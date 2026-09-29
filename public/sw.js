@@ -1,44 +1,21 @@
-// Service Worker for Watch & Earn BD
-const CACHE_NAME = 'watch-earn-bd-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json'
-];
-
+// Service Worker for Watch & Earn BD (Bypass & Network First)
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    })
+    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
   );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  // Pass API requests directly to network
-  if (event.request.url.includes('/api/')) {
-    return;
-  }
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request);
-    })
-  );
+  // Always fetch live from network
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
 });
 
-// Handle push notification click when user is in external apps like TikTok / YouTube
+// Handle push notification click when user is in external apps
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
