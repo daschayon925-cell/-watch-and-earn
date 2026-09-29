@@ -1429,9 +1429,9 @@ app.get('/api/admin/overview', (req, res) => {
     return res.status(403).json({ success: false, message: 'Admin access required' });
   }
 
-  const totalUsers = db.users.length;
-  const activeToday = db.users.filter(u => u.todayVideosCount > 0).length;
-  const totalVideosWatched = db.users.reduce((acc, u) => acc + (u.todayVideosCount || 0), 0) + 124;
+  const totalUsers = db.users.filter(u => u.role !== 'admin').length;
+  const activeToday = db.users.filter(u => u.role !== 'admin' && u.todayVideosCount > 0).length;
+  const totalVideosWatched = db.users.reduce((acc, u) => acc + (u.todayVideosCount || 0), 0);
   const totalCoinsDistributed = db.transactions
     .filter(t => t.amount > 0)
     .reduce((acc, t) => acc + t.amount, 0);
@@ -1445,19 +1445,18 @@ app.get('/api/admin/overview', (req, res) => {
     .filter(w => w.status === 'Paid')
     .reduce((acc, w) => acc + w.bdtAmount, 0);
 
-  const totalRewardLiabilityCoins = db.users.reduce((acc, u) => acc + u.coins, 0);
+  const userOnlyCoins = db.users.filter(u => u.role !== 'admin').reduce((acc, u) => acc + u.coins, 0);
+  const totalRewardLiabilityCoins = userOnlyCoins;
   const totalRewardLiabilityBDT = totalRewardLiabilityCoins * db.settings.coinToBDTRate;
 
-  // Ad revenue calculated based on standard real-world Google AdSense/AdMob rates:
-  // eCPM ~ $2.20 USD per 1000 video impressions = ~0.26 BDT per impression
-  // Each user video cycle generates ~3 impressions (1 rewarded + 1 interstitial + mini banner)
+  // Real Ad impressions count based on actual video views
   const simulatedAdImpressions = totalVideosWatched * 3;
   const estimatedGrossAdRevenueBDT = (simulatedAdImpressions * 0.35); // 0.35 BDT per ad eCPM
   const totalUserCostBDT = paidWithdrawalsBDT + (pendingWithdrawalsBDT * 0.7);
   const netProfitBDT = Math.max(0, estimatedGrossAdRevenueBDT - totalUserCostBDT);
   const profitMarginPercent = estimatedGrossAdRevenueBDT > 0 
     ? Math.round((netProfitBDT / estimatedGrossAdRevenueBDT) * 100) 
-    : 72;
+    : 0;
 
   res.json({
     success: true,
