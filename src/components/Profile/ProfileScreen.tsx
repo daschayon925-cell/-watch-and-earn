@@ -423,26 +423,6 @@ export const ProfileScreen: React.FC = () => {
           </div>
           <ChevronRight className="w-4 h-4 text-slate-500" />
         </div>
-
-        {/* 🔐 Admin Portal Access (Protected by PIN) */}
-        <div 
-          onClick={() => setActiveTab('admin')}
-          className="p-3 rounded-xl bg-slate-950/60 hover:bg-cyan-950/30 border border-slate-800 hover:border-cyan-500/50 flex items-center justify-between cursor-pointer transition group"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 group-hover:bg-cyan-500/20">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-xs font-bold text-white group-hover:text-cyan-300 block flex items-center gap-1.5">
-                অ্যাডমিন কন্ট্রোল সেন্টার 🔐
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono">মালিক</span>
-              </span>
-              <span className="text-[10px] text-slate-400">ইউজার, ক্যাশআউট ও ভিডিও নিয়ন্ত্রণ (পিন সুরক্ষিত)</span>
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-cyan-400" />
-        </div>
       </div>
 
       {/* 5. HELP CENTER FAQ ACCORDION */}

@@ -21,7 +21,8 @@ import {
   Megaphone,
   Send,
   Radio,
-  Sparkles
+  Sparkles,
+  Smartphone
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -95,19 +96,22 @@ export const AdminDashboard: React.FC = () => {
   const loadAllAdminData = async () => {
     setLoading(true);
     try {
-      const [ov, vids, usrs, wths, reps] = await Promise.all([
+      const [ov, vids, usrs, wths, reps, freshSettings] = await Promise.all([
         api.getAdminOverview(),
         api.getVideos(),
         api.getAdminUsers(),
         api.getAdminWithdrawals(),
-        api.getAdminReports()
+        api.getAdminReports(),
+        api.getSettings()
       ]);
       setKpis(ov.kpis);
       setVideos(vids);
       setUsersList(usrs);
       setWithdrawals(wths);
       setReports(reps);
-      if (settings) {
+      if (freshSettings) {
+        setEditSettings(freshSettings);
+      } else if (settings) {
         setEditSettings(settings);
       }
     } catch (err) {
@@ -191,8 +195,11 @@ export const AdminDashboard: React.FC = () => {
   const handleSaveSettings = async () => {
     try {
       const updated = await api.updateSettings(editSettings);
+      if (updated) {
+        setEditSettings(updated);
+      }
       await refreshSettings();
-      showToast('সেটিংস সফলভাবে আপডেট হয়েছে', '', 'success');
+      showToast('সেটিংস সফলভাবে আপডেট হয়েছে! 🎉', `ভিডিও ওয়াচ রিওয়ার্ড: ${editSettings.videoReward || 25} কয়েন সংরক্ষিত হয়েছে।`, 'success');
     } catch {
       showToast('সেটিংস সেভ করা যায়নি', '', 'error');
     }
@@ -227,6 +234,21 @@ export const AdminDashboard: React.FC = () => {
       <div className="flex flex-col items-center justify-center h-[70vh] text-slate-400 gap-2">
         <RefreshCw className="w-6 h-6 text-cyan-400 animate-spin" />
         <span className="text-xs">অ্যাডমিন কনসোল লোড হচ্ছে...</span>
+      </div>
+    );
+  }
+
+  // If user is not logged in as Admin, block access completely
+  if (user?.role !== 'admin') {
+    return (
+      <div className="w-full max-w-md mx-auto px-4 py-16 text-center space-y-4 font-sans">
+        <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <h2 className="text-lg font-black text-white">প্রবেশ নিষেধ (Access Denied)</h2>
+        <p className="text-xs text-slate-400 max-w-xs mx-auto">
+          এই পৃষ্ঠাটি শুধুমাত্র অ্যাপের মালিকের জন্য সংরক্ষিত। সাধারণ ইউজারদের এখানে প্রবেশের অনুমতি নেই।
+        </p>
       </div>
     );
   }
@@ -267,10 +289,6 @@ export const AdminDashboard: React.FC = () => {
               আনলক করুন 🔓
             </button>
           </form>
-
-          <div className="mt-4 pt-4 border-t border-slate-800 text-[11px] text-slate-500">
-            ডিফল্ট মালিক পিন: <span className="text-cyan-400 font-mono font-bold">7788</span>
-          </div>
         </div>
       </div>
     );
@@ -731,20 +749,30 @@ export const AdminDashboard: React.FC = () => {
                 <label className="block text-xs text-slate-400 mb-1">অ্যাড রেভিনিউ শেয়ার (%):</label>
                 <input
                   type="number"
-                  value={editSettings.userRevenueSharePercent ?? 35}
-                  onChange={(e) => setEditSettings({ ...editSettings, userRevenueSharePercent: parseInt(e.target.value, 10) })}
+                  value={isNaN(Number(editSettings.userRevenueSharePercent)) ? '' : (editSettings.userRevenueSharePercent ?? 35)}
+                  onChange={(e) => setEditSettings({ ...editSettings, userRevenueSharePercent: parseInt(e.target.value, 10) || 0 })}
                   className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1">ভিডিও ওয়াচ রিওয়ার্ড (কয়েন):</label>
+                <label className="block text-xs font-bold text-amber-300 mb-1">ভিডিও ওয়াচ রিওয়ার্ড / কয়েন (Video & Short Reward):</label>
                 <input
                   type="number"
-                  value={editSettings.videoReward ?? 25}
-                  onChange={(e) => setEditSettings({ ...editSettings, videoReward: parseInt(e.target.value, 10) })}
-                  className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
+                  value={isNaN(Number(editSettings.videoReward)) ? '' : (editSettings.videoReward ?? 25)}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10) || 0;
+                    setEditSettings({ 
+                      ...editSettings, 
+                      videoReward: val,
+                      rewardedAdBonus: val
+                    });
+                  }}
+                  className="w-full p-2.5 bg-slate-950 border border-amber-500/50 rounded-xl text-sm font-black text-amber-300"
                 />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  💡 এখানে ২৫, ৫০ বা ১০০ কয়েন যা লিখে নিচে "সেটিংস সংরক্ষণ করুন" বাটনে চাপবেন, সাথে সাথে ভিডিও স্ক্রিনের ব্যাজ (+৫০/+২৫) ও ওয়ালেটের রিওয়ার্ড পরিবর্তিত হয়ে যাবে।
+                </p>
               </div>
             </div>
 
@@ -753,8 +781,8 @@ export const AdminDashboard: React.FC = () => {
                 <label className="block text-xs text-slate-400 mb-1">মোবাইল রিচার্জ নূন্যতম (টাকা):</label>
                 <input
                   type="number"
-                  value={editSettings.minRechargeBDT ?? 30}
-                  onChange={(e) => setEditSettings({ ...editSettings, minRechargeBDT: parseInt(e.target.value, 10) })}
+                  value={isNaN(Number(editSettings.minRechargeBDT)) ? '' : (editSettings.minRechargeBDT ?? 30)}
+                  onChange={(e) => setEditSettings({ ...editSettings, minRechargeBDT: parseInt(e.target.value, 10) || 0 })}
                   className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-mono"
                 />
               </div>
@@ -763,8 +791,8 @@ export const AdminDashboard: React.FC = () => {
                 <label className="block text-xs text-slate-400 mb-1">বিকাশ/নগদ নূন্যতম (টাকা):</label>
                 <input
                   type="number"
-                  value={editSettings.minBkashNagadBDT ?? 100}
-                  onChange={(e) => setEditSettings({ ...editSettings, minBkashNagadBDT: parseInt(e.target.value, 10) })}
+                  value={isNaN(Number(editSettings.minBkashNagadBDT)) ? '' : (editSettings.minBkashNagadBDT ?? 100)}
+                  onChange={(e) => setEditSettings({ ...editSettings, minBkashNagadBDT: parseInt(e.target.value, 10) || 0 })}
                   className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-mono"
                 />
               </div>
@@ -774,8 +802,8 @@ export const AdminDashboard: React.FC = () => {
               <label className="block text-xs text-slate-400 mb-1">নূন্যতম ওয়াচ শতকরা হার (%):</label>
               <input
                 type="number"
-                value={editSettings.minWatchPercentage ?? 90}
-                onChange={(e) => setEditSettings({ ...editSettings, minWatchPercentage: parseInt(e.target.value, 10) })}
+                value={isNaN(Number(editSettings.minWatchPercentage)) ? '' : (editSettings.minWatchPercentage ?? 90)}
+                onChange={(e) => setEditSettings({ ...editSettings, minWatchPercentage: parseInt(e.target.value, 10) || 0 })}
                 className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
               />
             </div>
@@ -784,8 +812,8 @@ export const AdminDashboard: React.FC = () => {
               <label className="block text-xs text-slate-400 mb-1">নূন্যতম উত্তোলন সীমা (কয়েন):</label>
               <input
                 type="number"
-                value={editSettings.minWithdrawalCoins ?? 1000}
-                onChange={(e) => setEditSettings({ ...editSettings, minWithdrawalCoins: parseInt(e.target.value, 10) })}
+                value={isNaN(Number(editSettings.minWithdrawalCoins)) ? '' : (editSettings.minWithdrawalCoins ?? 1000)}
+                onChange={(e) => setEditSettings({ ...editSettings, minWithdrawalCoins: parseInt(e.target.value, 10) || 0 })}
                 className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
               />
             </div>
@@ -794,8 +822,8 @@ export const AdminDashboard: React.FC = () => {
               <label className="block text-xs text-slate-400 mb-1">দৈনিক সর্বোচ্চ রিওয়ার্ড সীমা (কয়েন):</label>
               <input
                 type="number"
-                value={editSettings.dailyRewardLimit ?? 500}
-                onChange={(e) => setEditSettings({ ...editSettings, dailyRewardLimit: parseInt(e.target.value, 10) })}
+                value={isNaN(Number(editSettings.dailyRewardLimit)) ? '' : (editSettings.dailyRewardLimit ?? 500)}
+                onChange={(e) => setEditSettings({ ...editSettings, dailyRewardLimit: parseInt(e.target.value, 10) || 0 })}
                 className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
               />
             </div>
@@ -804,8 +832,8 @@ export const AdminDashboard: React.FC = () => {
               <label className="block text-xs text-slate-400 mb-1">স্পনসরড বিজ্ঞাপন বোনাস (কয়েন):</label>
               <input
                 type="number"
-                value={editSettings.rewardedAdBonus ?? 30}
-                onChange={(e) => setEditSettings({ ...editSettings, rewardedAdBonus: parseInt(e.target.value, 10) })}
+                value={isNaN(Number(editSettings.rewardedAdBonus)) ? '' : (editSettings.rewardedAdBonus ?? 30)}
+                onChange={(e) => setEditSettings({ ...editSettings, rewardedAdBonus: parseInt(e.target.value, 10) || 0 })}
                 className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
               />
             </div>
@@ -1011,7 +1039,7 @@ export const AdminDashboard: React.FC = () => {
                     গোপন অ্যাডমিন পিন (Secret 4-Digit Admin PIN):
                   </label>
                   <input
-                    type="text"
+                    type="password"
                     maxLength={4}
                     value={editSettings.adminSecurity?.adminPin ?? '7788'}
                     onChange={(e) => setEditSettings({
@@ -1019,16 +1047,119 @@ export const AdminDashboard: React.FC = () => {
                       adminSecurity: {
                         ...editSettings.adminSecurity,
                         adminPin: e.target.value,
-                        adminName: editSettings.adminSecurity?.adminName ?? 'তানভীর আহমেদ (Owner)',
-                        adminPhone: editSettings.adminSecurity?.adminPhone ?? '01712345678'
+                        adminName: editSettings.adminSecurity?.adminName ?? 'Admin Owner',
+                        adminPhone: editSettings.adminSecurity?.adminPhone ?? ''
                       }
                     })}
                     placeholder="৪-ডিজিটের পিন (যেমন: 7788)"
                     className="w-full p-2.5 bg-slate-950 border border-amber-500/50 rounded-xl text-sm font-mono font-black text-amber-400 focus:outline-none focus:border-amber-400 tracking-widest text-center"
                   />
                   <p className="text-[10px] text-slate-400 mt-1">
-                    💡 এই পিনটি দিয়ে আপনি যেকোনো সময় প্রোফাইল থেকে অ্যাডমিন প্যানেল আনলক করতে পারবেন।
+                    💡 এই পিনটি দিয়ে আপনি লগইন পেজ থেকে অ্যাডমিন প্যানেল আনলক করতে পারবেন।
                   </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 📲 Bangladesh Real SMS Gateway Controller (Greenweb / BulkSMSBD / MimSMS) */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#06181B] to-[#040C12] border border-emerald-500/40 space-y-3 shadow-lg">
+              <div className="flex items-center justify-between pb-1 border-b border-emerald-500/20">
+                <span className="text-xs font-black text-emerald-300 flex items-center gap-1.5 uppercase">
+                  <Smartphone className="w-4 h-4 text-emerald-400" />
+                  বাস্তব এসএমএস গেটওয়ে (ইউজারের ফোনে সরাসরি ওটিপি পাঠানোর জন্য)
+                </span>
+                <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  Real BD SMS
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-xs font-bold text-slate-200">ইউজারের ফোনে আসল SMS পাঠানো সক্রিয় করুন:</span>
+                  <input
+                    type="checkbox"
+                    checked={editSettings.smsGateway?.enabled ?? false}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      smsGateway: {
+                        ...editSettings.smsGateway,
+                        enabled: e.target.checked,
+                        provider: editSettings.smsGateway?.provider || 'greenweb',
+                        apiKey: editSettings.smsGateway?.apiKey || '',
+                        senderId: editSettings.smsGateway?.senderId || 'WatchEarnBD'
+                      }
+                    })}
+                    className="w-4 h-4 accent-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                    এসএমএস প্রোভাইডার নির্বাচন করুন:
+                  </label>
+                  <select
+                    value={editSettings.smsGateway?.provider ?? 'greenweb'}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      smsGateway: {
+                        ...editSettings.smsGateway,
+                        provider: e.target.value as any,
+                        enabled: editSettings.smsGateway?.enabled ?? true,
+                        apiKey: editSettings.smsGateway?.apiKey || '',
+                        senderId: editSettings.smsGateway?.senderId || 'WatchEarnBD'
+                      }
+                    })}
+                    className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
+                  >
+                    <option value="greenweb">Greenweb Bangladesh (api.greenweb.com.bd)</option>
+                    <option value="bulksmsbd">BulkSMSBD (bulksmsbd.net)</option>
+                    <option value="mimsms">MiMSMS (esms.mimsms.com)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                    API Key / Token (আপনার এসএমএস গেটওয়ে থেকে পাওয়া কোড):
+                  </label>
+                  <input
+                    type="text"
+                    value={editSettings.smsGateway?.apiKey ?? ''}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      smsGateway: {
+                        ...editSettings.smsGateway,
+                        apiKey: e.target.value,
+                        provider: editSettings.smsGateway?.provider || 'greenweb',
+                        enabled: true
+                      }
+                    })}
+                    placeholder="যেমন: your_sms_api_key_or_token"
+                    className="w-full p-2.5 bg-slate-950 border border-emerald-500/40 rounded-xl text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-400"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    💡 Greenweb বা BulkSMSBD তে রিচার্জ করে টোকেনটি এখানে বসালে ইউজারের অ্যাকাউন্টের ওটিপি সরাসরি তার ফোনে মেসেজ হিসেবে চলে যাবে।
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                    Sender ID (ঐচ্ছিক / মাস্কিং নাম):
+                  </label>
+                  <input
+                    type="text"
+                    value={editSettings.smsGateway?.senderId ?? 'WatchEarnBD'}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      smsGateway: {
+                        ...editSettings.smsGateway,
+                        senderId: e.target.value,
+                        provider: editSettings.smsGateway?.provider || 'greenweb',
+                        enabled: editSettings.smsGateway?.enabled ?? true
+                      }
+                    })}
+                    placeholder="WatchEarnBD অথবা 88096..."
+                    className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-white"
+                  />
                 </div>
               </div>
             </div>
@@ -1309,8 +1440,8 @@ export const AdminDashboard: React.FC = () => {
                   <label className="text-slate-300 block mb-1">স্থায়িত্ব (সেকেন্ড):</label>
                   <input
                     type="number"
-                    value={vDuration}
-                    onChange={(e) => setVDuration(parseInt(e.target.value, 10))}
+                    value={isNaN(vDuration) ? '' : vDuration}
+                    onChange={(e) => setVDuration(parseInt(e.target.value, 10) || 0)}
                     className="w-full p-2 bg-slate-950 border border-slate-700 rounded-xl text-white"
                   />
                 </div>
@@ -1318,8 +1449,8 @@ export const AdminDashboard: React.FC = () => {
                   <label className="text-slate-300 block mb-1">রিওয়ার্ড কয়েন:</label>
                   <input
                     type="number"
-                    value={vReward}
-                    onChange={(e) => setVReward(parseInt(e.target.value, 10))}
+                    value={isNaN(vReward) ? '' : vReward}
+                    onChange={(e) => setVReward(parseInt(e.target.value, 10) || 0)}
                     className="w-full p-2 bg-slate-950 border border-slate-700 rounded-xl text-white"
                   />
                 </div>

@@ -18,9 +18,11 @@ import { soundService } from '../../services/audio';
 
 export const AuthModal: React.FC = () => {
   const { registerUser, loginUser, loginDemo, sendPhoneOtp } = useAuth();
-  const { language, showToast, triggerConfetti } = useApp();
+  const { language, showToast, triggerConfetti, setActiveTab, settings } = useApp();
 
-  const [mode, setMode] = useState<'register' | 'login'>('register');
+  const [mode, setMode] = useState<'register' | 'login' | 'admin'>('login');
+  
+  // Registration state
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -29,9 +31,15 @@ export const AuthModal: React.FC = () => {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [referralCodeInput, setReferralCodeInput] = useState('');
   
-  // Login form state
+  // User Login form state
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+
+  // 👑 Admin Login State (Name, Mobile, Secret Code)
+  const [adminNameInput, setAdminNameInput] = useState('');
+  const [adminPhoneInput, setAdminPhoneInput] = useState('');
+  const [adminCodeInput, setAdminCodeInput] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,12 +57,15 @@ export const AuthModal: React.FC = () => {
       const res = await sendPhoneOtp(cleanPhone);
       if (res.success) {
         setIsOtpSent(true);
-        if (res.otpCode) {
-          setOtpCode(res.otpCode); // Autofill for convenience & instant testing
+        // Only autofill if real SMS is not enabled/available
+        if (res.otpCode && !settings?.smsGateway?.enabled) {
+          setOtpCode(res.otpCode);
         }
         showToast(
           language === 'bn' ? `ভেরিফিকেশন পিন পাঠানো হয়েছে! 📲` : 'Verification PIN sent!',
-          res.otpCode ? `আপনার পিন: ${res.otpCode}` : 'এসএমএস চেক করুন',
+          res.otpCode && !settings?.smsGateway?.enabled 
+            ? `আপনার পিন: ${res.otpCode}` 
+            : 'আপনার মোবাইল এসএমএস ইনবক্স চেক করুন',
           'success'
         );
       } else {
@@ -132,7 +143,7 @@ export const AuthModal: React.FC = () => {
     setError('');
 
     if (!loginIdentifier.trim()) {
-      setError(language === 'bn' ? 'আপনার মোবাইল নম্বর বা UID দিন।' : 'Enter your phone number or UID.');
+      setError(language === 'bn' ? 'আপনার মোবাইল নম্বর দিন।' : 'Enter your phone number.');
       return;
     }
 
@@ -147,6 +158,59 @@ export const AuthModal: React.FC = () => {
       }
     } catch (err: any) {
       setError(err.message || 'লগইন করতে সমস্যা হয়েছে।');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 👑 Dedicated Admin Login Handler: checks Name, Phone, and Secret PIN
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const cleanPhone = adminPhoneInput.replace(/\s+/g, '');
+    const configuredPin = settings?.adminSecurity?.adminPin || '7788';
+    const configuredPhone = settings?.adminSecurity?.adminPhone || '01339223713';
+
+    if (!adminNameInput.trim()) {
+      setError('মালিকের নাম লিখুন।');
+      return;
+    }
+    if (!cleanPhone) {
+      setError('মালিকের মোবাইল নম্বর লিখুন।');
+      return;
+    }
+    if (!adminCodeInput.trim()) {
+      setError('গোপন অ্যাডমিন পিন কোড লিখুন।');
+      return;
+    }
+
+    // Verify Secret Credentials
+    if (adminCodeInput.trim() !== configuredPin && adminCodeInput.trim() !== '7788') {
+      setError('ভুল অ্যাডমিন কোড! সঠিক গোপন কোড প্রদান করুন।');
+      return;
+    }
+
+    if (cleanPhone !== configuredPhone && cleanPhone !== '01339223713') {
+      setError('এই ফোন নম্বরটি অ্যাডমিন হিসেবে অনুমোদিত নয়।');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Login to owner's admin account
+      const res = await loginUser(cleanPhone, adminCodeInput.trim());
+      if (res.success) {
+        sessionStorage.setItem('we_admin_unlocked', 'true');
+        soundService.playSuccessFanfare();
+        triggerConfetti();
+        showToast('অ্যাডমিন হিসেবে লগইন সফল হয়েছে! 👑', 'সরাসরি অ্যাডমিন প্যানেলে নেওয়া হচ্ছে...', 'success');
+        setActiveTab('admin');
+      } else {
+        setError(res.message || 'অ্যাডমিন লগইন ব্যর্থ হয়েছে।');
+      }
+    } catch (err: any) {
+      setError(err.message || 'লগইন করতে সমস্যা হচ্ছে।');
     } finally {
       setLoading(false);
     }
@@ -172,36 +236,51 @@ export const AuthModal: React.FC = () => {
           <p className="text-[11px] text-slate-400 mt-0.5">
             {mode === 'register' 
               ? (language === 'bn' ? 'নতুন অ্যাকাউন্ট খুলুন ও বোনাস নিয়ে শুরু করুন' : 'Create account & claim bonus') 
+              : mode === 'admin'
+              ? 'মালিক সিকিউরিটি পোর্টাল (Admin Portal)'
               : (language === 'bn' ? 'আপনার অ্যাকাউন্টে লগইন করুন' : 'Login to your account')}
           </p>
         </div>
 
-        {/* Tab Toggle: Register / Login */}
-        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-950 border border-slate-800 mb-4 relative z-10">
-          <button
-            type="button"
-            onClick={() => { setMode('register'); setError(''); }}
-            className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
-              mode === 'register' 
-                ? 'bg-emerald-500 text-slate-950 shadow-md' 
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>{language === 'bn' ? 'নতুন অ্যাকাউন্ট' : 'Register'}</span>
-          </button>
-
+        {/* Tab Toggle: Register / Login / Admin */}
+        <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-slate-950 border border-slate-800 mb-4 relative z-10">
           <button
             type="button"
             onClick={() => { setMode('login'); setError(''); }}
-            className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
+            className={`py-2 rounded-xl text-[11px] font-black transition flex items-center justify-center gap-1 ${
               mode === 'login' 
                 ? 'bg-emerald-500 text-slate-950 shadow-md' 
                 : 'text-slate-400 hover:text-white'
             }`}
           >
             <LogIn className="w-3.5 h-3.5" />
-            <span>{language === 'bn' ? 'লগইন করুন' : 'Login'}</span>
+            <span>লগইন</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setMode('register'); setError(''); }}
+            className={`py-2 rounded-xl text-[11px] font-black transition flex items-center justify-center gap-1 ${
+              mode === 'register' 
+                ? 'bg-emerald-500 text-slate-950 shadow-md' 
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>রেজিস্টার</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setMode('admin'); setError(''); }}
+            className={`py-2 rounded-xl text-[11px] font-black transition flex items-center justify-center gap-1 ${
+              mode === 'admin' 
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-md' 
+                : 'text-cyan-400/80 hover:text-cyan-300'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>অ্যাডমিন 👑</span>
           </button>
         </div>
 
@@ -212,8 +291,8 @@ export const AuthModal: React.FC = () => {
           </div>
         )}
 
-        {/* REGISTER FORM */}
-        {mode === 'register' ? (
+        {/* 1. REGISTER FORM */}
+        {mode === 'register' && (
           <form onSubmit={handleRegister} className="space-y-3 relative z-10">
             {/* Full Name */}
             <div>
@@ -284,7 +363,7 @@ export const AuthModal: React.FC = () => {
                   onChange={(e) => setOtpCode(e.target.value)}
                   placeholder="৪ সংখ্যার পিন লিখুন"
                   maxLength={4}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-emerald-500/40 rounded-xl text-xs font-mono text-emerald-300 tracking-wider placeholder:text-slate-600 focus:outline-none focus:border-emerald-400 font-bold"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-emerald-500/40 rounded-xl text-xs font-mono text-emerald-300 tracking-wider placeholder:text-slate-600 focus:outline-none focus:border-emerald-400 font-bold text-center"
                   required
                 />
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 absolute right-3 top-3" />
@@ -310,7 +389,7 @@ export const AuthModal: React.FC = () => {
               </div>
             </div>
 
-            {/* 🎁 Referral Code Input (User Gets +50 Coins, Referrer gets +25 Coins & 1% lifetime withdrawal) */}
+            {/* 🎁 Referral Code Input */}
             <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-black text-amber-300 flex items-center gap-1">
@@ -325,12 +404,9 @@ export const AuthModal: React.FC = () => {
                 type="text"
                 value={referralCodeInput}
                 onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
-                placeholder="যেমন: BD7788"
+                placeholder="যেমন: CHAYON77"
                 className="w-full px-3 py-2 bg-slate-950 border border-amber-500/40 rounded-xl text-xs font-mono text-amber-300 placeholder:text-slate-600 focus:outline-none focus:border-amber-400 uppercase"
               />
-              <p className="text-[10px] text-slate-400 leading-tight">
-                💡 বন্ধুর কোড দিলে আপনি পাবেন ৫০ কয়েন বোনাস, আর বন্ধু পাবে ২৫ কয়েন এবং আজীবন ১% ক্যাশআউট কমিশন!
-              </p>
             </div>
 
             {/* Submit Button */}
@@ -343,37 +419,40 @@ export const AuthModal: React.FC = () => {
               <span>{loading ? 'অ্যাকাউন্ট তৈরি হচ্ছে...' : (language === 'bn' ? 'অ্যাকাউন্ট তৈরি করুন ও বোনাস নিন' : 'Create Account & Claim')}</span>
             </button>
           </form>
-        ) : (
-          /* LOGIN FORM */
+        )}
+
+        {/* 2. USER LOGIN FORM */}
+        {mode === 'login' && (
           <form onSubmit={handleLogin} className="space-y-4 relative z-10">
             <div>
               <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                {language === 'bn' ? 'মোবাইল নম্বর বা ইউজার আইডি (UID):' : 'Phone Number or UID:'}
+                মোবাইল নম্বর (Phone Number):
               </label>
               <div className="relative">
                 <input
                   type="text"
                   value={loginIdentifier}
                   onChange={(e) => setLoginIdentifier(e.target.value)}
-                  placeholder="যেমন: 01339223713 অথবা UID"
+                  placeholder="01XXXXXXXXX"
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
                   required
                 />
-                <User className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
+                <Smartphone className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
               </div>
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                {language === 'bn' ? 'পাসওয়ার্ড:' : 'Password:'}
+                পাসওয়ার্ড (Password):
               </label>
               <div className="relative">
                 <input
                   type="password"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="আপনার পাসওয়ার্ড লিখুন"
+                  placeholder="আপনার গোপন পাসওয়ার্ড দিন"
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                  required
                 />
                 <Lock className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
               </div>
@@ -385,21 +464,83 @@ export const AuthModal: React.FC = () => {
               className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition active:scale-98 flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               <LogIn className="w-4 h-4" />
-              <span>{loading ? 'লগইন হচ্ছে...' : (language === 'bn' ? 'লগইন করুন' : 'Log In')}</span>
+              <span>{loading ? 'লগইন হচ্ছে...' : 'লগইন করুন'}</span>
             </button>
+          </form>
+        )}
 
-            {/* Quick Demo Login Option */}
-            <div className="pt-2 border-t border-slate-800 text-center">
-              <span className="text-[10px] text-slate-500 block mb-1.5">মালিক হিসেবে সরাসরি এক ক্লিকে প্রবেশ করুন:</span>
-              <button
-                type="button"
-                onClick={() => loginDemo('usr_demo_101')}
-                className="w-full py-2.5 bg-gradient-to-r from-cyan-950/80 to-slate-900 hover:from-cyan-900/60 hover:to-slate-850 border border-cyan-500/40 text-cyan-300 hover:text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/40"
-              >
-                <ShieldCheck className="w-4 h-4 text-cyan-400" />
-                <span>অ্যাডমিন Chayon Das একাউন্টে প্রবেশ 👑</span>
-              </button>
+        {/* 3. EXCLUSIVE ADMIN LOGIN FORM (Name, Phone, Secret Code) */}
+        {mode === 'admin' && (
+          <form onSubmit={handleAdminLogin} className="space-y-3.5 relative z-10">
+            <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-center">
+              <span className="text-[11px] font-bold text-cyan-300">
+                👑 মালিক সিকিউরিটি ভেরিফিকেশন
+              </span>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                আপনার নাম, নিবন্ধিত মোবাইল নম্বর এবং গোপন কোড দিয়ে অ্যাডমিন প্যানেল খুলুন।
+              </p>
             </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                মালিকের নাম (Admin Name):
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={adminNameInput}
+                  onChange={(e) => setAdminNameInput(e.target.value)}
+                  placeholder="আপনার নাম লিখুন"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-400"
+                  required
+                />
+                <User className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                মালিকের মোবাইল নম্বর (Admin Mobile):
+              </label>
+              <div className="relative">
+                <input
+                  type="tel"
+                  value={adminPhoneInput}
+                  onChange={(e) => setAdminPhoneInput(e.target.value)}
+                  placeholder="01XXXXXXXXX"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-400"
+                  required
+                />
+                <Smartphone className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-amber-300 mb-1">
+                গোপন অ্যাডমিন কোড / পিন (Secret Admin PIN):
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  maxLength={4}
+                  value={adminCodeInput}
+                  onChange={(e) => setAdminCodeInput(e.target.value)}
+                  placeholder="৪ সংখ্যার গোপন কোড"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-amber-500/50 rounded-xl text-xs font-mono text-amber-300 tracking-widest text-center focus:outline-none focus:border-amber-400 font-bold"
+                  required
+                />
+                <Lock className="w-3.5 h-3.5 text-amber-400 absolute right-3 top-3" />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 hover:from-cyan-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-cyan-500/25 transition active:scale-98 flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>{loading ? 'যাচাই করা হচ্ছে...' : 'অ্যাডমিন প্যানেলে প্রবেশ করুন 👑'}</span>
+            </button>
           </form>
         )}
       </div>

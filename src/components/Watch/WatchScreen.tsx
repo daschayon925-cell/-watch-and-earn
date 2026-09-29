@@ -39,8 +39,8 @@ export const WatchScreen: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const { setActiveTab, language, showToast, triggerConfetti, settings } = useApp();
 
-  // Dynamic reward coins based on admin settings (defaults to 50 coins)
-  const currentRewardCoins = settings?.rewardedAdBonus || settings?.videoReward || 50;
+  // Dynamic reward coins based on admin settings (syncs with videoReward and rewardedAdBonus)
+  const currentRewardCoins = settings?.videoReward ?? settings?.rewardedAdBonus ?? 25;
 
   // 🔄 Daily Auto-Rotating YouTube Feed (250 Real YouTube Videos per day, automatically replaced at midnight)
   const [dailyReels, setDailyReels] = useState<YouTubeReelItem[]>(() => getDailyYouTubeShorts(250));

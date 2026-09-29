@@ -135,14 +135,6 @@ export const Navbar: React.FC = () => {
               {language === 'bn' ? 'ডেমো মোড সক্রিয়: বিকাশ ও নগদ ক্যাশআউট সিমুলেশন' : 'DEMO MODE: Simulated Ad & BD Payouts'}
             </span>
           </div>
-          {user?.role === 'admin' && (
-            <button
-              onClick={() => setActiveTab('admin')}
-              className="text-[9px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded hover:bg-cyan-500/30 transition flex items-center gap-0.5"
-            >
-              <Shield className="w-3 h-3" /> Admin
-            </button>
-          )}
         </div>
       )}
     </header>

@@ -139,6 +139,13 @@ export interface AdminSettings {
     adminPhone: string;
     adminPin: string;
   };
+  smsGateway?: {
+    provider: 'bulksmsbd' | 'greenweb' | 'mimsms' | 'custom' | 'simulation';
+    apiKey?: string;
+    senderId?: string;
+    apiUrl?: string;
+    enabled: boolean;
+  };
 }
 
 export interface Report {

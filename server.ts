@@ -69,9 +69,16 @@ const db: {
       updatedAt: new Date().toISOString()
     },
     adminSecurity: {
-      adminName: 'Chayon Das (Owner)',
+      adminName: 'Owner Admin',
       adminPhone: '01339223713',
       adminPin: '7788'
+    },
+    smsGateway: {
+      provider: 'greenweb',
+      apiKey: process.env.SMS_API_KEY || '',
+      senderId: process.env.SMS_SENDER_ID || 'WatchEarnBD',
+      apiUrl: 'https://api.greenweb.com.bd/api.php',
+      enabled: false
     }
   },
   users: [
@@ -595,8 +602,47 @@ app.get('/api/auth/profile', (req, res) => {
   });
 });
 
+// Helper to dispatch Real SMS via Bangladesh SMS Gateways
+async function dispatchRealSms(phone: string, text: string): Promise<{ sent: boolean; response?: string }> {
+  const config = db.settings.smsGateway;
+  if (!config || !config.enabled || !config.apiKey) {
+    return { sent: false, response: 'Gateway not enabled or API Key missing' };
+  }
+
+  const cleanPhone = phone.startsWith('88') ? phone : '88' + phone;
+
+  try {
+    let url = '';
+    if (config.provider === 'greenweb') {
+      url = `https://api.greenweb.com.bd/api.php?token=${encodeURIComponent(config.apiKey)}&to=${encodeURIComponent(cleanPhone)}&message=${encodeURIComponent(text)}`;
+    } else if (config.provider === 'bulksmsbd') {
+      url = `http://bulksmsbd.net/api/smsapi?api_key=${encodeURIComponent(config.apiKey)}&type=text&number=${encodeURIComponent(cleanPhone)}&senderid=${encodeURIComponent(config.senderId || '8809612443880')}&message=${encodeURIComponent(text)}`;
+    } else if (config.provider === 'mimsms') {
+      url = `https://esms.mimsms.com/smsapi?api_key=${encodeURIComponent(config.apiKey)}&type=text&contacts=${encodeURIComponent(cleanPhone)}&senderid=${encodeURIComponent(config.senderId || '')}&msg=${encodeURIComponent(text)}`;
+    } else if (config.apiUrl) {
+      url = config.apiUrl
+        .replace('{phone}', cleanPhone)
+        .replace('{key}', config.apiKey)
+        .replace('{text}', encodeURIComponent(text));
+    }
+
+    if (url) {
+      console.log(`[REAL SMS DISPATCH] Requesting: ${url.replace(config.apiKey, '***')}`);
+      const res = await fetch(url);
+      const respText = await res.text();
+      console.log(`[REAL SMS RESULT] Response: ${respText.slice(0, 100)}`);
+      return { sent: true, response: respText };
+    }
+  } catch (err: any) {
+    console.error('[REAL SMS ERROR] Failed to send SMS:', err?.message || err);
+    return { sent: false, response: err?.message };
+  }
+
+  return { sent: false };
+}
+
 // Request Phone OTP Pin for Registration
-app.post('/api/auth/send-otp', (req, res) => {
+app.post('/api/auth/send-otp', async (req, res) => {
   const { phone } = req.body;
   const cleanPhone = (phone || '').replace(/\s+/g, '');
   if (!cleanPhone || !/^01[3-9]\d{8}$/.test(cleanPhone)) {
@@ -613,13 +659,22 @@ app.post('/api/auth/send-otp', (req, res) => {
   const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes validity
   phoneOtps.set(cleanPhone, { code, expiresAt });
 
+  const smsText = `Watch & Earn BD: আপনার অ্যাকাউন্ট ভেরিফিকেশন পিন হলো ${code}। পিনটি কাউকে বলবেন না।`;
   console.log(`[SMS OTP GATEWAY] Sending code ${code} to ${cleanPhone}`);
 
+  // Dispatch real SMS if configured
+  const smsResult = await dispatchRealSms(cleanPhone, smsText);
+
+  // Return message indicating real SMS sent to user's phone
   res.json({
     success: true,
-    message: `আপনার নম্বরে ৪-সংখ্যার ভেরিফিকেশন পিন পাঠানো হয়েছে: ${code}`,
-    otpCode: code, // returned for in-app instant alert & copy convenience
-    phone: cleanPhone
+    message: smsResult.sent 
+      ? `আপনার মোবাইল নম্বরে এসএমএস এর মাধ্যমে ৪-ডিজিটের ভেরিফিকেশন পিন পাঠানো হয়েছে।` 
+      : `আপনার নম্বরে ভেরিফিকেশন পিন পাঠানো হয়েছে। (SMS গেটওয়ে কনফিগার করা থাকলে সরাসরি ইনবক্সে আসবে)`,
+    // Never show OTP in UI if gateway is live
+    otpCode: (db.settings.smsGateway?.enabled && smsResult.sent) ? undefined : code,
+    phone: cleanPhone,
+    isRealSms: smsResult.sent
   });
 });
 
@@ -1149,7 +1204,9 @@ app.post('/api/reward/ad-reward', (req, res) => {
     return res.status(400).json({ success: false, message: 'রিওয়ার্ডেড বিজ্ঞাপন বর্তমানে নিষ্ক্রিয়।' });
   }
 
-  const rewardAmount = db.settings.rewardedAdBonus;
+  const rewardAmount = adToken === 'reel_auto_loop' 
+    ? (db.settings.videoReward || db.settings.rewardedAdBonus || 25)
+    : (db.settings.rewardedAdBonus || db.settings.videoReward || 30);
   user.coins += rewardAmount;
   user.lifetimeCoins += rewardAmount;
   user.todayCoins += rewardAmount;
@@ -1799,6 +1856,12 @@ app.post('/api/admin/settings', (req, res) => {
     db.settings.adminSecurity = {
       ...db.settings.adminSecurity,
       ...req.body.adminSecurity
+    };
+  }
+  if (req.body.smsGateway !== undefined) {
+    db.settings.smsGateway = {
+      ...db.settings.smsGateway,
+      ...req.body.smsGateway
     };
   }
 

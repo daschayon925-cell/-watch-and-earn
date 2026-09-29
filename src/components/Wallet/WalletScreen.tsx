@@ -603,8 +603,11 @@ export const WalletScreen: React.FC = () => {
                   </div>
                   <input
                     type="number"
-                    value={bdtAmountToWithdraw}
-                    onChange={(e) => setBdtAmountToWithdraw(Math.max(1, parseInt(e.target.value, 10) || 0))}
+                    value={isNaN(bdtAmountToWithdraw) ? '' : bdtAmountToWithdraw}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      setBdtAmountToWithdraw(isNaN(val) ? 0 : Math.max(0, val));
+                    }}
                     className="w-full pl-8 pr-4 py-2.5 bg-[#090D16] border border-slate-700 rounded-xl text-sm font-mono text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
