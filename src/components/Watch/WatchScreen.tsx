@@ -467,36 +467,53 @@ export const WatchScreen: React.FC = () => {
             </span>
           </div>
 
-          {/* Dual Mode Switcher */}
-          <div className="flex items-center bg-black/70 p-0.5 rounded-full border border-white/15 backdrop-blur-md">
+          {/* Dual Mode Switcher & Quick Ad Test */}
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => {
-                setViewMode('feed');
-                setIsVideoLocked(false);
+                setTargetWatchSeconds(prev => prev === 240 ? 10 : 240);
+                setWatchSeconds(0);
+                showToast(targetWatchSeconds === 240 ? '⚡ ১০ সেকেন্ড ফাস্ট অ্যাড সক্রিয়!' : '⏱️ ৪ মিনিট স্ট্যান্ডার্ড মোড সক্রিয়', '', 'info');
               }}
-              className={`px-3 py-1 rounded-full text-[10px] font-black transition flex items-center gap-1 ${
-                viewMode === 'feed'
-                  ? 'bg-red-600 text-white shadow-md'
-                  : 'text-slate-300 hover:text-white'
+              className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition ${
+                targetWatchSeconds === 10
+                  ? 'bg-amber-400 text-slate-950 border-amber-300 animate-pulse'
+                  : 'bg-black/60 text-slate-400 border-white/10 hover:text-white'
               }`}
             >
-              <Play className="w-3 h-3 fill-white" />
-              <span>শর্টস ফিড</span>
+              {targetWatchSeconds === 10 ? '⚡ টেস্ট অ্যাড (10s)' : '⏱️ ৪ মি.'}
             </button>
-            <button
-              onClick={() => {
-                setViewMode('app_task');
-                setIsVideoLocked(false);
-              }}
-              className={`px-3 py-1 rounded-full text-[10px] font-black transition flex items-center gap-1 ${
-                viewMode === 'app_task'
-                  ? 'bg-amber-500 text-slate-950 font-black shadow-md'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Smartphone className="w-3 h-3" />
-              <span>অ্যাপ টাস্ক</span>
-            </button>
+
+            <div className="flex items-center bg-black/70 p-0.5 rounded-full border border-white/15 backdrop-blur-md">
+              <button
+                onClick={() => {
+                  setViewMode('feed');
+                  setIsVideoLocked(false);
+                }}
+                className={`px-3 py-1 rounded-full text-[10px] font-black transition flex items-center gap-1 ${
+                  viewMode === 'feed'
+                    ? 'bg-red-600 text-white shadow-md'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <Play className="w-3 h-3 fill-white" />
+                <span>শর্টস ফিড</span>
+              </button>
+              <button
+                onClick={() => {
+                  setViewMode('app_task');
+                  setIsVideoLocked(false);
+                }}
+                className={`px-3 py-1 rounded-full text-[10px] font-black transition flex items-center gap-1 ${
+                  viewMode === 'app_task'
+                    ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <Smartphone className="w-3 h-3" />
+                <span>অ্যাপ টাস্ক</span>
+              </button>
+            </div>
           </div>
 
           <button

@@ -102,7 +102,7 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
 
         <div className="flex items-center gap-1 text-[8px] text-amber-400/90 font-semibold">
           <Coins className="w-2.5 h-2.5 text-amber-400" />
-          <span>ক্লিক করলেই +১৫ কয়েন</span>
+          <span>+১৫ কয়েন (দিনে সর্বোচ্চ ১০ বার)</span>
         </div>
       </div>
 
