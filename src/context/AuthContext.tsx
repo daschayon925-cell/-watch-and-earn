@@ -24,21 +24,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshUser = async () => {
     try {
       const u = await api.getProfile();
-      setUser(u);
+      setUser(u || null);
     } catch (err) {
       console.error('Failed to load user profile', err);
     }
   };
 
-  const loginDemo = async (uid: string = 'usr_demo_101') => {
+  const loginDemo = async (uid?: string) => {
+    if (!uid) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setApiUserId(uid);
     localStorage.setItem('we_user_id', uid);
     try {
       const u = await api.getProfile();
-      setUser(u);
+      setUser(u || null);
     } catch (err) {
       console.error('Login error', err);
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -111,8 +117,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const savedUid = localStorage.getItem('we_user_id') || 'usr_demo_102';
-    loginDemo(savedUid);
+    const savedUid = localStorage.getItem('we_user_id');
+    if (savedUid) {
+      loginDemo(savedUid);
+    } else {
+      setLoading(false);
+      setUser(null);
+    }
   }, []);
 
   return (

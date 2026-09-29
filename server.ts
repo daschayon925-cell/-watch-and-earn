@@ -83,49 +83,27 @@ const db: {
   },
   users: [
     {
-      uid: 'usr_demo_101',
+      uid: 'usr_admin_owner',
       displayName: 'Chayon Das (Owner)',
-      email: 'daschayon925@gmail.com', // Logged in user email
+      email: 'daschayon925@gmail.com',
       phone: '01339223713',
       password: '7788',
       phoneVerified: true,
       photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
       coins: 25000,
       pendingWithdrawalCoins: 0,
-      lifetimeCoins: 50000,
-      todayCoins: 500,
-      todayVideosCount: 15,
-      streakDays: 14,
+      lifetimeCoins: 25000,
+      todayCoins: 0,
+      todayVideosCount: 0,
+      streakDays: 1,
       lastCheckInDate: new Date().toISOString().split('T')[0],
-      role: 'admin', // Admin privilege
+      role: 'admin',
       accountStatus: 'active',
       riskScore: 0,
       referralCode: 'CHAYON77',
       referredBy: undefined,
-      referralCount: 28,
-      createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
-      updatedAt: new Date().toISOString()
-    },
-    {
-      uid: 'usr_demo_102',
-      displayName: 'সাদিয়া ইসলাম',
-      email: 'sadia.bd@example.com',
-      phone: '01898765432',
-      photoURL: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-      coins: 1200,
-      pendingWithdrawalCoins: 1000,
-      lifetimeCoins: 2200,
-      todayCoins: 50,
-      todayVideosCount: 2,
-      streakDays: 6,
-      lastCheckInDate: new Date().toISOString().split('T')[0],
-      role: 'user',
-      accountStatus: 'active',
-      riskScore: 12,
-      referralCode: 'BD9921',
-      referredBy: 'BD7788',
-      referralCount: 2,
-      createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+      referralCount: 0,
+      createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
   ],
@@ -443,127 +421,11 @@ const db: {
       tags: ['Dance', 'HipHop', 'Nach', 'Viral']
     }
   ],
-  transactions: [
-    {
-      transactionId: 'trx_init_01',
-      userId: 'usr_demo_101',
-      type: 'DAILY_BONUS',
-      amount: 25,
-      bdtEquivalent: 0.25,
-      source: 'Day 4 Streak Check-In',
-      status: 'COMPLETED',
-      note: 'Bonus',
-      createdAt: new Date(Date.now() - 2 * 3600000).toISOString()
-    },
-    {
-      transactionId: 'trx_init_02',
-      userId: 'usr_demo_101',
-      type: 'WATCH_REWARD',
-      amount: 25,
-      bdtEquivalent: 0.25,
-      source: 'ভিডিও দেখেছেন: মেঘের রাজ্য সাজেক ভ্যালি',
-      videoId: 'vid_bd_01',
-      status: 'COMPLETED',
-      createdAt: new Date(Date.now() - 1 * 3600000).toISOString()
-    },
-    {
-      transactionId: 'trx_init_03',
-      userId: 'usr_demo_101',
-      type: 'WATCH_REWARD',
-      amount: 25,
-      bdtEquivalent: 0.25,
-      source: 'ভিডিও দেখেছেন: পুরান ঢাকার শাহী বিরিয়ানি',
-      videoId: 'vid_bd_02',
-      status: 'COMPLETED',
-      createdAt: new Date(Date.now() - 30 * 60000).toISOString()
-    }
-  ],
-  withdrawals: [
-    {
-      withdrawalId: 'wth_demo_882',
-      userId: 'usr_demo_102',
-      userName: 'সাদিয়া ইসলাম',
-      method: 'bKash',
-      accountType: 'Personal',
-      mobileNumber: '01898765432',
-      coins: 1000,
-      bdtAmount: 10.00,
-      status: 'Pending',
-      requestedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
-      adminNote: 'Processing through bKash disbursement portal'
-    },
-    {
-      withdrawalId: 'wth_demo_881',
-      userId: 'usr_demo_101',
-      userName: 'তানভীর আহমেদ',
-      method: 'Nagad',
-      accountType: 'Personal',
-      mobileNumber: '01712345678',
-      coins: 1000,
-      bdtAmount: 10.00,
-      status: 'Paid',
-      trxId: 'NAG78239011BD',
-      requestedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-      processedAt: new Date(Date.now() - 4 * 86400000).toISOString(),
-      adminNote: 'Disbursed successfully'
-    }
-  ],
-  reports: [
-    {
-      id: 'rep_01',
-      videoId: 'vid_bd_05',
-      userId: 'usr_demo_102',
-      userEmail: 'sadia.bd@example.com',
-      reason: 'Audio attribution check',
-      details: 'Please ensure comedy background track author attribution is updated.',
-      status: 'reviewed',
-      createdAt: new Date(Date.now() - 2 * 86400000).toISOString()
-    }
-  ],
-  notifications: [
-    {
-      id: 'notif_01',
-      userId: 'usr_demo_101',
-      title: 'কয়েন যুক্ত হয়েছে! 🪙',
-      message: 'ভিডিও দেখে আপনি ২৫ কয়েন অর্জন করেছেন। চালিয়ে যান!',
-      type: 'reward',
-      read: false,
-      createdAt: new Date(Date.now() - 30 * 60000).toISOString(),
-      linkTab: 'wallet'
-    },
-    {
-      id: 'notif_02',
-      userId: 'usr_demo_101',
-      title: 'নগদ ক্যাশআউট সফল 🇧🇩',
-      message: 'আপনার ১০০০ কয়েন (৳১০.০০) নগদ অ্যাকাউন্টে সফলভাবে পরিশোধ করা হয়েছে। TrxID: NAG78239011BD',
-      type: 'withdrawal',
-      read: true,
-      createdAt: new Date(Date.now() - 4 * 86400000).toISOString(),
-      linkTab: 'wallet'
-    }
-  ],
-  comments: [
-    {
-      id: 'cmt_01',
-      videoId: 'vid_bd_01',
-      userId: 'usr_demo_102',
-      userName: 'সাদিয়া ইসলাম',
-      userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-      text: 'সাজেক ভ্যালির দৃশ্য অসাধারণ! এই শীতে অবশ্যই যাবো ইনশাআল্লাহ। ❤️',
-      likesCount: 18,
-      createdAt: new Date(Date.now() - 2 * 3600000).toISOString()
-    },
-    {
-      id: 'cmt_02',
-      videoId: 'vid_bd_02',
-      userId: 'usr_demo_101',
-      userName: 'তানভীর আহমেদ',
-      userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      text: 'পুরান ঢাকার বিরিয়ানির সাথে অন্য কিছুর তুলনা চলে না! দারুণ ভিডিও 😋',
-      likesCount: 9,
-      createdAt: new Date(Date.now() - 1 * 3600000).toISOString()
-    }
-  ]
+  transactions: [],
+  withdrawals: [],
+  reports: [],
+  notifications: [],
+  comments: []
 };
 
 // Active watch sessions to prevent fraud / time manipulation
@@ -574,13 +436,10 @@ const phoneOtps: Map<string, { code: string; expiresAt: number }> = new Map();
 
 // Helper to get current active user
 function getUser(req: express.Request) {
-  const authHeader = req.headers.authorization;
-  const uid = req.headers['x-user-id'] as string || 'usr_demo_102';
-  let user = db.users.find(u => u.uid === uid);
-  if (!user) {
-    user = db.users.find(u => u.role === 'user') || db.users[1] || db.users[0];
-  }
-  return user;
+  const uid = req.headers['x-user-id'] as string;
+  if (!uid) return null;
+  const user = db.users.find(u => u.uid === uid);
+  return user || null;
 }
 
 // ---------------- API ENDPOINTS ---------------- //
@@ -596,6 +455,12 @@ app.get('/api/settings', (req, res) => {
 // 2. User Profile & Auth
 app.get('/api/auth/profile', (req, res) => {
   const user = getUser(req);
+  if (!user) {
+    return res.status(401).json({
+      success: false,
+      message: 'অননুমোদিত বা কোনো সক্রিয় সেশন নেই।'
+    });
+  }
   res.json({
     success: true,
     user
@@ -1515,6 +1380,27 @@ app.post('/api/wallet/withdraw', (req, res) => {
     withdrawal,
     newBalance: user.coins,
     pendingBalance: user.pendingWithdrawalCoins
+  });
+});
+
+// 9.1 PUBLIC VERIFIED PAYOUT FEED
+app.get('/api/withdrawals/public-feed', (req, res) => {
+  // Return real paid withdrawals from database
+  const paidList = db.withdrawals
+    .filter(w => w.status === 'Paid')
+    .slice(0, 10)
+    .map(w => ({
+      id: w.withdrawalId,
+      name: w.userName || 'সম্মানিত ইউজার',
+      phone: w.mobileNumber ? w.mobileNumber.slice(0, 3) + '***' + w.mobileNumber.slice(-4) : '017***1234',
+      amount: w.bdtAmount,
+      method: w.method,
+      timeAgo: 'সদ্য পরিশোধিত'
+    }));
+
+  res.json({
+    success: true,
+    payouts: paidList
   });
 });
 

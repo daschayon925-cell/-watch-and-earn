@@ -20,7 +20,7 @@ export const AuthModal: React.FC = () => {
   const { registerUser, loginUser, loginDemo, sendPhoneOtp } = useAuth();
   const { language, showToast, triggerConfetti, setActiveTab, settings } = useApp();
 
-  const [mode, setMode] = useState<'register' | 'login' | 'admin'>('login');
+  const [mode, setMode] = useState<'register' | 'login' | 'admin'>('register');
   
   // Registration state
   const [displayName, setDisplayName] = useState('');
@@ -235,7 +235,7 @@ export const AuthModal: React.FC = () => {
           </h2>
           <p className="text-[11px] text-slate-400 mt-0.5">
             {mode === 'register' 
-              ? (language === 'bn' ? 'নতুন অ্যাকাউন্ট খুলুন ও বোনাস নিয়ে শুরু করুন' : 'Create account & claim bonus') 
+              ? (language === 'bn' ? 'নতুন অ্যাকাউন্ট খুলুন ও ১০০ কয়েন বোনাস নিন' : 'Create account & claim 100 coins bonus') 
               : mode === 'admin'
               ? 'মালিক সিকিউরিটি পোর্টাল (Admin Portal)'
               : (language === 'bn' ? 'আপনার অ্যাকাউন্টে লগইন করুন' : 'Login to your account')}
@@ -244,19 +244,6 @@ export const AuthModal: React.FC = () => {
 
         {/* Tab Toggle: Register / Login / Admin */}
         <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-slate-950 border border-slate-800 mb-4 relative z-10">
-          <button
-            type="button"
-            onClick={() => { setMode('login'); setError(''); }}
-            className={`py-2 rounded-xl text-[11px] font-black transition flex items-center justify-center gap-1 ${
-              mode === 'login' 
-                ? 'bg-emerald-500 text-slate-950 shadow-md' 
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <LogIn className="w-3.5 h-3.5" />
-            <span>লগইন</span>
-          </button>
-
           <button
             type="button"
             onClick={() => { setMode('register'); setError(''); }}
@@ -268,6 +255,19 @@ export const AuthModal: React.FC = () => {
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>রেজিস্টার</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setMode('login'); setError(''); }}
+            className={`py-2 rounded-xl text-[11px] font-black transition flex items-center justify-center gap-1 ${
+              mode === 'login' 
+                ? 'bg-emerald-500 text-slate-950 shadow-md' 
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>লগইন</span>
           </button>
 
           <button

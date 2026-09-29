@@ -1,6 +1,6 @@
 import { AdminSettings, Comment, NotificationItem, Report, RewardTransaction, User, Video, Withdrawal } from '../types';
 
-let currentUserId = 'usr_demo_101';
+let currentUserId = typeof window !== 'undefined' ? localStorage.getItem('we_user_id') || '' : '';
 
 export const setApiUserId = (uid: string) => {
   currentUserId = uid;
@@ -217,6 +217,11 @@ export const api = {
   // Wallet
   getWalletData: async () => {
     return await safeJsonFetch('/api/wallet/transactions', { headers: headers() });
+  },
+
+  getPublicPayoutFeed: async () => {
+    const data = await safeJsonFetch<{ success: boolean; payouts: any[] }>('/api/withdrawals/public-feed');
+    return data?.payouts || [];
   },
 
   requestWithdrawal: async (payload: { method: 'bKash' | 'Nagad' | 'Recharge'; accountType: 'Personal' | 'Agent' | 'Prepaid' | 'Postpaid'; mobileNumber: string; coins: number }) => {
