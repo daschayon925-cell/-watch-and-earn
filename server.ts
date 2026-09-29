@@ -1154,6 +1154,57 @@ app.post('/api/reward/task-reward', (req, res) => {
   });
 });
 
+// 6d. Direct Banner Ad Click Reward (+15 Coins, daily click limit protection)
+app.post('/api/reward/ad-click', (req, res) => {
+  const user = getUser(req);
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'লগইন আবশ্যক' });
+  }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (!user.adClicksToday || user.lastAdClickDate !== todayStr) {
+    user.adClicksToday = 0;
+    user.lastAdClickDate = todayStr;
+  }
+
+  // Daily click limit (e.g. max 10 paid clicks per user per day for network safety)
+  const maxDailyClicks = db.settings.maxDailyAdClicks || 10;
+  if (user.adClicksToday >= maxDailyClicks) {
+    return res.json({
+      success: false,
+      limitReached: true,
+      message: `আজকের সর্বোচ্চ (${maxDailyClicks} টি) বিজ্ঞাপন ক্লিক বোনাস সম্পন্ন হয়েছে। আগামীকাল আবার চেষ্টা করুন!`
+    });
+  }
+
+  const rewardAmount = 15; // ১৫ কয়েন প্রতি অ্যাড ক্লিক
+  user.adClicksToday += 1;
+  user.coins += rewardAmount;
+  user.lifetimeCoins += rewardAmount;
+  user.todayCoins += rewardAmount;
+  user.updatedAt = new Date().toISOString();
+
+  db.transactions.unshift({
+    transactionId: 'trx_adclk_' + Date.now(),
+    userId: user.uid,
+    type: 'AD_REWARD',
+    amount: rewardAmount,
+    bdtEquivalent: rewardAmount * db.settings.coinToBDTRate,
+    source: `স্পনসরড বিজ্ঞাপন ক্লিক বোনাস (${user.adClicksToday}/${maxDailyClicks})`,
+    status: 'COMPLETED',
+    createdAt: new Date().toISOString()
+  });
+
+  res.json({
+    success: true,
+    earnedCoins: rewardAmount,
+    adClicksToday: user.adClicksToday,
+    remainingClicks: maxDailyClicks - user.adClicksToday,
+    newBalance: user.coins,
+    message: `+${rewardAmount} কয়েন বোনাস সফলভাবে যুক্ত হয়েছে!`
+  });
+});
+
 // 7. Watch Milestone Claim
 app.post('/api/reward/claim-milestone', (req, res) => {
   const user = getUser(req);

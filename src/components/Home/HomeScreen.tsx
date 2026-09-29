@@ -151,7 +151,7 @@ export const HomeScreen: React.FC = () => {
       {/* Live Verified Cashout Proof Ticker (ব্যবহারকারীর বিশ্বাস ও ভাইরাল ইনগেজমেন্ট বাড়ানোর জন্য) */}
       <LivePayoutTicker />
 
-      {/* Admin Broadcast Announcement Banner (যদি সক্রিয় থাকে) */}
+      {/* 📢 অফিশিয়াল নোটিশ বোর্ড */}
       {settings?.activeNotice?.enabled && settings.activeNotice.title && (
         <div 
           onClick={() => setActiveTab('wallet')}
@@ -177,6 +177,9 @@ export const HomeScreen: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 🌟 প্রধান স্পনসর বিজ্ঞাপন ব্যানার (Home Top Adsterra Direct Link Spot) */}
+      <MiniBannerAd slotId="home_top_premium_slot" category="finance" />
 
       {/* Hero Wallet & Earnings Card */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0D1624] via-[#0A101A] to-[#0D1A14] border border-emerald-500/30 p-5 shadow-2xl">

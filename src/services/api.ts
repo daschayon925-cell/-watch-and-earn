@@ -182,6 +182,13 @@ export const api = {
     });
   },
 
+  claimAdClick: async () => {
+    return await safeJsonFetch<{ success: boolean; earnedCoins?: number; adClicksToday?: number; remainingClicks?: number; message?: string; limitReached?: boolean }>('/api/reward/ad-click', {
+      method: 'POST',
+      headers: headers()
+    });
+  },
+
   claimGameReward: async (gameName: string, coinsEarned: number) => {
     return await safeJsonFetch('/api/reward/game-reward', {
       method: 'POST',
