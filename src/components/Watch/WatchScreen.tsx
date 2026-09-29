@@ -538,41 +538,6 @@ export const WatchScreen: React.FC = () => {
               </div>
             </div>
           </div>
-
-          {/* Admin-only duration fast-switch for rapid testing */}
-          {user?.role === 'admin' && (
-            <div className="flex items-center gap-1 shrink-0 bg-slate-900/90 p-0.5 rounded-lg border border-amber-500/30">
-              <span className="text-[8px] text-amber-400 font-bold px-1">টেস্ট:</span>
-              <button
-                onClick={() => {
-                  setTargetWatchSeconds(30);
-                  setWatchSeconds(0);
-                  setIsVideoLocked(false);
-                  startTimeRef.current = null;
-                  showToast('⚡ অ্যাডমিন টেস্ট মোড: ৩০ সেকেন্ড সেট হয়েছে!', '', 'info');
-                }}
-                className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition ${
-                  targetWatchSeconds === 30 ? 'bg-amber-400 text-black border-amber-300 font-black' : 'bg-slate-800 text-slate-300 border-slate-700'
-                }`}
-              >
-                ৩০ সে.
-              </button>
-              <button
-                onClick={() => {
-                  setTargetWatchSeconds(240);
-                  setWatchSeconds(0);
-                  setIsVideoLocked(false);
-                  startTimeRef.current = null;
-                  showToast('অফিসিয়াল মোড: ৪ মিনিট সেট হয়েছে!', '', 'info');
-                }}
-                className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition ${
-                  targetWatchSeconds === 240 ? 'bg-emerald-500 text-black border-emerald-400 font-black' : 'bg-slate-800 text-slate-300 border-slate-700'
-                }`}
-              >
-                ৪ মি.
-              </button>
-            </div>
-          )}
         </div>
       </div>
 

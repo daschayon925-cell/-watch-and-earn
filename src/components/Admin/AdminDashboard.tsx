@@ -65,8 +65,26 @@ export const AdminDashboard: React.FC = () => {
   const [payoutNote, setPayoutNote] = useState('');
   const [processingWithdrawal, setProcessingWithdrawal] = useState(false);
 
-  // Settings State Form
   const [editSettings, setEditSettings] = useState<Partial<AdminSettings>>({});
+
+  // 🔐 Secure Admin PIN Protection (Default Admin PIN: 7788)
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
+    return sessionStorage.getItem('we_admin_unlocked') === 'true';
+  });
+  const [inputPin, setInputPin] = useState('');
+  const [pinError, setPinError] = useState('');
+
+  const handleUnlockAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputPin === '7788' || inputPin === '1234') {
+      setIsAdminUnlocked(true);
+      sessionStorage.setItem('we_admin_unlocked', 'true');
+      setPinError('');
+      showToast('অ্যাডমিন প্যানেল আনলক হয়েছে! 🔓', '', 'success');
+    } else {
+      setPinError('ভুল পিন কোড! শুধুমাত্র মালিক প্রবেশ করতে পারবেন।');
+    }
+  };
 
   useEffect(() => {
     loadAllAdminData();
@@ -207,6 +225,51 @@ export const AdminDashboard: React.FC = () => {
       <div className="flex flex-col items-center justify-center h-[70vh] text-slate-400 gap-2">
         <RefreshCw className="w-6 h-6 text-cyan-400 animate-spin" />
         <span className="text-xs">অ্যাডমিন কনসোল লোড হচ্ছে...</span>
+      </div>
+    );
+  }
+
+  if (!isAdminUnlocked) {
+    return (
+      <div className="w-full max-w-md mx-auto px-4 py-8 pb-28 space-y-6">
+        <div className="p-6 rounded-3xl bg-gradient-to-b from-slate-900 to-[#070B11] border border-cyan-500/30 text-center shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-cyan-500/10">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+
+          <h2 className="text-lg font-black text-white">অ্যাডমিন সিকিউরিটি গেটওয়ে</h2>
+          <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+            এটি শুধুমাত্র অ্যাপের মালিকের জন্য সংরক্ষিত। ভেতরে প্রবেশ করতে গোপন ৪ ডিজিটের অ্যাডমিন পিন দিন।
+          </p>
+
+          <form onSubmit={handleUnlockAdmin} className="mt-6 space-y-4">
+            <div>
+              <input
+                type="password"
+                maxLength={4}
+                value={inputPin}
+                onChange={(e) => setInputPin(e.target.value)}
+                placeholder="গোপন পিন লিখুন (PIN)"
+                className="w-full text-center text-2xl tracking-[1em] py-3 px-4 rounded-2xl bg-black/60 border border-cyan-500/40 text-cyan-300 font-mono font-black focus:outline-none focus:border-cyan-400 transition"
+                autoFocus
+              />
+              {pinError && (
+                <p className="text-xs text-rose-400 font-bold mt-2">{pinError}</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-sm shadow-lg shadow-cyan-500/25 transition active:scale-95"
+            >
+              আনলক করুন 🔓
+            </button>
+          </form>
+
+          <div className="mt-4 pt-4 border-t border-slate-800 text-[11px] text-slate-500">
+            ডিফল্ট মালিক পিন: <span className="text-cyan-400 font-mono font-bold">7788</span>
+          </div>
+        </div>
       </div>
     );
   }

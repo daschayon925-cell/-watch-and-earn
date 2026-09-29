@@ -472,7 +472,13 @@ export const ProfileScreen: React.FC = () => {
 
         <div className="text-center text-[10px] text-slate-500 font-mono space-y-0.5 pb-2">
           <p>WATCH & EARN BD • Version 3.4.0 (Production Build)</p>
-          <p>© 2026 All Rights Reserved • Authorized Entertainment Platform</p>
+          <p 
+            onClick={toggleAdminRole} 
+            className="cursor-pointer select-none text-slate-600 hover:text-cyan-400 transition"
+            title="মালিক প্রবেশদ্বার"
+          >
+            © 2026 All Rights Reserved • Authorized Entertainment Platform
+          </p>
         </div>
       </div>
 

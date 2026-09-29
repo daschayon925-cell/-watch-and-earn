@@ -83,7 +83,7 @@ const db: {
       todayVideosCount: 3,
       streakDays: 4,
       lastCheckInDate: new Date().toISOString().split('T')[0],
-      role: 'admin', // Admin access for app owner
+      role: 'user', // Default standard user
       accountStatus: 'active',
       riskScore: 5,
       referralCode: 'BD7788',
