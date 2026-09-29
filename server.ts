@@ -59,7 +59,8 @@ const db: {
       feedAdFrequency: 2, // প্রতি ২টি ভিডিও অন্তর অ্যাড
       adPublisherId: 'ca-pub-9842103859218491',
       adSlotBanner: '1092837465',
-      adSlotRewarded: '5647382910'
+      adSlotRewarded: '5647382910',
+      adsterraDirectLink: 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4'
     },
     activeNotice: {
       enabled: true,
@@ -90,9 +91,9 @@ const db: {
       password: '7788',
       phoneVerified: true,
       photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      coins: 25000,
+      coins: 0,
       pendingWithdrawalCoins: 0,
-      lifetimeCoins: 25000,
+      lifetimeCoins: 0,
       todayCoins: 0,
       todayVideosCount: 0,
       streakDays: 1,

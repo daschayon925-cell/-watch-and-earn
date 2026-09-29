@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
+import { MiniBannerAd } from '../Common/MiniBannerAd';
 
 export const ProfileScreen: React.FC = () => {
   const { user, updateProfile, toggleAdminRole, logout } = useAuth();
@@ -451,6 +452,11 @@ export const ProfileScreen: React.FC = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* 📢 Sponsored Dynamic Banner Ad */}
+      <div>
+        <MiniBannerAd slotId="profile_screen_footer" category="finance" />
       </div>
 
       {/* 6. LOGOUT & APP VERSION FOOTER */}

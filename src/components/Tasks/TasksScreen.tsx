@@ -17,6 +17,7 @@ import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
 import { soundService } from '../../services/audio';
 import { AdInterstitial } from '../Feed/AdInterstitial';
+import { MiniBannerAd } from '../Common/MiniBannerAd';
 
 type TaskType = 'math' | 'gk' | 'captcha' | 'daily_checkin';
 
@@ -275,6 +276,11 @@ export const TasksScreen: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* 📢 Sponsored Dynamic Banner Ad */}
+          <div className="pt-2">
+            <MiniBannerAd slotId="tasks_screen_bottom" category="gaming" />
           </div>
         </div>
       ) : (

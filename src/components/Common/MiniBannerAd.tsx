@@ -10,7 +10,7 @@ interface MiniBannerProps {
 }
 
 export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', category = 'finance' }) => {
-  const { showToast, triggerConfetti } = useApp();
+  const { showToast, triggerConfetti, settings } = useApp();
   const { refreshUser } = useAuth();
   const [clicked, setClicked] = useState(false);
 
@@ -64,7 +64,10 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
   const handleAdClick = () => {
     soundService.playCoinReward();
     showToast('🎁 স্পনসর ব্যানারে ক্লিক করার জন্য ধন্যবাদ!', '+৫ কয়েন বোনাস বিবেচনাধীন', 'coin');
-    window.open(currentAd.link, '_blank');
+    
+    // Primary monetize via Adsterra Direct Link if configured
+    const targetUrl = settings?.adsConfig?.adsterraDirectLink?.trim() || currentAd.link;
+    window.open(targetUrl, '_blank');
     setClicked(true);
   };
 

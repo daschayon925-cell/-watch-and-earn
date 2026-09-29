@@ -124,6 +124,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
       setUser(null);
     }
+
+    // 🔄 Auto Dynamic User Profile Polling every 4 seconds to reflect realtime earnings
+    const userPollTimer = setInterval(() => {
+      const activeUid = localStorage.getItem('we_user_id');
+      if (activeUid) {
+        refreshUser();
+      }
+    }, 4000);
+
+    return () => clearInterval(userPollTimer);
   }, []);
 
   return (

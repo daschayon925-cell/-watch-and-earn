@@ -136,6 +136,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     refreshSettings();
     refreshNotifications();
+
+    // 🔄 Auto Dynamic Polling every 5 seconds to keep data live and self-updating
+    const pollTimer = setInterval(() => {
+      refreshNotifications();
+      refreshSettings();
+    }, 5000);
+
+    return () => clearInterval(pollTimer);
   }, []);
 
   const unreadNotificationCount = notifications.filter(n => !n.read).length;
