@@ -1,0 +1,280 @@
+import React, { useState } from 'react';
+import { 
+  Sparkles, 
+  UserPlus, 
+  LogIn, 
+  Gift, 
+  Smartphone, 
+  User, 
+  ArrowRight, 
+  CheckCircle2, 
+  ShieldCheck, 
+  Lock,
+  Share2
+} from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { useApp } from '../../context/AppContext';
+import { soundService } from '../../services/audio';
+
+export const AuthModal: React.FC = () => {
+  const { registerUser, loginUser, loginDemo } = useAuth();
+  const { language, showToast, triggerConfetti } = useApp();
+
+  const [mode, setMode] = useState<'register' | 'login'>('register');
+  const [displayName, setDisplayName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [referralCodeInput, setReferralCodeInput] = useState('');
+  const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!displayName.trim()) {
+      setError(language === 'bn' ? 'অনুগ্রহ করে আপনার নাম লিখুন।' : 'Please enter your name.');
+      return;
+    }
+
+    const cleanPhone = phone.replace(/\s+/g, '');
+    if (!cleanPhone || !/^01[3-9]\d{8}$/.test(cleanPhone)) {
+      setError(language === 'bn' ? 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' : 'Enter valid 11-digit BD phone number.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await registerUser({
+        displayName: displayName.trim(),
+        phone: cleanPhone,
+        referralCodeInput: referralCodeInput.trim()
+      });
+
+      if (res.success) {
+        soundService.playSuccessFanfare();
+        triggerConfetti();
+        showToast(
+          language === 'bn' ? 'অভিনন্দন! আপনার অ্যাকাউন্ট তৈরি হয়েছে 🎉' : 'Account created successfully! 🎉',
+          res.bonusAdded 
+            ? (language === 'bn' ? `রেফারেল কোড ব্যবহারের জন্য +৫০ কয়েন বোনাস পেয়েছেন!` : `+50 referral coins bonus awarded!`)
+            : (language === 'bn' ? `১০০ কয়েন ওয়েলকাম বোনাস পেয়েছেন!` : `100 coins welcome bonus awarded!`),
+          'coin'
+        );
+      } else {
+        setError(res.message);
+      }
+    } catch (err: any) {
+      setError(err.message || 'রেজিস্ট্রেশন করতে সমস্যা হয়েছে।');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!loginIdentifier.trim()) {
+      setError(language === 'bn' ? 'আপনার মোবাইল নম্বর বা UID দিন।' : 'Enter your phone number or UID.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await loginUser(loginIdentifier.trim());
+      if (res.success) {
+        soundService.playSuccessFanfare();
+        showToast(language === 'bn' ? 'স্বাগতম! সফলভাবে লগইন হয়েছে।' : 'Logged in successfully!', '', 'success');
+      } else {
+        setError(res.message);
+      }
+    } catch (err: any) {
+      setError(err.message || 'লগইন করতে সমস্যা হয়েছে।');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
+      <div className="w-full max-w-sm rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#090D16] to-[#0A1A12] border border-emerald-500/40 p-6 shadow-2xl relative overflow-hidden">
+        {/* Glow ambient */}
+        <div className="absolute -top-16 -right-16 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
+
+        {/* Brand Header */}
+        <div className="text-center mb-5 relative z-10">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-400 p-0.5 shadow-lg shadow-emerald-500/20 mx-auto mb-2 flex items-center justify-center">
+            <div className="w-full h-full bg-[#05070B] rounded-[14px] flex items-center justify-center font-bold text-base text-emerald-400">
+              ▶
+            </div>
+          </div>
+          <h2 className="text-lg font-black text-white font-['Outfit'] tracking-tight">
+            WATCH<span className="text-emerald-400">&</span>EARN BD 🇧🇩
+          </h2>
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            {mode === 'register' 
+              ? (language === 'bn' ? 'নতুন অ্যাকাউন্ট খুলুন ও বোনাস নিয়ে শুরু করুন' : 'Create account & claim bonus') 
+              : (language === 'bn' ? 'আপনার অ্যাকাউন্টে লগইন করুন' : 'Login to your account')}
+          </p>
+        </div>
+
+        {/* Tab Toggle: Register / Login */}
+        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-950 border border-slate-800 mb-4 relative z-10">
+          <button
+            type="button"
+            onClick={() => { setMode('register'); setError(''); }}
+            className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
+              mode === 'register' 
+                ? 'bg-emerald-500 text-slate-950 shadow-md' 
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>{language === 'bn' ? 'নতুন অ্যাকাউন্ট' : 'Register'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setMode('login'); setError(''); }}
+            className={`py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
+              mode === 'login' 
+                ? 'bg-emerald-500 text-slate-950 shadow-md' 
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>{language === 'bn' ? 'লগইন করুন' : 'Login'}</span>
+          </button>
+        </div>
+
+        {/* Error Notification */}
+        {error && (
+          <div className="p-2.5 mb-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium text-center">
+            {error}
+          </div>
+        )}
+
+        {/* REGISTER FORM */}
+        {mode === 'register' ? (
+          <form onSubmit={handleRegister} className="space-y-3 relative z-10">
+            {/* Full Name */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                {language === 'bn' ? 'আপনার পূর্ণ নাম:' : 'Full Name:'}
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="যেমন: তানভীর আহমেদ"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                  required
+                />
+                <User className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
+              </div>
+            </div>
+
+            {/* Mobile Number */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                {language === 'bn' ? 'মোবাইল নম্বর (বিকাশ/নগদ/রিচার্জের জন্য):' : 'Mobile Number:'}
+              </label>
+              <div className="relative">
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="017XXXXXXXX (১১ ডিজিট)"
+                  maxLength={11}
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                  required
+                />
+                <Smartphone className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
+              </div>
+            </div>
+
+            {/* 🎁 Referral Code Input (User Gets +50 Coins, Referrer gets +25 Coins & 1% lifetime withdrawal) */}
+            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black text-amber-300 flex items-center gap-1">
+                  <Gift className="w-3.5 h-3.5 text-amber-400" />
+                  {language === 'bn' ? 'রেফারেল কোড (ঐচ্ছিক):' : 'Referral Code (Optional):'}
+                </span>
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full">
+                  +৫০ কয়েন বোনাস 🎁
+                </span>
+              </div>
+              <input
+                type="text"
+                value={referralCodeInput}
+                onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
+                placeholder="যেমন: BD7788"
+                className="w-full px-3 py-2 bg-slate-950 border border-amber-500/40 rounded-xl text-xs font-mono text-amber-300 placeholder:text-slate-600 focus:outline-none focus:border-amber-400 uppercase"
+              />
+              <p className="text-[10px] text-slate-400 leading-tight">
+                💡 বন্ধুর কোড দিলে আপনি পাবেন ৫০ কয়েন বোনাস, আর বন্ধু পাবে ২৫ কয়েন এবং আজীবন ১% ক্যাশআউট কমিশন!
+              </p>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition active:scale-98 flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <Sparkles className="w-4 h-4 fill-slate-950" />
+              <span>{loading ? 'অ্যাকাউন্ট তৈরি হচ্ছে...' : (language === 'bn' ? 'অ্যাকাউন্ট তৈরি করুন ও বোনাস নিন' : 'Create Account & Claim')}</span>
+            </button>
+          </form>
+        ) : (
+          /* LOGIN FORM */
+          <form onSubmit={handleLogin} className="space-y-4 relative z-10">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                {language === 'bn' ? 'মোবাইল নম্বর বা ইউজার আইডি (UID):' : 'Phone Number or UID:'}
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={loginIdentifier}
+                  onChange={(e) => setLoginIdentifier(e.target.value)}
+                  placeholder="যেমন: 01712345678 অথবা usr_demo_101"
+                  className="w-full px-3.5 py-3 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                  required
+                />
+                <Lock className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3.5" />
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1">
+                যে নম্বর বা আইডি দিয়ে অ্যাকাউন্ট খুলেছিলেন তা প্রদান করুন।
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition active:scale-98 flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>{loading ? 'লগইন হচ্ছে...' : (language === 'bn' ? 'লগইন করুন' : 'Log In')}</span>
+            </button>
+
+            {/* Quick Demo Login Option */}
+            <div className="pt-2 border-t border-slate-800 text-center">
+              <span className="text-[10px] text-slate-500 block mb-1.5">অথবা টেস্ট অ্যাকাউন্টে প্রবেশ করুন:</span>
+              <button
+                type="button"
+                onClick={() => loginDemo('usr_demo_101')}
+                className="w-full py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-xs font-bold rounded-xl transition"
+              >
+                Super Admin একাউন্টে প্রবেশ (Demo)
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};

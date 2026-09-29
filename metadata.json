@@ -1,0 +1,6 @@
+{
+  "name": "WATCH & EARN BD",
+  "description": "Watch short videos, earn reward coins, and redeem through bKash & Nagad in Bangladesh.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

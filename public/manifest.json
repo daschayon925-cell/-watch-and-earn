@@ -1,0 +1,22 @@
+{
+  "short_name": "Watch&Earn BD",
+  "name": "WATCH & EARN BD - Watch Videos, Earn Rewards",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#05070B",
+  "theme_color": "#22C55E",
+  "display": "standalone",
+  "orientation": "portrait",
+  "description": "Watch entertaining short videos, earn reward coins, and withdraw via bKash & Nagad in Bangladesh."
+}

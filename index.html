@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>WATCH & EARN BD | ভিডিও দেখুন • প্রতিদিন আয় করুন 🇧🇩</title>
+    <meta name="description" content="বাংলাদেশের প্রিমিয়াম শর্ট ভিডিও ওয়াচ এবং রিওয়ার্ড প্ল্যাটফর্ম। ভিডিও দেখুন, কয়েন জিতুন ও বিকাশ-নগদ-রিচার্জে সরাসরি ক্যাশআউট করুন।" />
+    <meta property="og:title" content="WATCH & EARN BD | ভিডিও দেখুন • প্রতিদিন আয় করুন 🇧🇩" />
+    <meta property="og:description" content="বাংলাদেশের প্রিমিয়াম শর্ট ভিডিও ওয়াচ এবং রিওয়ার্ড প্ল্যাটফর্ম। ভিডিও দেখুন, কয়েন জিতুন ও বিকাশ-নগদ-রিচার্জে সরাসরি ক্যাশআউট করুন।" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#05070B" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.json" />
+    <!-- Google Fonts for Bengali and Modern UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-[#05070B] text-[#F8FAFC] antialiased selection:bg-emerald-500 selection:text-white select-none overflow-x-hidden">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(err => {
+            console.log('SW registration error:', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

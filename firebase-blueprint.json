@@ -1,0 +1,129 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account, coins balance, activity stats, and anti-fraud metrics",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "format": "email", "maxLength": 120 },
+        "photoURL": { "type": "string", "maxLength": 500 },
+        "coins": { "type": "number" },
+        "pendingWithdrawalCoins": { "type": "number" },
+        "lifetimeCoins": { "type": "number" },
+        "todayCoins": { "type": "number" },
+        "todayVideosCount": { "type": "number" },
+        "streakDays": { "type": "number" },
+        "lastCheckInDate": { "type": "string", "maxLength": 20 },
+        "accountStatus": { "type": "string", "enum": ["active", "flagged", "suspended"] },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "riskScore": { "type": "number" },
+        "referralCode": { "type": "string", "maxLength": 20 },
+        "referredBy": { "type": "string", "maxLength": 128 },
+        "referralCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "email", "coins", "accountStatus", "role"]
+    },
+    "Video": {
+      "title": "Video Entity",
+      "description": "Licensed or platform-owned vertical video content",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 500 },
+        "videoUrl": { "type": "string", "maxLength": 1000 },
+        "thumbnailUrl": { "type": "string", "maxLength": 1000 },
+        "duration": { "type": "number" },
+        "category": { "type": "string", "enum": ["entertainment", "food", "travel", "tech", "comedy", "music", "culture"] },
+        "creatorName": { "type": "string", "maxLength": 100 },
+        "creatorHandle": { "type": "string", "maxLength": 50 },
+        "rewardCoins": { "type": "number" },
+        "contentLicense": { "type": "string", "enum": ["owned", "licensed", "creator_permission", "official_embed"] },
+        "licenseAttribution": { "type": "string", "maxLength": 300 },
+        "copyrightStatus": { "type": "string", "enum": ["verified", "pending", "reported"] },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "videoUrl", "contentLicense", "rewardCoins", "isActive"]
+    },
+    "RewardTransaction": {
+      "title": "Reward Transaction",
+      "description": "Immutable ledger record for user coin earnings and spends",
+      "type": "object",
+      "properties": {
+        "transactionId": { "type": "string", "maxLength": 64 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["WATCH_REWARD", "AD_REWARD", "DAILY_BONUS", "MILESTONE_REWARD", "REFERRAL_BONUS", "WITHDRAWAL", "ADMIN_ADJUSTMENT"] },
+        "amount": { "type": "number" },
+        "bdtEquivalent": { "type": "number" },
+        "source": { "type": "string", "maxLength": 200 },
+        "videoId": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["COMPLETED", "PENDING", "REJECTED"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["transactionId", "userId", "type", "amount", "status", "createdAt"]
+    },
+    "Withdrawal": {
+      "title": "Withdrawal Request",
+      "description": "bKash/Nagad payout request ledger",
+      "type": "object",
+      "properties": {
+        "withdrawalId": { "type": "string", "maxLength": 64 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "userName": { "type": "string", "maxLength": 100 },
+        "method": { "type": "string", "enum": ["bKash", "Nagad"] },
+        "accountType": { "type": "string", "enum": ["Personal", "Agent"] },
+        "mobileNumber": { "type": "string", "maxLength": 15, "pattern": "^01[3-9][0-9]{8}$" },
+        "coins": { "type": "number" },
+        "bdtAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["Pending", "Approved", "Paid", "Rejected"] },
+        "trxId": { "type": "string", "maxLength": 100 },
+        "requestedAt": { "type": "string", "format": "date-time" },
+        "processedAt": { "type": "string", "format": "date-time" },
+        "adminNote": { "type": "string", "maxLength": 300 }
+      },
+      "required": ["withdrawalId", "userId", "method", "mobileNumber", "coins", "bdtAmount", "status", "requestedAt"]
+    },
+    "Report": {
+      "title": "Report Entity",
+      "description": "User copyright or violation report",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "videoId": { "type": "string", "maxLength": 64 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "reason": { "type": "string", "maxLength": 100 },
+        "details": { "type": "string", "maxLength": 500 },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "action_taken"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "videoId", "userId", "reason", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User account documents containing balance and profile"
+    },
+    "/videos/{videoId}": {
+      "schema": { "$ref": "#/entities/Video" },
+      "description": "Public catalog of licensed videos"
+    },
+    "/rewardTransactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/RewardTransaction" },
+      "description": "Ledger of all rewards and wallet adjustments"
+    },
+    "/withdrawals/{withdrawalId}": {
+      "schema": { "$ref": "#/entities/Withdrawal" },
+      "description": "Payout requests for bKash and Nagad"
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/Report" },
+      "description": "Copyright and content moderation reports"
+    }
+  }
+}
