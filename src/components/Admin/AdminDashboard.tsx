@@ -22,7 +22,8 @@ import {
   Send,
   Radio,
   Sparkles,
-  Smartphone
+  Smartphone,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -308,12 +309,26 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        <button
-          onClick={loadAllAdminData}
-          className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => {
+              sessionStorage.removeItem('we_admin_unlocked');
+              setIsAdminUnlocked(false);
+              showToast('অ্যাডমিন পোর্টাল লক করা হয়েছে 🔒', '', 'info');
+            }}
+            title="লক করুন"
+            className="p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition"
+          >
+            <Lock className="w-4 h-4" />
+          </button>
+          <button
+            onClick={loadAllAdminData}
+            title="রিফ্রেশ করুন"
+            className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Admin Tabs */}

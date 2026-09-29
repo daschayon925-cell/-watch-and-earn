@@ -575,10 +575,10 @@ const phoneOtps: Map<string, { code: string; expiresAt: number }> = new Map();
 // Helper to get current active user
 function getUser(req: express.Request) {
   const authHeader = req.headers.authorization;
-  const uid = req.headers['x-user-id'] as string || 'usr_demo_101';
+  const uid = req.headers['x-user-id'] as string || 'usr_demo_102';
   let user = db.users.find(u => u.uid === uid);
   if (!user) {
-    user = db.users[0];
+    user = db.users.find(u => u.role === 'user') || db.users[1] || db.users[0];
   }
   return user;
 }

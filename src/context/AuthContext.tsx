@@ -106,11 +106,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.removeItem('we_user_id');
+    sessionStorage.removeItem('we_admin_unlocked');
     setUser(null);
   };
 
   useEffect(() => {
-    const savedUid = localStorage.getItem('we_user_id') || 'usr_demo_101';
+    const savedUid = localStorage.getItem('we_user_id') || 'usr_demo_102';
     loginDemo(savedUid);
   }, []);
 
