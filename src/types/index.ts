@@ -35,6 +35,8 @@ export interface User {
   displayName: string;
   email: string;
   phone?: string;
+  password?: string;
+  phoneVerified?: boolean;
   photoURL: string;
   coins: number;
   pendingWithdrawalCoins: number;
@@ -131,6 +133,11 @@ export interface AdminSettings {
     message: string;
     type?: string;
     updatedAt?: string;
+  };
+  adminSecurity?: {
+    adminName: string;
+    adminPhone: string;
+    adminPin: string;
   };
 }
 

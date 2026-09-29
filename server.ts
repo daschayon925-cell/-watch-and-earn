@@ -67,29 +67,36 @@ const db: {
       message: 'নিয়মিত ভিডিও দেখুন, কয়েন জমান এবং সরাসরি বিকাশ, নগদ ও মোবাইল রিচার্জে ক্যাশআউট করুন।',
       type: 'info',
       updatedAt: new Date().toISOString()
+    },
+    adminSecurity: {
+      adminName: 'Chayon Das (Owner)',
+      adminPhone: '01339223713',
+      adminPin: '7788'
     }
   },
   users: [
     {
       uid: 'usr_demo_101',
-      displayName: 'তানভীর আহমেদ (Tanvir)',
+      displayName: 'Chayon Das (Owner)',
       email: 'daschayon925@gmail.com', // Logged in user email
-      phone: '01712345678',
+      phone: '01339223713',
+      password: '7788',
+      phoneVerified: true,
       photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      coins: 450,
+      coins: 25000,
       pendingWithdrawalCoins: 0,
-      lifetimeCoins: 1250,
-      todayCoins: 75,
-      todayVideosCount: 3,
-      streakDays: 4,
+      lifetimeCoins: 50000,
+      todayCoins: 500,
+      todayVideosCount: 15,
+      streakDays: 14,
       lastCheckInDate: new Date().toISOString().split('T')[0],
-      role: 'user', // Default standard user
+      role: 'admin', // Admin privilege
       accountStatus: 'active',
-      riskScore: 5,
-      referralCode: 'BD7788',
+      riskScore: 0,
+      referralCode: 'CHAYON77',
       referredBy: undefined,
-      referralCount: 6,
-      createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+      referralCount: 28,
+      createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
       updatedAt: new Date().toISOString()
     },
     {
@@ -555,6 +562,9 @@ const db: {
 // Active watch sessions to prevent fraud / time manipulation
 const activeSessions: Map<string, WatchSessionData> = new Map();
 
+// In-Memory Phone OTP verification store: phone -> { code: string, expiresAt: number }
+const phoneOtps: Map<string, { code: string; expiresAt: number }> = new Map();
+
 // Helper to get current active user
 function getUser(req: express.Request) {
   const authHeader = req.headers.authorization;
@@ -585,20 +595,68 @@ app.get('/api/auth/profile', (req, res) => {
   });
 });
 
-// Register New Account with Referral bonus (New user gets 50 coins, Referrer gets 25 coins)
+// Request Phone OTP Pin for Registration
+app.post('/api/auth/send-otp', (req, res) => {
+  const { phone } = req.body;
+  const cleanPhone = (phone || '').replace(/\s+/g, '');
+  if (!cleanPhone || !/^01[3-9]\d{8}$/.test(cleanPhone)) {
+    return res.status(400).json({ success: false, message: 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' });
+  }
+
+  // Check if phone already registered
+  if (db.users.some(u => u.phone === cleanPhone)) {
+    return res.status(400).json({ success: false, message: 'এই ফোন নম্বরটি দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট তৈরি করা হয়েছে।' });
+  }
+
+  // Generate 4-digit verification code
+  const code = Math.floor(1000 + Math.random() * 9000).toString();
+  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes validity
+  phoneOtps.set(cleanPhone, { code, expiresAt });
+
+  console.log(`[SMS OTP GATEWAY] Sending code ${code} to ${cleanPhone}`);
+
+  res.json({
+    success: true,
+    message: `আপনার নম্বরে ৪-সংখ্যার ভেরিফিকেশন পিন পাঠানো হয়েছে: ${code}`,
+    otpCode: code, // returned for in-app instant alert & copy convenience
+    phone: cleanPhone
+  });
+});
+
+// Register New Account with Phone OTP Verification, Password, and Referral bonus
 app.post('/api/auth/register', (req, res) => {
-  const { displayName, email, phone, referralCodeInput } = req.body;
+  const { displayName, email, phone, password, otpCode, referralCodeInput } = req.body;
   if (!displayName || !displayName.trim()) {
     return res.status(400).json({ success: false, message: 'আপনার পূর্ণ নাম প্রদান করুন।' });
   }
 
   const cleanPhone = (phone || '').replace(/\s+/g, '');
-  if (cleanPhone && !/^01[3-9]\d{8}$/.test(cleanPhone)) {
+  if (!cleanPhone || !/^01[3-9]\d{8}$/.test(cleanPhone)) {
     return res.status(400).json({ success: false, message: 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' });
   }
 
-  // Check if phone or email already registered
-  if (cleanPhone && db.users.some(u => u.phone === cleanPhone)) {
+  if (!password || password.length < 4) {
+    return res.status(400).json({ success: false, message: 'কমপক্ষে ৪ ডিজিটের পাসওয়ার্ড দিন।' });
+  }
+
+  // Verify OTP
+  const storedOtp = phoneOtps.get(cleanPhone);
+  if (!storedOtp) {
+    return res.status(400).json({ success: false, message: 'অনুগ্রহ করে প্রথমে "পিন পাঠান" বাটনে ক্লিক করে ভেরিফিকেশন পিন সংগ্রহ করুন।' });
+  }
+  if (Date.now() > storedOtp.expiresAt) {
+    phoneOtps.delete(cleanPhone);
+    return res.status(400).json({ success: false, message: 'ভেরিফিকেশন পিনের মেয়াদ শেষ হয়ে গেছে। পুনরায় পিন পাঠান।' });
+  }
+  if (storedOtp.code !== (otpCode || '').trim()) {
+    return res.status(400).json({ success: false, message: 'ভেরিফিকেশন পিনটি সঠিক নয়! ফোনে পাঠানো ৪ ডিজিটের পিন দিন।' });
+  }
+
+  // Verification successful, consume OTP
+  phoneOtps.delete(cleanPhone);
+
+  // Check if phone already registered
+  if (db.users.some(u => u.phone === cleanPhone)) {
     return res.status(400).json({ success: false, message: 'এই ফোন নম্বরটি দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট তৈরি করা হয়েছে।' });
   }
 
@@ -653,7 +711,9 @@ app.post('/api/auth/register', (req, res) => {
     uid: newUid,
     displayName: displayName.trim(),
     email: email ? email.trim() : `${newUid}@watchandearn.bd`,
-    phone: cleanPhone || '017' + Math.floor(10000000 + Math.random() * 90000000),
+    phone: cleanPhone,
+    password: password.trim(),
+    phoneVerified: true,
     photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     coins: initialCoins,
     pendingWithdrawalCoins: 0,
@@ -710,9 +770,9 @@ app.post('/api/auth/register', (req, res) => {
   });
 });
 
-// Login Account by Phone/UID
+// Login Account by Phone/UID with Password
 app.post('/api/auth/login', (req, res) => {
-  const { identifier } = req.body;
+  const { identifier, password } = req.body;
   if (!identifier || !identifier.trim()) {
     return res.status(400).json({ success: false, message: 'আপনার মোবাইল নম্বর বা ইউজার আইডি দিন।' });
   }
@@ -726,6 +786,13 @@ app.post('/api/auth/login', (req, res) => {
 
   if (!user) {
     return res.status(404).json({ success: false, message: 'এই নম্বর বা আইডিতে কোনো অ্যাকাউন্ট খুঁজে পাওয়া যায়নি। দয়া করে নতুন অ্যাকাউন্ট তৈরি করুন।' });
+  }
+
+  // If user has a password set, verify it
+  if (user.password && password) {
+    if (user.password !== password.trim()) {
+      return res.status(400).json({ success: false, message: 'ভুল পাসওয়ার্ড! আপনার সঠিক পাসওয়ার্ডটি লিখুন।' });
+    }
   }
 
   res.json({
@@ -1728,6 +1795,12 @@ app.post('/api/admin/settings', (req, res) => {
   if (isDemoMode !== undefined) db.settings.isDemoMode = !!isDemoMode;
   if (adsConfig !== undefined) db.settings.adsConfig = { ...db.settings.adsConfig, ...adsConfig };
   if (req.body.activeNotice !== undefined) db.settings.activeNotice = { ...db.settings.activeNotice, ...req.body.activeNotice };
+  if (req.body.adminSecurity !== undefined) {
+    db.settings.adminSecurity = {
+      ...db.settings.adminSecurity,
+      ...req.body.adminSecurity
+    };
+  }
 
   // If coin rate was changed, broadcast a system notification to users
   if (oldRate !== db.settings.coinToBDTRate) {
@@ -1786,6 +1859,11 @@ app.get('/api/admin/reports', (req, res) => {
   const user = getUser(req);
   if (user.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin required' });
   res.json({ success: true, reports: db.reports });
+});
+
+// Explicit 404 for unhandled API endpoints so they never return HTML
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ success: false, message: `API route not found: ${req.method} ${req.originalUrl}` });
 });
 
 // Attach Vite middleware for development

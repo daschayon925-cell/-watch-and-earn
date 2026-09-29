@@ -11,57 +11,98 @@ const headers = () => ({
   'x-user-id': currentUserId
 });
 
+// Helper to safely parse JSON and prevent Unexpected token '<' HTML crashes
+async function safeJsonFetch<T = any>(url: string, options?: RequestInit): Promise<T> {
+  try {
+    const res = await fetch(url, options);
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await res.text();
+      console.warn(`[API] Expected JSON from ${url}, received HTML or text:`, text.slice(0, 100));
+      return { success: false, message: `সার্ভার রেসপন্স মেলেনি (${res.status})` } as unknown as T;
+    }
+    return await res.json();
+  } catch (err: any) {
+    console.error(`[API Network Error] ${url}:`, err);
+    return { success: false, message: 'নেটওয়ার্ক সংযোগে সমস্যা হয়েছে।' } as unknown as T;
+  }
+}
+
 export const api = {
   // Settings
   getSettings: async (): Promise<AdminSettings> => {
-    const res = await fetch('/api/settings');
-    const data = await res.json();
-    return data.settings;
+    const data = await safeJsonFetch<{ success: boolean; settings: AdminSettings }>('/api/settings');
+    return data?.settings || {
+      coinToBDTRate: 0.015,
+      minWithdrawalCoins: 2000,
+      minRechargeBDT: 30,
+      minBkashNagadBDT: 100,
+      userRevenueSharePercent: 35,
+      videoReward: 50,
+      minWatchPercentage: 90,
+      minWatchSeconds: 12,
+      dailyRewardLimit: 1200,
+      dailyMaxVideos: 40,
+      rewardedAdBonus: 50,
+      dailyRewardedAdLimit: 25,
+      referralBonus: 50,
+      isDemoMode: false,
+      adsConfig: {
+        feedAdsEnabled: true,
+        bannerEnabled: true,
+        rewardedAdsEnabled: true,
+        interstitialEnabled: true,
+        feedAdFrequency: 2
+      }
+    };
   },
 
   // Auth / Profile
   getProfile: async (): Promise<User> => {
-    const res = await fetch('/api/auth/profile', { headers: headers() });
-    const data = await res.json();
-    return data.user;
+    const data = await safeJsonFetch<{ success: boolean; user: User }>('/api/auth/profile', { headers: headers() });
+    return data?.user;
   },
 
-  register: async (payload: { displayName: string; email?: string; phone: string; referralCodeInput?: string }): Promise<{ success: boolean; user?: User; message: string; bonusAdded?: number }> => {
-    const res = await fetch('/api/auth/register', {
+  sendOtp: async (phone: string): Promise<{ success: boolean; message: string; otpCode?: string; phone?: string }> => {
+    return await safeJsonFetch('/api/auth/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+  },
+
+  register: async (payload: { displayName: string; email?: string; phone: string; password?: string; otpCode?: string; referralCodeInput?: string }): Promise<{ success: boolean; user?: User; message: string; bonusAdded?: number }> => {
+    return await safeJsonFetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    return await res.json();
   },
 
-  login: async (identifier: string): Promise<{ success: boolean; user?: User; message: string }> => {
-    const res = await fetch('/api/auth/login', {
+  login: async (identifier: string, password?: string): Promise<{ success: boolean; user?: User; message: string }> => {
+    return await safeJsonFetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier })
+      body: JSON.stringify({ identifier, password })
     });
-    return await res.json();
   },
 
   updateProfile: async (payload: { displayName?: string; phone?: string; photoURL?: string }): Promise<User> => {
-    const res = await fetch('/api/auth/update-profile', {
+    const data = await safeJsonFetch<{ success: boolean; user: User }>('/api/auth/update-profile', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify(payload)
     });
-    const data = await res.json();
-    return data.user;
+    return data?.user;
   },
 
   switchRole: async (role: 'user' | 'admin'): Promise<User> => {
-    const res = await fetch('/api/auth/switch-role', {
+    const data = await safeJsonFetch<{ success: boolean; user: User }>('/api/auth/switch-role', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ role })
     });
-    const data = await res.json();
-    return data.user;
+    return data?.user;
   },
 
   // Videos
@@ -69,228 +110,200 @@ export const api = {
     const params = new URLSearchParams();
     if (category) params.append('category', category);
     if (search) params.append('search', search);
-    const res = await fetch(`/api/videos?${params.toString()}`);
-    const data = await res.json();
-    return data.videos;
+    const data = await safeJsonFetch<{ success: boolean; videos: Video[] }>(`/api/videos?${params.toString()}`);
+    return data?.videos || [];
   },
 
   likeVideo: async (id: string): Promise<number> => {
-    const res = await fetch(`/api/videos/${id}/like`, { method: 'POST', headers: headers() });
-    const data = await res.json();
-    return data.likesCount;
+    const data = await safeJsonFetch<{ success: boolean; likesCount: number }>(`/api/videos/${id}/like`, { method: 'POST', headers: headers() });
+    return data?.likesCount || 0;
   },
 
   getComments: async (id: string): Promise<Comment[]> => {
-    const res = await fetch(`/api/videos/${id}/comments`);
-    const data = await res.json();
-    return data.comments;
+    const data = await safeJsonFetch<{ success: boolean; comments: Comment[] }>(`/api/videos/${id}/comments`);
+    return data?.comments || [];
   },
 
   addComment: async (id: string, text: string): Promise<Comment> => {
-    const res = await fetch(`/api/videos/${id}/comments`, {
+    const data = await safeJsonFetch<{ success: boolean; comment: Comment }>(`/api/videos/${id}/comments`, {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ text })
     });
-    const data = await res.json();
-    return data.comment;
+    return data?.comment;
   },
 
   reportVideo: async (id: string, reason: string, details: string): Promise<string> => {
-    const res = await fetch(`/api/videos/${id}/report`, {
+    const data = await safeJsonFetch<{ success: boolean; message: string }>(`/api/videos/${id}/report`, {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ reason, details })
     });
-    const data = await res.json();
-    return data.message;
+    return data?.message || 'রিপোর্ট গৃহীত হয়েছে';
   },
 
   // Rewards & Watch-To-Earn Engine
   startWatchSession: async (videoId: string) => {
-    const res = await fetch('/api/reward/start-session', {
+    return await safeJsonFetch('/api/reward/start-session', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ videoId })
     });
-    return await res.json();
   },
 
   sendHeartbeat: async (sessionId: string, currentTime: number, isPlaying: boolean, isVisible: boolean) => {
-    const res = await fetch('/api/reward/heartbeat', {
+    return await safeJsonFetch('/api/reward/heartbeat', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ sessionId, currentTime, isPlaying, isVisible })
     });
-    return await res.json();
   },
 
   claimReward: async (sessionId: string) => {
-    const res = await fetch('/api/reward/claim', {
+    return await safeJsonFetch('/api/reward/claim', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ sessionId })
     });
-    return await res.json();
   },
 
   dailyCheckIn: async () => {
-    const res = await fetch('/api/reward/daily-checkin', {
+    return await safeJsonFetch('/api/reward/daily-checkin', {
       method: 'POST',
       headers: headers()
     });
-    return await res.json();
   },
 
   claimRewardedAd: async (adToken?: string) => {
-    const res = await fetch('/api/reward/ad-reward', {
+    return await safeJsonFetch('/api/reward/ad-reward', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ adToken: adToken || 'sponsor_bd_promo' })
     });
-    return await res.json();
   },
 
   claimGameReward: async (gameName: string, coinsEarned: number) => {
-    const res = await fetch('/api/reward/game-reward', {
+    return await safeJsonFetch('/api/reward/game-reward', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ gameName, coinsEarned })
     });
-    return await res.json();
   },
 
   claimTaskReward: async (taskType: string, taskName: string, coinsEarned: number) => {
-    const res = await fetch('/api/reward/task-reward', {
+    return await safeJsonFetch('/api/reward/task-reward', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ taskType, taskName, coinsEarned })
     });
-    return await res.json();
   },
 
   claimMilestone: async (milestoneCount: number) => {
-    const res = await fetch('/api/reward/claim-milestone', {
+    return await safeJsonFetch('/api/reward/claim-milestone', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ milestoneCount })
     });
-    return await res.json();
   },
 
   claimReferral: async (referralCode: string) => {
-    const res = await fetch('/api/reward/referral-claim', {
+    return await safeJsonFetch('/api/reward/referral-claim', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ referralCode })
     });
-    return await res.json();
   },
 
   // Wallet
   getWalletData: async () => {
-    const res = await fetch('/api/wallet/transactions', { headers: headers() });
-    return await res.json();
+    return await safeJsonFetch('/api/wallet/transactions', { headers: headers() });
   },
 
   requestWithdrawal: async (payload: { method: 'bKash' | 'Nagad' | 'Recharge'; accountType: 'Personal' | 'Agent' | 'Prepaid' | 'Postpaid'; mobileNumber: string; coins: number }) => {
-    const res = await fetch('/api/wallet/withdraw', {
+    return await safeJsonFetch('/api/wallet/withdraw', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify(payload)
     });
-    return await res.json();
   },
 
   // Notifications
   getNotifications: async (): Promise<NotificationItem[]> => {
-    const res = await fetch('/api/notifications', { headers: headers() });
-    const data = await res.json();
-    return data.notifications;
+    const data = await safeJsonFetch<{ success: boolean; notifications: NotificationItem[] }>('/api/notifications', { headers: headers() });
+    return data?.notifications || [];
   },
 
   markNotificationsRead: async () => {
-    const res = await fetch('/api/notifications/mark-read', { method: 'POST', headers: headers() });
-    return await res.json();
+    return await safeJsonFetch('/api/notifications/mark-read', { method: 'POST', headers: headers() });
   },
 
   // Admin
   getAdminOverview: async () => {
-    const res = await fetch('/api/admin/overview', { headers: headers() });
-    return await res.json();
+    return await safeJsonFetch('/api/admin/overview', { headers: headers() });
   },
 
   getAdminUsers: async (): Promise<User[]> => {
-    const res = await fetch('/api/admin/users', { headers: headers() });
-    const data = await res.json();
-    return data.users;
+    const data = await safeJsonFetch<{ success: boolean; users: User[] }>('/api/admin/users', { headers: headers() });
+    return data?.users || [];
   },
 
   adminUserAction: async (uid: string, action: string, coinAdjustment?: number, reason?: string) => {
-    const res = await fetch(`/api/admin/users/${uid}/action`, {
+    return await safeJsonFetch(`/api/admin/users/${uid}/action`, {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ action, coinAdjustment, reason })
     });
-    return await res.json();
   },
 
   getAdminWithdrawals: async (): Promise<Withdrawal[]> => {
-    const res = await fetch('/api/admin/withdrawals', { headers: headers() });
-    const data = await res.json();
-    return data.withdrawals;
+    const data = await safeJsonFetch<{ success: boolean; withdrawals: Withdrawal[] }>('/api/admin/withdrawals', { headers: headers() });
+    return data?.withdrawals || [];
   },
 
   updateWithdrawalStatus: async (id: string, status: 'Approved' | 'Paid' | 'Rejected', trxId?: string, adminNote?: string) => {
-    const res = await fetch(`/api/admin/withdrawals/${id}/status`, {
+    return await safeJsonFetch(`/api/admin/withdrawals/${id}/status`, {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ status, trxId, adminNote })
     });
-    return await res.json();
   },
 
   addVideo: async (videoData: Partial<Video>): Promise<Video> => {
-    const res = await fetch('/api/admin/videos', {
+    const data = await safeJsonFetch<{ success: boolean; video: Video }>('/api/admin/videos', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify(videoData)
     });
-    const data = await res.json();
-    return data.video;
+    return data?.video;
   },
 
   toggleVideo: async (id: string): Promise<Video> => {
-    const res = await fetch(`/api/admin/videos/${id}/toggle`, {
+    const data = await safeJsonFetch<{ success: boolean; video: Video }>(`/api/admin/videos/${id}/toggle`, {
       method: 'POST',
       headers: headers()
     });
-    const data = await res.json();
-    return data.video;
+    return data?.video;
   },
 
   updateSettings: async (settings: Partial<AdminSettings>): Promise<AdminSettings> => {
-    const res = await fetch('/api/admin/settings', {
+    const data = await safeJsonFetch<{ success: boolean; settings: AdminSettings }>('/api/admin/settings', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify(settings)
     });
-    const data = await res.json();
-    return data.settings;
+    return data?.settings;
   },
 
   getAdminReports: async (): Promise<Report[]> => {
-    const res = await fetch('/api/admin/reports', { headers: headers() });
-    const data = await res.json();
-    return data.reports;
+    const data = await safeJsonFetch<{ success: boolean; reports: Report[] }>('/api/admin/reports', { headers: headers() });
+    return data?.reports || [];
   },
 
   broadcastAnnouncement: async (title: string, message: string, linkTab: string = 'home'): Promise<{ success: boolean; message: string }> => {
-    const res = await fetch('/api/admin/broadcast', {
+    return await safeJsonFetch('/api/admin/broadcast', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ title, message, linkTab })
     });
-    return await res.json();
   }
 };

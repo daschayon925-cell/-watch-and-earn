@@ -17,16 +17,55 @@ import { useApp } from '../../context/AppContext';
 import { soundService } from '../../services/audio';
 
 export const AuthModal: React.FC = () => {
-  const { registerUser, loginUser, loginDemo } = useAuth();
+  const { registerUser, loginUser, loginDemo, sendPhoneOtp } = useAuth();
   const { language, showToast, triggerConfetti } = useApp();
 
   const [mode, setMode] = useState<'register' | 'login'>('register');
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
   const [referralCodeInput, setReferralCodeInput] = useState('');
+  
+  // Login form state
   const [loginIdentifier, setLoginIdentifier] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // 📲 Send Phone OTP Handler
+  const handleSendOtp = async () => {
+    setError('');
+    const cleanPhone = phone.replace(/\s+/g, '');
+    if (!cleanPhone || !/^01[3-9]\d{8}$/.test(cleanPhone)) {
+      setError(language === 'bn' ? 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' : 'Enter valid 11-digit BD phone number.');
+      return;
+    }
+
+    setSendingOtp(true);
+    try {
+      const res = await sendPhoneOtp(cleanPhone);
+      if (res.success) {
+        setIsOtpSent(true);
+        if (res.otpCode) {
+          setOtpCode(res.otpCode); // Autofill for convenience & instant testing
+        }
+        showToast(
+          language === 'bn' ? `ভেরিফিকেশন পিন পাঠানো হয়েছে! 📲` : 'Verification PIN sent!',
+          res.otpCode ? `আপনার পিন: ${res.otpCode}` : 'এসএমএস চেক করুন',
+          'success'
+        );
+      } else {
+        setError(res.message);
+      }
+    } catch (err: any) {
+      setError(err.message || 'পিন পাঠানো যায়নি।');
+    } finally {
+      setSendingOtp(false);
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,11 +82,28 @@ export const AuthModal: React.FC = () => {
       return;
     }
 
+    if (!isOtpSent) {
+      setError(language === 'bn' ? 'আগে "পিন পাঠান" বাটনে ক্লিক করে মোবাইল ভেরিফাই করুন।' : 'Please click "Send PIN" to verify your phone.');
+      return;
+    }
+
+    if (!otpCode.trim() || otpCode.trim().length !== 4) {
+      setError(language === 'bn' ? 'মোবাইলে পাঠানো ৪ ডিজিটের ভেরিফিকেশন পিন লিখুন।' : 'Enter 4-digit verification PIN.');
+      return;
+    }
+
+    if (!password || password.length < 4) {
+      setError(language === 'bn' ? 'কমপক্ষে ৪ ডিজিটের একটি গোপন পাসওয়ার্ড দিন।' : 'Password must be at least 4 characters.');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await registerUser({
         displayName: displayName.trim(),
         phone: cleanPhone,
+        password: password.trim(),
+        otpCode: otpCode.trim(),
         referralCodeInput: referralCodeInput.trim()
       });
 
@@ -55,7 +111,7 @@ export const AuthModal: React.FC = () => {
         soundService.playSuccessFanfare();
         triggerConfetti();
         showToast(
-          language === 'bn' ? 'অভিনন্দন! আপনার অ্যাকাউন্ট তৈরি হয়েছে 🎉' : 'Account created successfully! 🎉',
+          language === 'bn' ? 'অভিনন্দন! আপনার অ্যাকাউন্ট তৈরি ও নম্বর ভেরিফাই হয়েছে 🎉' : 'Account created and verified! 🎉',
           res.bonusAdded 
             ? (language === 'bn' ? `রেফারেল কোড ব্যবহারের জন্য +৫০ কয়েন বোনাস পেয়েছেন!` : `+50 referral coins bonus awarded!`)
             : (language === 'bn' ? `১০০ কয়েন ওয়েলকাম বোনাস পেয়েছেন!` : `100 coins welcome bonus awarded!`),
@@ -82,7 +138,7 @@ export const AuthModal: React.FC = () => {
 
     setLoading(true);
     try {
-      const res = await loginUser(loginIdentifier.trim());
+      const res = await loginUser(loginIdentifier.trim(), loginPassword.trim());
       if (res.success) {
         soundService.playSuccessFanfare();
         showToast(language === 'bn' ? 'স্বাগতম! সফলভাবে লগইন হয়েছে।' : 'Logged in successfully!', '', 'success');
@@ -177,22 +233,80 @@ export const AuthModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Mobile Number */}
+            {/* Mobile Number with OTP Request Button */}
             <div>
               <label className="block text-[11px] font-bold text-slate-300 mb-1">
                 {language === 'bn' ? 'মোবাইল নম্বর (বিকাশ/নগদ/রিচার্জের জন্য):' : 'Mobile Number:'}
               </label>
+              <div className="flex gap-1.5">
+                <div className="relative flex-1">
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      setIsOtpSent(false); // reset if number is changed
+                    }}
+                    placeholder="017XXXXXXXX (১১ ডিজিট)"
+                    maxLength={11}
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                    required
+                  />
+                  <Smartphone className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={sendingOtp || phone.length < 11}
+                  className="px-3 py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-[11px] whitespace-nowrap transition disabled:opacity-40"
+                >
+                  {sendingOtp ? 'পাঠানো হচ্ছে...' : isOtpSent ? 'পুনরায় পিন পাঠান' : 'পিন পাঠান 📲'}
+                </button>
+              </div>
+            </div>
+
+            {/* OTP Verification PIN Input */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-bold text-slate-300">
+                  {language === 'bn' ? 'নম্বরে পাঠানো ৪-ডিজিটের পিন:' : 'SMS Verification PIN:'}
+                </label>
+                {isOtpSent && (
+                  <span className="text-[10px] text-emerald-400 font-semibold animate-pulse">
+                    ✓ পিন পাঠানো হয়েছে
+                  </span>
+                )}
+              </div>
               <div className="relative">
                 <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="017XXXXXXXX (১১ ডিজিট)"
-                  maxLength={11}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                  type="text"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  placeholder="৪ সংখ্যার পিন লিখুন"
+                  maxLength={4}
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-emerald-500/40 rounded-xl text-xs font-mono text-emerald-300 tracking-wider placeholder:text-slate-600 focus:outline-none focus:border-emerald-400 font-bold"
                   required
                 />
-                <Smartphone className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 absolute right-3 top-3" />
+              </div>
+            </div>
+
+            {/* Account Password */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                {language === 'bn' ? 'গোপন পাসওয়ার্ড (লগইন করার জন্য):' : 'Password:'}
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="কমপক্ষে ৪ ডিজিটের পাসওয়ার্ড দিন"
+                  minLength={4}
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                  required
+                />
+                <Lock className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
               </div>
             </div>
 
@@ -241,15 +355,28 @@ export const AuthModal: React.FC = () => {
                   type="text"
                   value={loginIdentifier}
                   onChange={(e) => setLoginIdentifier(e.target.value)}
-                  placeholder="যেমন: 01712345678 অথবা usr_demo_101"
-                  className="w-full px-3.5 py-3 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                  placeholder="যেমন: 01339223713 অথবা UID"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
                   required
                 />
-                <Lock className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3.5" />
+                <User className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">
-                যে নম্বর বা আইডি দিয়ে অ্যাকাউন্ট খুলেছিলেন তা প্রদান করুন।
-              </p>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                {language === 'bn' ? 'পাসওয়ার্ড:' : 'Password:'}
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="আপনার পাসওয়ার্ড লিখুন"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                />
+                <Lock className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
+              </div>
             </div>
 
             <button
@@ -263,13 +390,14 @@ export const AuthModal: React.FC = () => {
 
             {/* Quick Demo Login Option */}
             <div className="pt-2 border-t border-slate-800 text-center">
-              <span className="text-[10px] text-slate-500 block mb-1.5">অথবা টেস্ট অ্যাকাউন্টে প্রবেশ করুন:</span>
+              <span className="text-[10px] text-slate-500 block mb-1.5">মালিক হিসেবে সরাসরি এক ক্লিকে প্রবেশ করুন:</span>
               <button
                 type="button"
                 onClick={() => loginDemo('usr_demo_101')}
-                className="w-full py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-xs font-bold rounded-xl transition"
+                className="w-full py-2.5 bg-gradient-to-r from-cyan-950/80 to-slate-900 hover:from-cyan-900/60 hover:to-slate-850 border border-cyan-500/40 text-cyan-300 hover:text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/40"
               >
-                Super Admin একাউন্টে প্রবেশ (Demo)
+                <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                <span>অ্যাডমিন Chayon Das একাউন্টে প্রবেশ 👑</span>
               </button>
             </div>
           </form>

@@ -6,8 +6,9 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   loginDemo: (uid?: string) => Promise<void>;
-  registerUser: (data: { displayName: string; phone: string; email?: string; referralCodeInput?: string }) => Promise<{ success: boolean; message: string; bonusAdded?: number }>;
-  loginUser: (identifier: string) => Promise<{ success: boolean; message: string }>;
+  sendPhoneOtp: (phone: string) => Promise<{ success: boolean; message: string; otpCode?: string }>;
+  registerUser: (data: { displayName: string; phone: string; password?: string; otpCode?: string; email?: string; referralCodeInput?: string }) => Promise<{ success: boolean; message: string; bonusAdded?: number }>;
+  loginUser: (identifier: string, password?: string) => Promise<{ success: boolean; message: string }>;
   updateProfile: (data: { displayName?: string; phone?: string; photoURL?: string }) => Promise<void>;
   toggleAdminRole: () => Promise<void>;
   logout: () => void;
@@ -43,7 +44,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const registerUser = async (data: { displayName: string; phone: string; email?: string; referralCodeInput?: string }) => {
+  const sendPhoneOtp = async (phone: string) => {
+    try {
+      const res = await api.sendOtp(phone);
+      return res;
+    } catch (err: any) {
+      return { success: false, message: err.message || 'পিন পাঠাতে সমস্যা হয়েছে।' };
+    }
+  };
+
+  const registerUser = async (data: { displayName: string; phone: string; password?: string; otpCode?: string; email?: string; referralCodeInput?: string }) => {
     try {
       const res = await api.register(data);
       if (res.success && res.user) {
@@ -58,9 +68,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginUser = async (identifier: string) => {
+  const loginUser = async (identifier: string, password?: string) => {
     try {
-      const res = await api.login(identifier);
+      const res = await api.login(identifier, password);
       if (res.success && res.user) {
         setApiUserId(res.user.uid);
         localStorage.setItem('we_user_id', res.user.uid);
@@ -105,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginDemo, registerUser, loginUser, updateProfile, toggleAdminRole, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, loginDemo, sendPhoneOtp, registerUser, loginUser, updateProfile, toggleAdminRole, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

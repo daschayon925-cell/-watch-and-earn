@@ -67,16 +67,18 @@ export const AdminDashboard: React.FC = () => {
 
   const [editSettings, setEditSettings] = useState<Partial<AdminSettings>>({});
 
-  // 🔐 Secure Admin PIN Protection (Default Admin PIN: 7788)
+  // 🔐 Secure Admin PIN Protection (Verified from Settings or Default 7788)
   const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
     return sessionStorage.getItem('we_admin_unlocked') === 'true';
   });
   const [inputPin, setInputPin] = useState('');
   const [pinError, setPinError] = useState('');
 
+  const currentConfiguredPin = settings?.adminSecurity?.adminPin || '7788';
+
   const handleUnlockAdmin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputPin === '7788' || inputPin === '1234') {
+    if (inputPin === currentConfiguredPin || inputPin === '7788' || inputPin === '1234') {
       setIsAdminUnlocked(true);
       sessionStorage.setItem('we_admin_unlocked', 'true');
       setPinError('');
@@ -945,6 +947,88 @@ export const AdminDashboard: React.FC = () => {
                       className="w-4 h-4 accent-cyan-500"
                     />
                   </label>
+                </div>
+              </div>
+            </div>
+
+            {/* 👑 Admin Security & Profile Settings (Name, Phone, Secret PIN) */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#0B1528] to-[#080E1A] border border-cyan-500/50 space-y-3 shadow-lg">
+              <div className="flex items-center justify-between pb-1 border-b border-cyan-500/20">
+                <span className="text-xs font-black text-cyan-300 flex items-center gap-1.5 uppercase">
+                  <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                  মালিকের প্রোফাইল ও সিকিউরিটি পিন পরিবর্তন
+                </span>
+                <span className="text-[9px] text-cyan-400 font-mono font-bold bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                  Master Security
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                    অ্যাডমিনের নাম (Admin Name):
+                  </label>
+                  <input
+                    type="text"
+                    value={editSettings.adminSecurity?.adminName ?? 'তানভীর আহমেদ (Owner)'}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      adminSecurity: {
+                        ...editSettings.adminSecurity,
+                        adminName: e.target.value,
+                        adminPhone: editSettings.adminSecurity?.adminPhone ?? '01712345678',
+                        adminPin: editSettings.adminSecurity?.adminPin ?? '7788'
+                      }
+                    })}
+                    placeholder="মালিকের নাম"
+                    className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                    অ্যাডমিনের মোবাইল নম্বর (Admin Phone):
+                  </label>
+                  <input
+                    type="tel"
+                    value={editSettings.adminSecurity?.adminPhone ?? '01712345678'}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      adminSecurity: {
+                        ...editSettings.adminSecurity,
+                        adminPhone: e.target.value,
+                        adminName: editSettings.adminSecurity?.adminName ?? 'তানভীর আহমেদ (Owner)',
+                        adminPin: editSettings.adminSecurity?.adminPin ?? '7788'
+                      }
+                    })}
+                    placeholder="017XXXXXXXX"
+                    className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-amber-300 mb-1">
+                    গোপন অ্যাডমিন পিন (Secret 4-Digit Admin PIN):
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={4}
+                    value={editSettings.adminSecurity?.adminPin ?? '7788'}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      adminSecurity: {
+                        ...editSettings.adminSecurity,
+                        adminPin: e.target.value,
+                        adminName: editSettings.adminSecurity?.adminName ?? 'তানভীর আহমেদ (Owner)',
+                        adminPhone: editSettings.adminSecurity?.adminPhone ?? '01712345678'
+                      }
+                    })}
+                    placeholder="৪-ডিজিটের পিন (যেমন: 7788)"
+                    className="w-full p-2.5 bg-slate-950 border border-amber-500/50 rounded-xl text-sm font-mono font-black text-amber-400 focus:outline-none focus:border-amber-400 tracking-widest text-center"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    💡 এই পিনটি দিয়ে আপনি যেকোনো সময় প্রোফাইল থেকে অ্যাডমিন প্যানেল আনলক করতে পারবেন।
+                  </p>
                 </div>
               </div>
             </div>
