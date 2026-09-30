@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, Sparkles, X, Info, Coins } from 'lucide-react';
+import { ExternalLink, Sparkles, Coins, Zap } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { soundService } from '../../services/audio';
@@ -20,50 +20,51 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
   const maxClicks = 10;
   const isLimitReached = clicksToday >= maxClicks;
 
+  // High-fidelity full-bleed responsive banner graphics
   const ads = [
     {
-      title: 'Nagad Mega Offer! ৫০ টাকা ক্যাশব্যাক',
-      desc: 'বিজ্ঞাপনে ক্লিক করে পেয়ে যান আকর্ষণীয় ক্যাশব্যাক অফার।',
-      sponsor: 'Nagad Promo',
-      tag: 'Ad • 320x50',
+      title: 'নগদ মেগা বোনাস! ৫০ টাকা নিশ্চিত ক্যাশব্যাক',
+      desc: 'বিজ্ঞাপনে এক ক্লিকেই অফার পেজ দেখুন এবং জিতে নিন বিশেষ ছাড়!',
+      sponsor: 'Nagad Official Promo 🇧🇩',
+      tag: 'AD • 320x100 SPONSOR',
       cta: 'অফার নিন (+১৫ কয়েন)',
       link: 'https://nagad.com.bd',
-      image: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=150&auto=format&fit=crop&q=80',
-      gradient: 'from-amber-950/80 via-slate-900 to-orange-950/80',
-      badgeColor: 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+      bannerBg: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=80',
+      badgeGradient: 'from-amber-500 to-orange-500 text-slate-950',
+      highlightBadge: 'স্পেশাল বোনাস অফার'
     },
     {
-      title: 'Daraz Grand Sale! ৮০% পর্যন্ত ছাড়',
-      desc: 'সেরা গ্যাজেট কিনুন ফ্রি ডেলিভারিতে!',
-      sponsor: 'Daraz BD',
-      tag: 'Sponsored Ad',
+      title: 'দারাজ গ্র্যান্ড বৈশাখী মেলা! ৮০% পর্যন্ত ক্যাশ ছাড়',
+      desc: 'ফ্রি হোম ডেলিভারিতে সেরা স্মার্টফোন ও গ্যাজেট কিনুন ঘরে বসেই।',
+      sponsor: 'Daraz Bangladesh 🛍️',
+      tag: 'SPONSORED CAMPAIGN',
       cta: 'শপ করুন (+১৫ কয়েন)',
       link: 'https://daraz.com.bd',
-      image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=150&auto=format&fit=crop&q=80',
-      gradient: 'from-orange-950/80 via-slate-900 to-red-950/80',
-      badgeColor: 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+      bannerBg: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&auto=format&fit=crop&q=80',
+      badgeGradient: 'from-orange-500 to-red-500 text-white',
+      highlightBadge: 'লিমিটেড টাইম মেগা সেল'
     },
     {
-      title: 'Bkash Send Money সম্পূর্ণ ফ্রি!',
-      desc: 'প্রিয় ৫টি নাম্বারে ক্যাশআউট চার্জ ছাড়া পাঠান।',
-      sponsor: 'bKash Limited',
-      tag: 'Ad Banner',
-      cta: 'বিস্তারিত (+১৫ কয়েন)',
+      title: 'বিকাশ সেন্ড মানি সম্পূর্ণ ফ্রি ও ক্যাশআউট বোনাস!',
+      desc: 'প্রিয় ৫টি নাম্বারে ০% খরচে টাকা পাঠান ও আকর্ষণীয় ভাউচার পান।',
+      sponsor: 'bKash Payments 📲',
+      tag: 'AD • PREMIUM OFFER',
+      cta: 'বিস্তারিত দেখুন (+১৫ কয়েন)',
       link: 'https://bkash.com',
-      image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=150&auto=format&fit=crop&q=80',
-      gradient: 'from-pink-950/80 via-slate-900 to-rose-950/80',
-      badgeColor: 'bg-pink-500/20 text-pink-400 border-pink-500/30'
+      bannerBg: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop&q=80',
+      badgeGradient: 'from-pink-500 to-rose-600 text-white',
+      highlightBadge: '১০০% ফ্রি অফার'
     },
     {
-      title: 'Chaldal Grocery! ১ ঘণ্টায় ডেলিভারি',
-      desc: 'তাজা শাকসবজি ও মুদি সামগ্রী পান ঘরে বসেই।',
-      sponsor: 'Chaldal Online',
-      tag: 'Sponsored',
-      cta: 'অর্ডার দিন (+১৫ কয়েন)',
+      title: 'চালডাল তাজা গ্রোসারি! ঘরে বসেই ১ ঘণ্টায় ডেলিভারি',
+      desc: 'প্রথম অর্ডারে বিশেষ ডিসকাউন্ট এবং ফ্রি এক্সপ্রেস হোম ডেলিভারি!',
+      sponsor: 'Chaldal BD Groceries 🛒',
+      tag: 'SPONSORED PARTNER',
+      cta: 'অর্ডার করুন (+১৫ কয়েন)',
       link: 'https://chaldal.com',
-      image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=150&auto=format&fit=crop&q=80',
-      gradient: 'from-emerald-950/80 via-slate-900 to-teal-950/80',
-      badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+      bannerBg: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=80',
+      badgeGradient: 'from-emerald-500 to-teal-500 text-slate-950',
+      highlightBadge: 'দ্রুত হোম ডেলিভারি'
     }
   ];
 
@@ -88,7 +89,11 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
         soundService.playCoinReward();
         triggerConfetti();
         await refreshUser();
-        showToast(`🎁 +${res.earnedCoins || 15} কয়েন বোনাস পেয়ে গেছেন!`, `আজ আর ${res.remainingClicks || 0} টি অ্যাডে ক্লিক করতে পারবেন।`, 'coin');
+        showToast(
+          `🎁 +${res.earnedCoins || 15} কয়েন আপনার অ্যাকাউন্টে যোগ হয়েছে!`,
+          `আজকের বাকি ক্লিক: ${res.remainingClicks || 0}টি।`,
+          'coin'
+        );
       } else if (res?.limitReached) {
         showToast('🔒 আজকের সীমা সম্পন্ন হয়েছে!', res.message || '১০টি ক্লিক পূর্ণ হয়েছে। আগামীকাল আবার নতুন ক্লিক চালু হবে।', 'info');
         await refreshUser();
@@ -99,64 +104,78 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
   };
 
   return (
-    <div className={`w-full rounded-2xl bg-gradient-to-r ${currentAd.gradient} border ${isLimitReached ? 'border-slate-800 opacity-75' : 'border-amber-500/30'} p-2.5 shadow-lg relative overflow-hidden transition-all hover:border-amber-400/60`}>
-      {/* Tiny Google/Network Ad Marker */}
-      <div className="flex items-center justify-between gap-1 mb-1">
-        <div className="flex items-center gap-1.5">
-          <span className={`px-1.5 py-0.2 rounded text-[8px] font-black uppercase tracking-wider border ${currentAd.badgeColor}`}>
-            {currentAd.tag}
-          </span>
-          <span className="text-[9px] text-slate-400 font-medium truncate max-w-[150px]">
-            {currentAd.sponsor}
-          </span>
-        </div>
+    <div className="w-full relative overflow-hidden rounded-2xl border-2 border-amber-500/40 shadow-xl group transition-all duration-300 hover:border-amber-400">
+      {/* 🌟 1. FULL-BLEED BACKGROUND BANNER IMAGE (পুরো ঘর জুড়ে ছবি) */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+        style={{ backgroundImage: `url(${currentAd.bannerBg})` }}
+      />
 
-        <div className="flex items-center gap-1 text-[8px] font-semibold">
-          {isLimitReached ? (
-            <span className="text-rose-400 bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-500/30">
-              🔒 দৈনিক ১০/১০ শেষ (কাল চালু হবে)
+      {/* 🌟 2. DARK GRADIENT OVERLAY (লেখা ও বাটনের স্পষ্টতার জন্য সুন্দর সিনেমাটিক লেয়ার) */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-slate-950/85 to-black/70 backdrop-blur-[1px]" />
+
+      {/* 🌟 3. BANNER CONTENT CONTAINER */}
+      <div className="relative z-10 p-3.5 flex flex-col justify-between min-h-[110px]">
+        {/* Top Badges Header */}
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="flex items-center gap-1.5">
+            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-gradient-to-r ${currentAd.badgeGradient} shadow-sm`}>
+              {currentAd.tag}
             </span>
-          ) : (
-            <div className="flex items-center gap-1 text-amber-400/90">
-              <Coins className="w-2.5 h-2.5 text-amber-400" />
-              <span>+১৫ কয়েন ({clicksToday}/১০ সম্পন্ন)</span>
-            </div>
-          )}
-        </div>
-      </div>
+            <span className="text-[10px] text-amber-300 font-bold flex items-center gap-1 drop-shadow">
+              <Sparkles className="w-3 h-3 text-amber-400 fill-amber-400" />
+              {currentAd.highlightBadge}
+            </span>
+          </div>
 
-      {/* Main Banner Content */}
-      <div className="flex items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          {currentAd.image && (
-            <img 
-              src={currentAd.image} 
-              alt={currentAd.sponsor} 
-              className="w-10 h-10 rounded-xl object-cover border border-white/20 shrink-0 shadow-sm"
-            />
-          )}
-          <div className="min-w-0 flex-1">
-            <h5 className="text-[11px] font-black text-white truncate leading-snug">
-              {currentAd.title}
-            </h5>
-            <p className="text-[9px] text-slate-300 truncate mt-0.5">
-              {isLimitReached ? 'আজকের ক্লিকের কোটা পূর্ণ। কাল আবার পয়েন্ট পাবেন।' : currentAd.desc}
-            </p>
+          {/* Daily Coin Quota Pill */}
+          <div className="flex items-center gap-1 text-[9px] font-black">
+            {isLimitReached ? (
+              <span className="text-rose-300 bg-rose-950/80 px-2 py-0.5 rounded-full border border-rose-500/50">
+                🔒 দৈনিক ১০/১০ সম্পন্ন
+              </span>
+            ) : (
+              <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-full text-amber-300">
+                <Coins className="w-3 h-3 text-amber-400 animate-pulse" />
+                <span>+১৫ কয়েন ({clicksToday}/১০)</span>
+              </div>
+            )}
           </div>
         </div>
 
-        <button
-          onClick={handleAdClick}
-          disabled={isLimitReached}
-          className={`shrink-0 px-2.5 py-1.5 font-black text-[10px] rounded-xl shadow-md transition flex items-center gap-1 cursor-pointer ${
-            isLimitReached 
-              ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700' 
-              : 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 active:scale-95'
-          }`}
-        >
-          <span>{isLimitReached ? '🔒 কোটা শেষ' : currentAd.cta}</span>
-          {!isLimitReached && <ExternalLink className="w-2.5 h-2.5 stroke-[3]" />}
-        </button>
+        {/* Middle: Title & Sponsor Info */}
+        <div className="my-auto pr-1">
+          <span className="text-[10px] font-semibold text-slate-300 block mb-0.5">
+            {currentAd.sponsor}
+          </span>
+          <h4 className="text-[13px] font-black text-white leading-tight drop-shadow-md">
+            {currentAd.title}
+          </h4>
+          <p className="text-[10px] text-slate-200 mt-1 line-clamp-1 drop-shadow">
+            {isLimitReached ? 'আজকের কোটা শেষ। আগামীকাল আবার ক্লিক করে ১৫ কয়েন পাবেন।' : currentAd.desc}
+          </p>
+        </div>
+
+        {/* Bottom CTA Action Bar */}
+        <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between gap-3">
+          <span className="text-[10px] font-medium text-amber-200/90 flex items-center gap-1">
+            <Zap className="w-3 h-3 text-amber-400 fill-amber-400" />
+            <span>ক্লিক করলেই সরাসরি ১৫ কয়েন ওয়ালেটে জমা হবে</span>
+          </span>
+
+          <button
+            onClick={handleAdClick}
+            disabled={isLimitReached}
+            className={`px-3.5 py-1.5 font-black text-[11px] rounded-xl shadow-lg transition-all flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 ${
+              isLimitReached
+                ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
+                : 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black shadow-amber-500/25 border border-amber-300'
+            }`}
+          >
+            <span>{isLimitReached ? '🔒 কোটা শেষ' : currentAd.cta}</span>
+            {!isLimitReached && <ExternalLink className="w-3 h-3 stroke-[3]" />}
+          </button>
+        </div>
       </div>
     </div>
   );
