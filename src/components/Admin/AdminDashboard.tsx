@@ -607,11 +607,27 @@ export const AdminDashboard: React.FC = () => {
                 className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <img src={u.photoURL} alt={u.displayName} className="w-8 h-8 rounded-full object-cover" />
+                  <div className="flex items-center gap-2.5">
+                    <img src={u.photoURL} alt={u.displayName} className="w-10 h-10 rounded-full object-cover border border-slate-700 shrink-0" />
                     <div>
-                      <h5 className="text-xs font-bold text-white">{u.displayName}</h5>
-                      <span className="text-[10px] text-slate-400 font-mono">{u.email}</span>
+                      <div className="flex items-center gap-2">
+                        <h5 className="text-xs font-bold text-white">{u.displayName}</h5>
+                        {u.role === 'admin' && (
+                          <span className="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.2 rounded border border-amber-500/40">
+                            👑 OWNER
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 mt-0.5 text-[10px]">
+                        {u.phone ? (
+                          <span className="text-emerald-400 font-mono font-bold flex items-center gap-1">
+                            📱 {u.phone}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-mono">{u.email}</span>
+                        )}
+                        <span className="text-slate-500 font-mono text-[9px]">UID: {u.uid.slice(0, 12)}...</span>
+                      </div>
                     </div>
                   </div>
 
@@ -620,25 +636,34 @@ export const AdminDashboard: React.FC = () => {
                       ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                       : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
                   }`}>
-                    {u.accountStatus}
+                    {u.accountStatus === 'active' ? 'সক্রিয়' : 'স্থগিত'}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-center text-xs py-1 border-t border-slate-800">
+                {/* Detailed User Insights Grid */}
+                <div className="grid grid-cols-4 gap-1.5 text-center text-xs py-2 border-t border-slate-800 bg-slate-950/60 rounded-xl px-2">
                   <div>
-                    <span className="text-[9px] text-slate-500 block">ব্যালেন্স</span>
-                    <span className="font-bold text-amber-400">{u.coins}</span>
+                    <span className="text-[9px] text-slate-400 block">বর্তমান কয়েন</span>
+                    <span className="font-bold text-amber-400 font-mono">{u.coins}</span>
                   </div>
                   <div>
-                    <span className="text-[9px] text-slate-500 block">রিস্ক স্কোর</span>
-                    <span className={`font-bold ${u.riskScore > 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                      {u.riskScore}/100
-                    </span>
+                    <span className="text-[9px] text-slate-400 block">আজকের ভিডিও</span>
+                    <span className="font-bold text-cyan-400 font-mono">{u.todayVideosCount || 0}টি</span>
                   </div>
                   <div>
-                    <span className="text-[9px] text-slate-500 block">রেফারেল</span>
-                    <span className="font-bold text-cyan-400">{u.referralCount}</span>
+                    <span className="text-[9px] text-slate-400 block">আজকের অ্যাড</span>
+                    <span className="font-bold text-purple-400 font-mono">{u.adClicksToday || 0}/১০</span>
                   </div>
+                  <div>
+                    <span className="text-[9px] text-slate-400 block">রেফার সংখ্যা</span>
+                    <span className="font-bold text-emerald-400 font-mono">{u.referralCount || 0}</span>
+                  </div>
+                </div>
+
+                {/* Additional user registration info */}
+                <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
+                  <span>রেফার কোড: <strong className="text-slate-200 font-mono">{u.referralCode}</strong> {u.referredBy ? `(ইনভাইটেড: ${u.referredBy})` : ''}</span>
+                  <span>যোগদান: {u.createdAt ? new Date(u.createdAt).toLocaleDateString('bn-BD') : 'আজ'}</span>
                 </div>
 
                 <div className="flex items-center gap-2 pt-1">
