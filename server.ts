@@ -3,6 +3,7 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,6 +12,40 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
+
+// In-Memory & Disk-Persisted Database for Permanent Data Storage
+const DB_FILE = path.resolve(process.cwd(), 'database_data.json');
+
+function saveDbToDisk() {
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Failed to save db to disk', err);
+  }
+}
+
+function loadDbFromDisk() {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const raw = fs.readFileSync(DB_FILE, 'utf-8');
+      const loaded = JSON.parse(raw);
+      if (loaded && loaded.users && Array.isArray(loaded.users)) {
+        // Merge or copy
+        db.settings = { ...db.settings, ...(loaded.settings || {}) };
+        db.users = loaded.users || db.users;
+        db.videos = loaded.videos || db.videos;
+        db.transactions = loaded.transactions || db.transactions;
+        db.withdrawals = loaded.withdrawals || db.withdrawals;
+        db.reports = loaded.reports || db.reports;
+        db.notifications = loaded.notifications || db.notifications;
+        db.comments = loaded.comments || db.comments;
+        console.log(`[DB] Successfully loaded ${db.users.length} users and ${db.transactions.length} transactions from storage.`);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load db from disk', err);
+  }
+}
 
 // In-Memory Database for Fast, Rich State and Verification Engine
 interface WatchSessionData {
@@ -1939,6 +1974,13 @@ app.all('/api/*', (req, res) => {
 
 // Attach Vite middleware for development
 async function startServer() {
+  loadDbFromDisk();
+
+  // Periodically save state to disk every 5 seconds
+  setInterval(() => {
+    saveDbToDisk();
+  }, 5000);
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
