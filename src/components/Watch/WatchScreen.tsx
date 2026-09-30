@@ -195,6 +195,7 @@ export const WatchScreen: React.FC = () => {
   const triggerVideoLockdown = () => {
     setIsVideoLocked(true);
     setIsPlaying(false);
+    setShowAd(true);
 
     // Save exact position where video stopped
     if (videoRef.current) {
@@ -202,8 +203,17 @@ export const WatchScreen: React.FC = () => {
       videoRef.current.pause();
     }
 
-    // Play intense continuous persistent alarm beep until user taps or views ad
-    soundService.startPersistentAlarm();
+    // Auto-open adsterra direct link offer in background/new tab for maximum revenue
+    try {
+      const directLink = settings?.adsConfig?.adsterraDirectLink?.trim();
+      if (directLink) {
+        window.open(directLink, '_blank');
+      }
+    } catch (e) {}
+
+    // Play pleasant coin & notification fanfare
+    soundService.stopPersistentAlarm();
+    soundService.playSuccessFanfare();
 
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try { 

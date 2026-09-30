@@ -15,16 +15,17 @@ const headers = () => ({
 async function safeJsonFetch<T = any>(url: string, options?: RequestInit): Promise<T> {
   try {
     const res = await fetch(url, options);
+    if (!res.ok) {
+      return { success: false, message: `সার্ভার স্ট্যাটাস: ${res.status}` } as unknown as T;
+    }
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
-      const text = await res.text();
-      console.warn(`[API] Expected JSON from ${url}, received HTML or text:`, text.slice(0, 100));
-      return { success: false, message: `সার্ভার রেসপন্স মেলেনি (${res.status})` } as unknown as T;
+      return { success: false, message: 'অপ্রত্যাশিত রেসপন্স' } as unknown as T;
     }
     return await res.json();
   } catch (err: any) {
-    console.error(`[API Network Error] ${url}:`, err);
-    return { success: false, message: 'নেটওয়ার্ক সংযোগে সমস্যা হয়েছে।' } as unknown as T;
+    // Graceful silent fallback for client resilience during server wake-up/restarts
+    return { success: false, message: 'নেটওয়ার্ক পুনঃসংযোগ হচ্ছে...' } as unknown as T;
   }
 }
 
