@@ -245,7 +245,7 @@ export const api = {
     return data?.payouts || [];
   },
 
-  requestWithdrawal: async (payload: { method: 'bKash' | 'Nagad' | 'Recharge'; accountType: 'Personal' | 'Agent' | 'Prepaid' | 'Postpaid'; mobileNumber: string; coins: number }) => {
+  requestWithdrawal: async (payload: { method: 'bKash' | 'Nagad' | 'Recharge'; accountType: 'Personal' | 'Agent' | 'Prepaid' | 'Postpaid'; mobileNumber: string; coins: number; password?: string }) => {
     return await safeJsonFetch('/api/wallet/withdraw', {
       method: 'POST',
       headers: headers(),

@@ -29,6 +29,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { Video, User, Withdrawal, Report, AdminSettings } from '../../types';
 import { api } from '../../services/api';
+import { cloudDb } from '../../services/cloudDb';
 
 export const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -112,9 +113,19 @@ export const AdminDashboard: React.FC = () => {
         api.getAdminReports(),
         api.getSettings()
       ]);
+      
+      // Merge with Cloud Firestore to make sure no user or request is missed even after server refresh
+      const cloudUsers = await cloudDb.getAllUsers();
+      const mergedUsers = [...(usrs || [])];
+      cloudUsers.forEach(cu => {
+        if (!mergedUsers.some(u => u.uid === cu.uid || (u.phone && cu.phone && u.phone === cu.phone))) {
+          mergedUsers.push(cu);
+        }
+      });
+
       setKpis(ov?.kpis);
       setVideos(vids || []);
-      setUsersList(usrs || []);
+      setUsersList(mergedUsers);
       setWithdrawals(wths || []);
       setReports(reps || []);
       if (freshSettings) {
@@ -1037,21 +1048,21 @@ export const AdminDashboard: React.FC = () => {
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                    অ্যাডমিনের মোবাইল নম্বর (Admin Phone):
+                    অ্যাডমিনের মোবাইল নম্বর (Admin Phone - ঐচ্ছিক):
                   </label>
                   <input
                     type="tel"
-                    value={editSettings.adminSecurity?.adminPhone ?? '01712345678'}
+                    value={editSettings.adminSecurity?.adminPhone ?? ''}
                     onChange={(e) => setEditSettings({
                       ...editSettings,
                       adminSecurity: {
                         ...editSettings.adminSecurity,
                         adminPhone: e.target.value,
-                        adminName: editSettings.adminSecurity?.adminName ?? 'তানভীর আহমেদ (Owner)',
+                        adminName: editSettings.adminSecurity?.adminName ?? 'Owner Admin',
                         adminPin: editSettings.adminSecurity?.adminPin ?? '7788'
                       }
                     })}
-                    placeholder="017XXXXXXXX"
+                    placeholder="01XXXXXXXXX"
                     className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-400"
                   />
                 </div>

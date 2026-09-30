@@ -106,7 +106,7 @@ const db: {
     },
     adminSecurity: {
       adminName: 'Owner Admin',
-      adminPhone: '01339223713',
+      adminPhone: '',
       adminPin: '7788'
     },
     smsGateway: {
@@ -120,9 +120,9 @@ const db: {
   users: [
     {
       uid: 'usr_admin_owner',
-      displayName: 'Chayon Das (Owner)',
-      email: 'daschayon925@gmail.com',
-      phone: '01339223713',
+      displayName: 'System Admin (Owner)',
+      email: 'admin@watchearnbd.com',
+      phone: '',
       password: '7788',
       phoneVerified: true,
       photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
@@ -136,7 +136,7 @@ const db: {
       role: 'admin',
       accountStatus: 'active',
       riskScore: 0,
-      referralCode: 'CHAYON77',
+      referralCode: 'ADMIN77',
       referredBy: undefined,
       referralCount: 0,
       createdAt: new Date().toISOString(),
@@ -1443,10 +1443,35 @@ app.get('/api/wallet/transactions', (req, res) => {
   });
 });
 
-// Request withdrawal
+// Request withdrawal with Anti-Fraud & Password Protection
 app.post('/api/wallet/withdraw', (req, res) => {
   const user = getUser(req);
-  const { method, accountType, mobileNumber, coins } = req.body;
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'লগইন আবশ্যক।' });
+  }
+
+  // Security Check 1: Suspended/Banned check
+  if (user.accountStatus === 'suspended') {
+    return res.status(403).json({ success: false, message: 'আপনার অ্যাকাউন্টটি সাময়িকভাবে স্থগিত রয়েছে। অ্যাডমিনের সাথে যোগাযোগ করুন।' });
+  }
+
+  const { method, accountType, mobileNumber, coins, password } = req.body;
+
+  // Security Check 2: Account Password Verification to prevent unauthorized cashouts
+  if (user.password && password) {
+    if (user.password !== password.trim()) {
+      return res.status(400).json({ success: false, message: 'নিরাপত্তা সতর্কতা: ভুল অ্যাকাউন্ট পাসওয়ার্ড! আপনার সঠিক পাসওয়ার্ড দিন।' });
+    }
+  }
+
+  // Security Check 3: Check for multiple pending withdrawals
+  const existingPending = db.withdrawals.find(w => w.userId === user.uid && w.status === 'Pending');
+  if (existingPending) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'আপনার একটি উত্তোলন অনুরোধ ইতিমধ্যে প্রক্রিয়াধীন রয়েছে। পূর্বের পেমেন্ট সম্পন্ন হওয়ার পর নতুন অনুরোধ করতে পারবেন।' 
+    });
+  }
 
   // Validation
   if (method !== 'bKash' && method !== 'Nagad' && method !== 'Recharge') {
@@ -1455,7 +1480,8 @@ app.post('/api/wallet/withdraw', (req, res) => {
 
   // BD Phone number regex: 01[3-9]XXXXXXXX (11 digits)
   const bdPhoneRegex = /^01[3-9]\d{8}$/;
-  if (!mobileNumber || !bdPhoneRegex.test(mobileNumber.replace(/\s+/g, ''))) {
+  const cleanMobile = (mobileNumber || '').replace(/\s+/g, '');
+  if (!cleanMobile || !bdPhoneRegex.test(cleanMobile)) {
     return res.status(400).json({ success: false, message: 'সঠিক ১১ ডিজিটের বাংলাদেশি মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' });
   }
 
@@ -1500,7 +1526,7 @@ app.post('/api/wallet/withdraw', (req, res) => {
     userName: user.displayName,
     method,
     accountType: accountType || (method === 'Recharge' ? 'Prepaid' : 'Personal'),
-    mobileNumber: mobileNumber.replace(/\s+/g, ''),
+    mobileNumber: cleanMobile,
     coins: coinAmount,
     bdtAmount,
     status: 'Pending',
@@ -1520,7 +1546,7 @@ app.post('/api/wallet/withdraw', (req, res) => {
     source: `${method === 'Recharge' ? 'মোবাইল রিচার্জ' : method} (${withdrawal.accountType}) ক্যাশআউট রিকোয়েস্ট`,
     status: 'PENDING',
     createdAt: new Date().toISOString(),
-    note: `${mobileNumber}`
+    note: `${cleanMobile}`
   });
 
   // Notification
@@ -1534,6 +1560,8 @@ app.post('/api/wallet/withdraw', (req, res) => {
     createdAt: new Date().toISOString(),
     linkTab: 'wallet'
   });
+
+  saveDbToDisk();
 
   res.json({
     success: true,

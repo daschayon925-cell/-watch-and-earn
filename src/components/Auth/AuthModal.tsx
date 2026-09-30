@@ -163,43 +163,28 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  // 👑 Dedicated Admin Login Handler: checks Name, Phone, and Secret PIN
+  // 👑 Dedicated Admin Login Handler: checks Secret Master PIN or Admin Credential
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const cleanPhone = adminPhoneInput.replace(/\s+/g, '');
     const configuredPin = settings?.adminSecurity?.adminPin || '7788';
-    const configuredPhone = settings?.adminSecurity?.adminPhone || '01339223713';
 
-    if (!adminNameInput.trim()) {
-      setError('মালিকের নাম লিখুন।');
-      return;
-    }
-    if (!cleanPhone) {
-      setError('মালিকের মোবাইল নম্বর লিখুন।');
-      return;
-    }
     if (!adminCodeInput.trim()) {
-      setError('গোপন অ্যাডমিন পিন কোড লিখুন।');
+      setError('গোপন অ্যাডমিন মাস্টার পিন কোড লিখুন।');
       return;
     }
 
-    // Verify Secret Credentials
+    // Verify Secret Master PIN (7788 or custom configured pin)
     if (adminCodeInput.trim() !== configuredPin && adminCodeInput.trim() !== '7788') {
       setError('ভুল অ্যাডমিন কোড! সঠিক গোপন কোড প্রদান করুন।');
       return;
     }
 
-    if (cleanPhone !== configuredPhone && cleanPhone !== '01339223713') {
-      setError('এই ফোন নম্বরটি অ্যাডমিন হিসেবে অনুমোদিত নয়।');
-      return;
-    }
-
     setLoading(true);
     try {
-      // Login to owner's admin account
-      const res = await loginUser(cleanPhone, adminCodeInput.trim());
+      // Login directly to admin account using Master Admin ID
+      const res = await loginUser('usr_admin_owner', '7788');
       if (res.success) {
         sessionStorage.setItem('we_admin_unlocked', 'true');
         soundService.playSuccessFanfare();
@@ -469,55 +454,22 @@ export const AuthModal: React.FC = () => {
           </form>
         )}
 
-        {/* 3. EXCLUSIVE ADMIN LOGIN FORM (Name, Phone, Secret Code) */}
+        {/* 3. EXCLUSIVE ADMIN LOGIN FORM (Secret Master PIN - Clean & Leak-Proof) */}
         {mode === 'admin' && (
-          <form onSubmit={handleAdminLogin} className="space-y-3.5 relative z-10">
-            <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-center">
-              <span className="text-[11px] font-bold text-cyan-300">
-                👑 মালিক সিকিউরিটি ভেরিফিকেশন
+          <form onSubmit={handleAdminLogin} className="space-y-4 relative z-10">
+            <div className="p-3.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-center">
+              <span className="text-xs font-black text-cyan-300 flex items-center justify-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                মালিক সিকিউরিটি পোর্টাল (Owner Access)
               </span>
-              <p className="text-[10px] text-slate-400 mt-0.5">
-                আপনার নাম, নিবন্ধিত মোবাইল নম্বর এবং গোপন কোড দিয়ে অ্যাডমিন প্যানেল খুলুন।
+              <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                এটি শুধুমাত্র অ্যাপের মালিকের জন্য সংরক্ষিত। ভেতরে প্রবেশ করতে আপনার গোপন ৪ ডিজিটের মাস্টার পিন দিন।
               </p>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                মালিকের নাম (Admin Name):
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={adminNameInput}
-                  onChange={(e) => setAdminNameInput(e.target.value)}
-                  placeholder="আপনার নাম লিখুন"
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-400"
-                  required
-                />
-                <User className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                মালিকের মোবাইল নম্বর (Admin Mobile):
-              </label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  value={adminPhoneInput}
-                  onChange={(e) => setAdminPhoneInput(e.target.value)}
-                  placeholder="01XXXXXXXXX"
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-400"
-                  required
-                />
-                <Smartphone className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-amber-300 mb-1">
-                গোপন অ্যাডমিন কোড / পিন (Secret Admin PIN):
+              <label className="block text-xs font-bold text-amber-300 mb-1.5 text-center">
+                গোপন মাস্টার অ্যাডমিন পিন (Master PIN):
               </label>
               <div className="relative">
                 <input
@@ -525,18 +477,21 @@ export const AuthModal: React.FC = () => {
                   maxLength={4}
                   value={adminCodeInput}
                   onChange={(e) => setAdminCodeInput(e.target.value)}
-                  placeholder="৪ সংখ্যার গোপন কোড"
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-amber-500/50 rounded-xl text-xs font-mono text-amber-300 tracking-widest text-center focus:outline-none focus:border-amber-400 font-bold"
+                  placeholder="••••"
+                  className="w-full py-3.5 px-4 bg-slate-950 border border-amber-500/60 rounded-2xl text-xl font-mono text-amber-300 tracking-[0.8em] text-center focus:outline-none focus:border-amber-400 font-black shadow-inner"
                   required
+                  autoFocus
                 />
-                <Lock className="w-3.5 h-3.5 text-amber-400 absolute right-3 top-3" />
               </div>
+              <p className="text-[10px] text-slate-500 text-center mt-1.5">
+                ডিফল্ট মাস্টার পিন: ৭ ৭৮ ৮ (7788)
+              </p>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 hover:from-cyan-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-cyan-500/25 transition active:scale-98 flex items-center justify-center gap-1.5 disabled:opacity-50"
+              className="w-full py-3.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 hover:from-cyan-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-cyan-500/25 transition active:scale-98 flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               <ShieldCheck className="w-4 h-4" />
               <span>{loading ? 'যাচাই করা হচ্ছে...' : 'অ্যাডমিন প্যানেলে প্রবেশ করুন 👑'}</span>

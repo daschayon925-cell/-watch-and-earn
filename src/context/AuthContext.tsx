@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
 import { api, setApiUserId } from '../services/api';
+import { cloudDb } from '../services/cloudDb';
 
 interface AuthContextType {
   user: User | null;
@@ -24,7 +25,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshUser = async () => {
     try {
       const u = await api.getProfile();
-      setUser(u || null);
+      if (u) {
+        setUser(u);
+        // Persist to Google Cloud Firestore permanently
+        cloudDb.saveUser(u);
+      } else {
+        const savedUid = localStorage.getItem('we_user_id');
+        if (savedUid) {
+          const cloudUser = await cloudDb.getUser(savedUid);
+          if (cloudUser) {
+            setUser(cloudUser);
+          }
+        }
+      }
     } catch (err) {
       console.error('Failed to load user profile', err);
     }
@@ -41,10 +54,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('we_user_id', uid);
     try {
       const u = await api.getProfile();
-      setUser(u || null);
+      if (u) {
+        setUser(u);
+        cloudDb.saveUser(u);
+      } else {
+        // Fetch from Cloud DB directly if server just restarted
+        const cloudUser = await cloudDb.getUser(uid);
+        if (cloudUser) {
+          setUser(cloudUser);
+        } else {
+          setUser(null);
+        }
+      }
     } catch (err) {
       console.error('Login error', err);
-      setUser(null);
+      // Fallback to cloud db
+      const cloudUser = await cloudDb.getUser(uid);
+      if (cloudUser) setUser(cloudUser);
+      else setUser(null);
     } finally {
       setLoading(false);
     }
@@ -66,6 +93,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setApiUserId(res.user.uid);
         localStorage.setItem('we_user_id', res.user.uid);
         setUser(res.user);
+        // Save permanently in Firestore cloud database
+        await cloudDb.saveUser(res.user);
         return { success: true, message: res.message, bonusAdded: res.bonusAdded };
       }
       return { success: false, message: res.message || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে।' };
@@ -81,10 +110,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setApiUserId(res.user.uid);
         localStorage.setItem('we_user_id', res.user.uid);
         setUser(res.user);
+        // Save permanently in Cloud DB
+        await cloudDb.saveUser(res.user);
         return { success: true, message: res.message };
       }
+
+      // If server lost state due to Render restart, check Cloud Firestore directly!
+      const clean = (identifier || '').replace(/\s+/g, '');
+      const cloudUser = await cloudDb.findUserByPhone(clean);
+      if (cloudUser) {
+        if (cloudUser.password && password && cloudUser.password !== password.trim()) {
+          return { success: false, message: 'ভুল পাসওয়ার্ড! আপনার সঠিক পাসওয়ার্ডটি লিখুন।' };
+        }
+        setApiUserId(cloudUser.uid);
+        localStorage.setItem('we_user_id', cloudUser.uid);
+        setUser(cloudUser);
+        // Re-sync user back to server API
+        try {
+          await api.register({
+            displayName: cloudUser.displayName,
+            phone: cloudUser.phone,
+            password: cloudUser.password,
+            otpCode: 'bypass_synced'
+          });
+        } catch (e) {}
+        return { success: true, message: 'লগইন সফল হয়েছে (ক্লাউড ডাটাবেস থেকে পুনরুদ্ধার করা হয়েছে)!' };
+      }
+
       return { success: false, message: res.message || 'লগইন ব্যর্থ হয়েছে।' };
     } catch (err: any) {
+      // Cloud fallback on network error
+      const clean = (identifier || '').replace(/\s+/g, '');
+      const cloudUser = await cloudDb.findUserByPhone(clean);
+      if (cloudUser) {
+        if (cloudUser.password && password && cloudUser.password !== password.trim()) {
+          return { success: false, message: 'ভুল পাসওয়ার্ড! আপনার সঠিক পাসওয়ার্ডটি লিখুন।' };
+        }
+        setApiUserId(cloudUser.uid);
+        localStorage.setItem('we_user_id', cloudUser.uid);
+        setUser(cloudUser);
+        return { success: true, message: 'লগইন সফল হয়েছে!' };
+      }
       return { success: false, message: err.message || 'লগইন করতে সমস্যা হচ্ছে।' };
     }
   };
@@ -92,7 +158,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateProfile = async (data: { displayName?: string; phone?: string; photoURL?: string }) => {
     try {
       const updated = await api.updateProfile(data);
-      setUser(updated);
+      if (updated) {
+        setUser(updated);
+        cloudDb.saveUser(updated);
+      }
     } catch (err) {
       console.error('Update profile error', err);
       throw err;

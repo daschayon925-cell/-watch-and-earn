@@ -1,129 +1,75 @@
 {
+  "$schema": "https://raw.githubusercontent.com/firebase/firebase-tools/master/schema/firestore-blueprint.json",
   "entities": {
-    "User": {
-      "title": "User Profile",
-      "description": "User account, coins balance, activity stats, and anti-fraud metrics",
-      "type": "object",
-      "properties": {
-        "uid": { "type": "string", "maxLength": 128 },
-        "displayName": { "type": "string", "maxLength": 100 },
-        "email": { "type": "string", "format": "email", "maxLength": 120 },
-        "photoURL": { "type": "string", "maxLength": 500 },
-        "coins": { "type": "number" },
-        "pendingWithdrawalCoins": { "type": "number" },
-        "lifetimeCoins": { "type": "number" },
-        "todayCoins": { "type": "number" },
-        "todayVideosCount": { "type": "number" },
-        "streakDays": { "type": "number" },
-        "lastCheckInDate": { "type": "string", "maxLength": 20 },
-        "accountStatus": { "type": "string", "enum": ["active", "flagged", "suspended"] },
-        "role": { "type": "string", "enum": ["user", "admin"] },
-        "riskScore": { "type": "number" },
-        "referralCode": { "type": "string", "maxLength": 20 },
-        "referredBy": { "type": "string", "maxLength": 128 },
-        "referralCount": { "type": "number" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["uid", "displayName", "email", "coins", "accountStatus", "role"]
+    "users": {
+      "description": "User profiles, wallet balances, credentials and activity logs",
+      "fields": {
+        "id": { "type": "string", "description": "Unique user identifier (UID or phone-based)" },
+        "name": { "type": "string", "description": "User full name" },
+        "phone": { "type": "string", "description": "User Bangladeshi phone number" },
+        "password": { "type": "string", "description": "Hashed or secured user password" },
+        "coins": { "type": "number", "description": "Current active coin balance" },
+        "totalEarned": { "type": "number", "description": "Lifetime earned coins" },
+        "totalWithdrawn": { "type": "number", "description": "Lifetime withdrawn amount in BDT" },
+        "referralCode": { "type": "string", "description": "User referral code" },
+        "referredBy": { "type": "string", "description": "Referrer code if referred" },
+        "totalReferrals": { "type": "number", "description": "Count of referred users" },
+        "isBanned": { "type": "boolean", "description": "Whether user is suspended by admin" },
+        "joinedAt": { "type": "string", "description": "Registration ISO timestamp" },
+        "lastActiveAt": { "type": "string", "description": "Last active ISO timestamp" },
+        "lastBonusClaimAt": { "type": "string", "description": "Last daily bonus claim ISO timestamp" },
+        "todayAdClicks": { "type": "number", "description": "Daily ad click count" },
+        "lastAdClickDate": { "type": "string", "description": "YYYY-MM-DD for ad click limit resets" },
+        "watchedVideos": { "type": "array", "description": "Array of watched video IDs" }
+      }
     },
-    "Video": {
-      "title": "Video Entity",
-      "description": "Licensed or platform-owned vertical video content",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string", "maxLength": 64 },
-        "title": { "type": "string", "maxLength": 200 },
-        "description": { "type": "string", "maxLength": 500 },
-        "videoUrl": { "type": "string", "maxLength": 1000 },
-        "thumbnailUrl": { "type": "string", "maxLength": 1000 },
-        "duration": { "type": "number" },
-        "category": { "type": "string", "enum": ["entertainment", "food", "travel", "tech", "comedy", "music", "culture"] },
-        "creatorName": { "type": "string", "maxLength": 100 },
-        "creatorHandle": { "type": "string", "maxLength": 50 },
-        "rewardCoins": { "type": "number" },
-        "contentLicense": { "type": "string", "enum": ["owned", "licensed", "creator_permission", "official_embed"] },
-        "licenseAttribution": { "type": "string", "maxLength": 300 },
-        "copyrightStatus": { "type": "string", "enum": ["verified", "pending", "reported"] },
-        "isActive": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "title", "videoUrl", "contentLicense", "rewardCoins", "isActive"]
+    "settings": {
+      "description": "Global system configurations and Adsterra ad codes",
+      "fields": {
+        "siteName": { "type": "string", "description": "Application display name" },
+        "siteNotice": { "type": "string", "description": "Top marquee/banner notice" },
+        "coinRate": { "type": "number", "description": "100 coins rate in BDT" },
+        "minWithdrawCoins": { "type": "number", "description": "Minimum withdrawal threshold" },
+        "referralRewardCoins": { "type": "number", "description": "Referral bonus coins" },
+        "videoRewardCoins": { "type": "number", "description": "Coins rewarded per video watch" },
+        "watchDurationSeconds": { "type": "number", "description": "Required watch duration in seconds" },
+        "telegramSupportUrl": { "type": "string", "description": "Telegram help channel link" },
+        "whatsappSupportUrl": { "type": "string", "description": "WhatsApp contact link" },
+        "isWithdrawalActive": { "type": "boolean", "description": "Withdrawal system toggle" },
+        "adsConfig": { "type": "object", "description": "Adsterra configuration and direct links" }
+      }
     },
-    "RewardTransaction": {
-      "title": "Reward Transaction",
-      "description": "Immutable ledger record for user coin earnings and spends",
-      "type": "object",
-      "properties": {
-        "transactionId": { "type": "string", "maxLength": 64 },
-        "userId": { "type": "string", "maxLength": 128 },
-        "type": { "type": "string", "enum": ["WATCH_REWARD", "AD_REWARD", "DAILY_BONUS", "MILESTONE_REWARD", "REFERRAL_BONUS", "WITHDRAWAL", "ADMIN_ADJUSTMENT"] },
-        "amount": { "type": "number" },
-        "bdtEquivalent": { "type": "number" },
-        "source": { "type": "string", "maxLength": 200 },
-        "videoId": { "type": "string", "maxLength": 64 },
-        "status": { "type": "string", "enum": ["COMPLETED", "PENDING", "REJECTED"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["transactionId", "userId", "type", "amount", "status", "createdAt"]
+    "videos": {
+      "description": "Admin managed YouTube videos for watch-to-earn",
+      "fields": {
+        "id": { "type": "string", "description": "Unique video ID" },
+        "title": { "type": "string", "description": "Bangla video title" },
+        "youtubeId": { "type": "string", "description": "YouTube 11-char video ID" },
+        "coinsReward": { "type": "number", "description": "Coins reward for full watch" },
+        "durationSeconds": { "type": "number", "description": "Duration required to watch" },
+        "category": { "type": "string", "description": "Video category tag" },
+        "thumbnail": { "type": "string", "description": "Thumbnail preview URL" },
+        "isActive": { "type": "boolean", "description": "Whether video is visible" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      }
     },
-    "Withdrawal": {
-      "title": "Withdrawal Request",
-      "description": "bKash/Nagad payout request ledger",
-      "type": "object",
-      "properties": {
-        "withdrawalId": { "type": "string", "maxLength": 64 },
-        "userId": { "type": "string", "maxLength": 128 },
-        "userName": { "type": "string", "maxLength": 100 },
-        "method": { "type": "string", "enum": ["bKash", "Nagad"] },
-        "accountType": { "type": "string", "enum": ["Personal", "Agent"] },
-        "mobileNumber": { "type": "string", "maxLength": 15, "pattern": "^01[3-9][0-9]{8}$" },
-        "coins": { "type": "number" },
-        "bdtAmount": { "type": "number" },
-        "status": { "type": "string", "enum": ["Pending", "Approved", "Paid", "Rejected"] },
-        "trxId": { "type": "string", "maxLength": 100 },
-        "requestedAt": { "type": "string", "format": "date-time" },
-        "processedAt": { "type": "string", "format": "date-time" },
-        "adminNote": { "type": "string", "maxLength": 300 }
-      },
-      "required": ["withdrawalId", "userId", "method", "mobileNumber", "coins", "bdtAmount", "status", "requestedAt"]
-    },
-    "Report": {
-      "title": "Report Entity",
-      "description": "User copyright or violation report",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string", "maxLength": 64 },
-        "videoId": { "type": "string", "maxLength": 64 },
-        "userId": { "type": "string", "maxLength": 128 },
-        "reason": { "type": "string", "maxLength": 100 },
-        "details": { "type": "string", "maxLength": 500 },
-        "status": { "type": "string", "enum": ["pending", "reviewed", "action_taken"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "videoId", "userId", "reason", "status", "createdAt"]
-    }
-  },
-  "firestore": {
-    "/users/{userId}": {
-      "schema": { "$ref": "#/entities/User" },
-      "description": "User account documents containing balance and profile"
-    },
-    "/videos/{videoId}": {
-      "schema": { "$ref": "#/entities/Video" },
-      "description": "Public catalog of licensed videos"
-    },
-    "/rewardTransactions/{transactionId}": {
-      "schema": { "$ref": "#/entities/RewardTransaction" },
-      "description": "Ledger of all rewards and wallet adjustments"
-    },
-    "/withdrawals/{withdrawalId}": {
-      "schema": { "$ref": "#/entities/Withdrawal" },
-      "description": "Payout requests for bKash and Nagad"
-    },
-    "/reports/{reportId}": {
-      "schema": { "$ref": "#/entities/Report" },
-      "description": "Copyright and content moderation reports"
+    "withdrawals": {
+      "description": "Cashout requests from users for bKash, Nagad, and Rocket",
+      "fields": {
+        "id": { "type": "string", "description": "Unique withdrawal request ID" },
+        "userId": { "type": "string", "description": "User identifier" },
+        "userName": { "type": "string", "description": "User name" },
+        "userPhone": { "type": "string", "description": "User account phone" },
+        "method": { "type": "string", "description": "bkash, nagad, or rocket" },
+        "accountType": { "type": "string", "description": "Personal or Agent" },
+        "accountNumber": { "type": "string", "description": "Payment receiving number" },
+        "coins": { "type": "number", "description": "Requested coins amount" },
+        "amountBDT": { "type": "number", "description": "Converted BDT amount" },
+        "status": { "type": "string", "description": "pending, approved, or rejected" },
+        "requestedAt": { "type": "string", "description": "Request creation ISO timestamp" },
+        "processedAt": { "type": "string", "description": "Admin resolution ISO timestamp" },
+        "adminNote": { "type": "string", "description": "Optional admin memo or TrxID" }
+      }
     }
   }
 }

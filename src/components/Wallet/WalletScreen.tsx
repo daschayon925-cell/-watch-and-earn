@@ -36,7 +36,14 @@ export const WalletScreen: React.FC = () => {
   const [method, setMethod] = useState<'bKash' | 'Nagad' | 'Recharge'>('Recharge');
   const [operator, setOperator] = useState<string>('গ্রামীণফোন (GP)');
   const [accountType, setAccountType] = useState<'Personal' | 'Agent' | 'Prepaid' | 'Postpaid'>('Prepaid');
-  const [mobileNumber, setMobileNumber] = useState(user?.phone || '');
+  // Auto-fill user's own registered phone ONLY if it is a real standard user phone, never fallback to owner phone
+  const [mobileNumber, setMobileNumber] = useState<string>(() => {
+    if (user?.phone && user.role !== 'admin') {
+      return user.phone;
+    }
+    return '';
+  });
+  const [withdrawPassword, setWithdrawPassword] = useState('');
   const [bdtAmountToWithdraw, setBdtAmountToWithdraw] = useState<number>(30);
   const [withdrawing, setWithdrawing] = useState(false);
   const [phoneError, setPhoneError] = useState('');
@@ -125,13 +132,19 @@ export const WalletScreen: React.FC = () => {
       return;
     }
 
+    if (user?.password && !withdrawPassword.trim()) {
+      showToast('নিরাপত্তা নিশ্চায়নের জন্য আপনার অ্যাকাউন্টের পাসওয়ার্ড দিন।', '', 'error');
+      return;
+    }
+
     setWithdrawing(true);
     try {
       const res = await api.requestWithdrawal({
         method,
         accountType: method === 'Recharge' ? (`${operator} (${accountType})` as any) : accountType,
         mobileNumber: mobileNumber.replace(/\s+/g, ''),
-        coins: coinsNeeded
+        coins: coinsNeeded,
+        password: withdrawPassword.trim()
       });
 
       if (res.success) {
@@ -238,7 +251,15 @@ export const WalletScreen: React.FC = () => {
 
         {/* Withdraw Action Button */}
         <button
-          onClick={() => setShowWithdrawModal(true)}
+          onClick={() => {
+            if (user?.role === 'admin') {
+              setMobileNumber('');
+            } else {
+              setMobileNumber(user?.phone || '');
+            }
+            setWithdrawPassword('');
+            setShowWithdrawModal(true);
+          }}
           className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition active:scale-98"
         >
           <ArrowDownLeft className="w-4 h-4" />
@@ -613,6 +634,26 @@ export const WalletScreen: React.FC = () => {
                 </div>
               </div>
 
+              {/* 🔒 অ্যাকাউন্ট সিকিউরিটি ভেরিফিকেশন (উন্নত নিরাপত্তা স্তর) */}
+              <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>নিরাপত্তা নিশ্চায়ন (Security Protection)</span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  টাকা উত্তোলন সুরক্ষিত রাখতে আপনার অ্যাকাউন্টের পাসওয়ার্ড দিন:
+                </p>
+                <div className="relative">
+                  <input
+                    type="password"
+                    value={withdrawPassword}
+                    onChange={(e) => setWithdrawPassword(e.target.value)}
+                    placeholder="অ্যাকাউন্টের পাসওয়ার্ড লিখুন"
+                    className="w-full px-3.5 py-2.5 bg-[#090D16] border border-slate-700 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
               {/* Warning box if balance is insufficient */}
               {(user?.coins || 0) < coinsRequired && (
                 <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 space-y-1">
@@ -630,13 +671,14 @@ export const WalletScreen: React.FC = () => {
               <button
                 type="submit"
                 disabled={withdrawing || (user?.coins || 0) < coinsRequired}
-                className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 text-slate-950 font-black text-sm rounded-2xl shadow-lg shadow-emerald-500/25 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 text-slate-950 font-black text-sm rounded-2xl shadow-lg shadow-emerald-500/25 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
+                <ShieldCheck className="w-4 h-4" />
                 {withdrawing 
-                  ? 'প্রক্রিয়াধীন...' 
+                  ? 'নিরাপদে প্রক্রিয়াধীন...' 
                   : (user?.coins || 0) < coinsRequired
                     ? 'পর্যাপ্ত কয়েন নেই'
-                    : `উইথড্র সাবমিট করুন (৳${bdtAmountToWithdraw})`}
+                    : `নিরাপদে উইথড্র সাবমিট করুন (৳${bdtAmountToWithdraw})`}
               </button>
             </form>
           </div>
