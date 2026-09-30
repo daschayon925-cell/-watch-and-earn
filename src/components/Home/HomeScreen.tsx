@@ -22,6 +22,10 @@ import { Video } from '../../types';
 import { api } from '../../services/api';
 import { soundService } from '../../services/audio';
 import { LivePayoutTicker } from './LivePayoutTicker';
+import { LivePayoutToast } from './LivePayoutToast';
+import { DailyCheckInStreak } from './DailyCheckInStreak';
+import { LuckySpinModal } from './LuckySpinModal';
+import { WeeklyLeaderboardModal } from './WeeklyLeaderboardModal';
 import { MiniBannerAd } from '../Common/MiniBannerAd';
 import { AdInterstitial } from '../Feed/AdInterstitial';
 
@@ -41,6 +45,8 @@ export const HomeScreen: React.FC = () => {
   const [checkingIn, setCheckingIn] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
   const [adCountdown, setAdCountdown] = useState(0);
+  const [showSpinModal, setShowSpinModal] = useState(false);
+  const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
 
   const handleOpenYouTubeApp = (topic?: string) => {
     if (topic) setSelectedCategory(topic);
@@ -150,6 +156,12 @@ export const HomeScreen: React.FC = () => {
 
       {/* Live Verified Cashout Proof Ticker (ব্যবহারকারীর বিশ্বাস ও ভাইরাল ইনগেজমেন্ট বাড়ানোর জন্য) */}
       <LivePayoutTicker />
+
+      {/* 🎁 ৭ দিনের ডেইলি চেক-ইন বোনাস স্ট্রিম */}
+      <DailyCheckInStreak />
+
+      {/* 🚀 লাইভ পেমেন্ট প্রুফ ফ্লোটিং নোটিফিকেশন */}
+      <LivePayoutToast />
 
       {/* 📢 অফিশিয়াল নোটিশ বোর্ড */}
       {settings?.activeNotice?.enabled && settings.activeNotice.title && (
@@ -268,28 +280,38 @@ export const HomeScreen: React.FC = () => {
             </button>
           </div>
 
-          {/* Quick Shortcuts to New Games & Tasks Feature */}
-          <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-800/80">
+          {/* Quick Shortcuts to Spin, Leaderboard, Games & Tasks */}
+          <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t border-slate-800/80">
+            <button
+              onClick={() => setShowSpinModal(true)}
+              className="p-2 rounded-2xl bg-gradient-to-b from-amber-500/20 to-yellow-600/10 border border-amber-500/40 hover:border-amber-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
+            >
+              <span className="text-xl group-hover:scale-110 transition">🎡</span>
+              <span className="text-[10px] font-black text-amber-300 block mt-0.5">স্পিন হুইল</span>
+            </button>
+
+            <button
+              onClick={() => setShowLeaderboardModal(true)}
+              className="p-2 rounded-2xl bg-gradient-to-b from-yellow-500/20 to-amber-700/10 border border-yellow-500/40 hover:border-yellow-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
+            >
+              <span className="text-xl group-hover:scale-110 transition">🏆</span>
+              <span className="text-[10px] font-black text-yellow-300 block mt-0.5">লিডারবোর্ড</span>
+            </button>
+
             <button
               onClick={() => setActiveTab('games')}
-              className="p-2.5 rounded-2xl bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-blue-500/30 hover:border-blue-400 text-left transition flex items-center gap-2.5"
+              className="p-2 rounded-2xl bg-gradient-to-b from-blue-500/20 to-indigo-700/10 border border-blue-500/40 hover:border-blue-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
             >
-              <span className="text-xl">🎲</span>
-              <div>
-                <span className="text-xs font-black text-blue-300 block">গেমিং হাব</span>
-                <span className="text-[10px] text-slate-400">লুডু, ক্যারাম, স্পিন</span>
-              </div>
+              <span className="text-xl group-hover:scale-110 transition">🎲</span>
+              <span className="text-[10px] font-black text-blue-300 block mt-0.5">গেমিং হাব</span>
             </button>
 
             <button
               onClick={() => setActiveTab('tasks')}
-              className="p-2.5 rounded-2xl bg-gradient-to-r from-purple-900/40 to-fuchsia-900/40 border border-purple-500/30 hover:border-purple-400 text-left transition flex items-center gap-2.5"
+              className="p-2 rounded-2xl bg-gradient-to-b from-purple-500/20 to-fuchsia-700/10 border border-purple-500/40 hover:border-purple-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
             >
-              <span className="text-xl">🧠</span>
-              <div>
-                <span className="text-xs font-black text-purple-300 block">কুইজ ও টাস্ক</span>
-                <span className="text-[10px] text-slate-400">অংক, GK, ক্যাপচা</span>
-              </div>
+              <span className="text-xl group-hover:scale-110 transition">🧠</span>
+              <span className="text-[10px] font-black text-purple-300 block mt-0.5">কুইজ/টাস্ক</span>
             </button>
           </div>
         </div>
@@ -535,6 +557,18 @@ export const HomeScreen: React.FC = () => {
 
       {/* 📢 খালি জায়গায় ছোট ব্যানার অ্যাড (Mini Banner Ad Spot) */}
       <MiniBannerAd slotId="home_bottom_slot" category="finance" />
+
+      {/* 🎡 Lucky Spin Wheel Modal */}
+      <LuckySpinModal
+        isOpen={showSpinModal}
+        onClose={() => setShowSpinModal(false)}
+      />
+
+      {/* 🏆 Weekly Leaderboard Modal */}
+      <WeeklyLeaderboardModal
+        isOpen={showLeaderboardModal}
+        onClose={() => setShowLeaderboardModal(false)}
+      />
 
       {/* Platform Fair-Play Disclaimer */}
       <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 text-[10px] text-slate-400 space-y-1">

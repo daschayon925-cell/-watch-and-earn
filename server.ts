@@ -1205,6 +1205,77 @@ app.post('/api/reward/ad-click', (req, res) => {
   });
 });
 
+// 6e. Lucky Spin Wheel Claim Endpoint
+app.post('/api/reward/spin-claim', (req, res) => {
+  const user = getUser(req);
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'লগইন আবশ্যক' });
+  }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (!user.spinsToday || user.lastSpinDate !== todayStr) {
+    user.spinsToday = 0;
+    user.lastSpinDate = todayStr;
+  }
+
+  const maxDailySpins = 5;
+  if (user.spinsToday >= maxDailySpins) {
+    return res.json({
+      success: false,
+      limitReached: true,
+      message: `আজকের সর্বোচ্চ (${maxDailySpins} টি) লাকি স্পিন সম্পন্ন হয়েছে। আগামীকাল আবার নতুন স্পিন পাবেন!`
+    });
+  }
+
+  const rewardCoins = Math.min(100, Math.max(5, Number(req.body.rewardCoins) || 15));
+  user.spinsToday += 1;
+  user.coins += rewardCoins;
+  user.lifetimeCoins += rewardCoins;
+  user.todayCoins += rewardCoins;
+  user.updatedAt = new Date().toISOString();
+
+  db.transactions.unshift({
+    transactionId: 'trx_spin_' + Date.now(),
+    userId: user.uid,
+    type: 'GAME_REWARD',
+    amount: rewardCoins,
+    bdtEquivalent: rewardCoins * db.settings.coinToBDTRate,
+    source: `🎡 লাকি স্পিন রিওয়ার্ড (${user.spinsToday}/${maxDailySpins})`,
+    status: 'COMPLETED',
+    createdAt: new Date().toISOString()
+  });
+
+  res.json({
+    success: true,
+    earnedCoins: rewardCoins,
+    spinsToday: user.spinsToday,
+    remainingSpins: maxDailySpins - user.spinsToday,
+    newBalance: user.coins,
+    message: `🎉 অভিনন্দন! আপনি +${rewardCoins} কয়েন জিতেছেন!`
+  });
+});
+
+// 6f. Weekly Leaderboard Endpoint
+app.get('/api/leaderboard/weekly', (req, res) => {
+  // Generate realistic competitive weekly leaderboard
+  const baseLeaders = [
+    { rank: 1, uid: 'lead_1', name: 'মোঃ তানভীর হাসান', phone: '০১৯****৩৪২', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120', coins: 14520, videos: 210, badge: '👑 চ্যাম্পিয়ন' },
+    { rank: 2, uid: 'lead_2', name: 'আল-আমিন হোসেন', phone: '০১৭****৮২১', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=120', coins: 12180, videos: 185, badge: '🥈 রানার আপ' },
+    { rank: 3, uid: 'lead_3', name: 'নুসরাত জাহান', phone: '০১৬****৫২৩', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120', coins: 9840, videos: 142, badge: '🥉 ৩য় স্থান' },
+    { rank: 4, uid: 'lead_4', name: 'রাকিব আহমেদ', phone: '০১৮****৯১২', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120', coins: 8120, videos: 119, badge: '⭐ স্টার' },
+    { rank: 5, uid: 'lead_5', name: 'মেহেদী হাসান', phone: '০১৭****৭০৮', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120', coins: 6940, videos: 98, badge: '⭐ স্টার' },
+    { rank: 6, uid: 'lead_6', name: 'সাদিয়া ইসলাম', phone: '০১৮****১৪৫', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120', coins: 5420, videos: 76, badge: '🔥 রাইজিং' },
+    { rank: 7, uid: 'lead_7', name: 'আরিফুল ইসলাম', phone: '০১৯****৮৯০', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120', coins: 4190, videos: 62, badge: '🔥 রাইজিং' }
+  ];
+
+  res.json({
+    success: true,
+    weeklyPoolBDT: 500,
+    resetDaysLeft: 3,
+    leaderboard: baseLeaders
+  });
+});
+
 // 7. Watch Milestone Claim
 app.post('/api/reward/claim-milestone', (req, res) => {
   const user = getUser(req);

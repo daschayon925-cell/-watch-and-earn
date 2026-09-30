@@ -51,6 +51,11 @@ export interface User {
   referralCode: string;
   referredBy?: string;
   referralCount: number;
+  adClicksToday?: number;
+  lastAdClickDate?: string;
+  spinsToday?: number;
+  lastSpinDate?: string;
+  isVerifiedMember?: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -213,6 +213,18 @@ export const api = {
     });
   },
 
+  claimSpinWheel: async (rewardCoins: number) => {
+    return await safeJsonFetch<{ success: boolean; earnedCoins?: number; spinsToday?: number; remainingSpins?: number; newBalance?: number; message?: string; limitReached?: boolean }>('/api/reward/spin-claim', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ rewardCoins })
+    });
+  },
+
+  getWeeklyLeaderboard: async () => {
+    return await safeJsonFetch<{ success: boolean; weeklyPoolBDT: number; resetDaysLeft: number; leaderboard: any[] }>('/api/leaderboard/weekly');
+  },
+
   claimReferral: async (referralCode: string) => {
     return await safeJsonFetch('/api/reward/referral-claim', {
       method: 'POST',

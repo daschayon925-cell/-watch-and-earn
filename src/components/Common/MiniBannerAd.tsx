@@ -12,8 +12,13 @@ interface MiniBannerProps {
 
 export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', category = 'finance' }) => {
   const { showToast, triggerConfetti, settings } = useApp();
-  const { refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [clicked, setClicked] = useState(false);
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const clicksToday = user?.lastAdClickDate === todayStr ? (user?.adClicksToday || 0) : 0;
+  const maxClicks = 10;
+  const isLimitReached = clicksToday >= maxClicks;
 
   const ads = [
     {
@@ -67,6 +72,11 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
   const currentAd = ads[adIndex];
 
   const handleAdClick = async () => {
+    if (isLimitReached) {
+      showToast('🔒 আজকের সীমা শেষ!', 'আপনি আজকে সর্বোচ্চ ১০টি বিজ্ঞাপনে ক্লিক করেছেন। অ্যাকাউন্ট সুরক্ষার জন্য আগামীকাল আবার চালু হবে।', 'info');
+      return;
+    }
+
     // Primary monetize via Adsterra Direct Link if configured
     const targetUrl = settings?.adsConfig?.adsterraDirectLink?.trim() || currentAd.link;
     window.open(targetUrl, '_blank');
@@ -78,9 +88,10 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
         soundService.playCoinReward();
         triggerConfetti();
         await refreshUser();
-        showToast(`🎁 +${res.earnedCoins || 15} কয়েন বোনাস পেয়ে গেছেন!`, `আজ আর ${res.remainingClicks || 0} টি অ্যাডে ক্লিক করে কয়েন নিতে পারবেন।`, 'coin');
+        showToast(`🎁 +${res.earnedCoins || 15} কয়েন বোনাস পেয়ে গেছেন!`, `আজ আর ${res.remainingClicks || 0} টি অ্যাডে ক্লিক করতে পারবেন।`, 'coin');
       } else if (res?.limitReached) {
-        showToast('আজকের বিজ্ঞাপনের ক্লিকের সীমা শেষ!', res.message || 'আগামীকাল আবার ক্লিক করে কয়েন নিন।', 'info');
+        showToast('🔒 আজকের সীমা সম্পন্ন হয়েছে!', res.message || '১০টি ক্লিক পূর্ণ হয়েছে। আগামীকাল আবার নতুন ক্লিক চালু হবে।', 'info');
+        await refreshUser();
       }
     } catch (e) {
       console.error(e);
@@ -88,7 +99,7 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
   };
 
   return (
-    <div className={`w-full rounded-2xl bg-gradient-to-r ${currentAd.gradient} border border-amber-500/30 p-2.5 shadow-lg relative overflow-hidden transition-all hover:border-amber-400/60`}>
+    <div className={`w-full rounded-2xl bg-gradient-to-r ${currentAd.gradient} border ${isLimitReached ? 'border-slate-800 opacity-75' : 'border-amber-500/30'} p-2.5 shadow-lg relative overflow-hidden transition-all hover:border-amber-400/60`}>
       {/* Tiny Google/Network Ad Marker */}
       <div className="flex items-center justify-between gap-1 mb-1">
         <div className="flex items-center gap-1.5">
@@ -100,9 +111,17 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
           </span>
         </div>
 
-        <div className="flex items-center gap-1 text-[8px] text-amber-400/90 font-semibold">
-          <Coins className="w-2.5 h-2.5 text-amber-400" />
-          <span>+১৫ কয়েন (দিনে সর্বোচ্চ ১০ বার)</span>
+        <div className="flex items-center gap-1 text-[8px] font-semibold">
+          {isLimitReached ? (
+            <span className="text-rose-400 bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-500/30">
+              🔒 দৈনিক ১০/১০ শেষ (কাল চালু হবে)
+            </span>
+          ) : (
+            <div className="flex items-center gap-1 text-amber-400/90">
+              <Coins className="w-2.5 h-2.5 text-amber-400" />
+              <span>+১৫ কয়েন ({clicksToday}/১০ সম্পন্ন)</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -121,17 +140,22 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
               {currentAd.title}
             </h5>
             <p className="text-[9px] text-slate-300 truncate mt-0.5">
-              {currentAd.desc}
+              {isLimitReached ? 'আজকের ক্লিকের কোটা পূর্ণ। কাল আবার পয়েন্ট পাবেন।' : currentAd.desc}
             </p>
           </div>
         </div>
 
         <button
           onClick={handleAdClick}
-          className="shrink-0 px-2.5 py-1.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-black text-[10px] rounded-xl shadow-md active:scale-95 transition flex items-center gap-1 cursor-pointer"
+          disabled={isLimitReached}
+          className={`shrink-0 px-2.5 py-1.5 font-black text-[10px] rounded-xl shadow-md transition flex items-center gap-1 cursor-pointer ${
+            isLimitReached 
+              ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700' 
+              : 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 active:scale-95'
+          }`}
         >
-          <span>{currentAd.cta}</span>
-          <ExternalLink className="w-2.5 h-2.5 stroke-[3]" />
+          <span>{isLimitReached ? '🔒 কোটা শেষ' : currentAd.cta}</span>
+          {!isLimitReached && <ExternalLink className="w-2.5 h-2.5 stroke-[3]" />}
         </button>
       </div>
     </div>

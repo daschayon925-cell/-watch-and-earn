@@ -391,6 +391,28 @@ export const ProfileScreen: React.FC = () => {
           <ChevronRight className="w-4 h-4 text-slate-500" />
         </div>
 
+        {/* Official Telegram Channel Button */}
+        <div 
+          onClick={() => window.open('https://t.me/watchearnbd_official', '_blank')}
+          className="p-3 rounded-xl bg-gradient-to-r from-blue-950/40 to-sky-950/40 hover:from-blue-900/50 hover:to-sky-900/50 border border-sky-500/30 flex items-center justify-between cursor-pointer transition"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-sky-500/20 text-sky-400">
+              <Send className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-white block">অফিসিয়াল টেলিগ্রাম চ্যানেল ও প্রুফ গ্রুপ</span>
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30">
+                  LIVE
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400">প্রতিদিনের পেমেন্ট প্রুফ ও মেগা বোনাস নোটিশ</span>
+            </div>
+          </div>
+          <ExternalLink className="w-4 h-4 text-sky-400" />
+        </div>
+
         {/* Terms of Service */}
         <div 
           onClick={() => setActiveLegalModal('terms')}

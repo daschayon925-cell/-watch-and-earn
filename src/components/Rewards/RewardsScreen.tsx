@@ -11,7 +11,9 @@ import {
   Copy, 
   Check, 
   Zap, 
-  Trophy 
+  Trophy,
+  MessageCircle,
+  Share
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -331,10 +333,44 @@ export const RewardsScreen: React.FC = () => {
 
           <button
             onClick={handleCopyReferral}
-            className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1 transition"
+            className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1 transition cursor-pointer"
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
             {copied ? (language === 'bn' ? 'কপি হয়েছে' : 'Copied') : (language === 'bn' ? 'কপি' : 'Copy')}
+          </button>
+        </div>
+
+        {/* 🚀 One-Tap WhatsApp & Social Share Buttons */}
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <button
+            onClick={() => {
+              const shareText = `🔥 ভিডিও দেখে ও গেম খেলে প্রতিদিন বিকাশ/নগদে টাকা আয় করুন! আমার রেফারেল কোড [${user?.referralCode || 'BD7788'}] দিয়ে একাউন্ট খুললেই পাবেন ৫০ কয়েন বোনাস!\n👉 এখনই জয়েন করুন: ${window.location.origin}`;
+              window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+            }}
+            className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95 transition cursor-pointer"
+          >
+            <MessageCircle className="w-4 h-4 fill-white" />
+            <span>হোয়াটসঅ্যাপে শেয়ার</span>
+          </button>
+
+          <button
+            onClick={() => {
+              const shareText = `🔥 ভিডিও দেখে ও গেম খেলে প্রতিদিন বিকাশ/নগদে টাকা আয় করুন! আমার রেফারেল কোড [${user?.referralCode || 'BD7788'}] দিয়ে একাউন্ট খুললেই পাবেন ৫০ কয়েন বোনাস!\n👉 এখনই জয়েন করুন: ${window.location.origin}`;
+              if (navigator.share) {
+                navigator.share({
+                  title: 'WATCH & EARN BD',
+                  text: shareText,
+                  url: window.location.origin
+                }).catch(() => {});
+              } else {
+                navigator.clipboard.writeText(shareText);
+                showToast('রেফারেল ইনভাইট মেসেজ কপি হয়েছে!', 'মেসেঞ্জার বা ফেসবুকে বন্ধুদের পাঠিয়ে দিন।', 'success');
+              }
+            }}
+            className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/20 active:scale-95 transition cursor-pointer"
+          >
+            <Share className="w-4 h-4" />
+            <span>বন্ধুদের শেয়ার করুন</span>
           </button>
         </div>
 
