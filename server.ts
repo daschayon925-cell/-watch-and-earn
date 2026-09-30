@@ -718,6 +718,8 @@ app.post('/api/auth/register', (req, res) => {
     linkTab: 'home'
   });
 
+  saveDbToDisk();
+
   res.json({
     success: true,
     user: newUser,

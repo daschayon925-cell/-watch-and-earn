@@ -15,17 +15,18 @@ const headers = () => ({
 async function safeJsonFetch<T = any>(url: string, options?: RequestInit): Promise<T> {
   try {
     const res = await fetch(url, options);
-    if (!res.ok) {
-      return { success: false, message: `সার্ভার স্ট্যাটাস: ${res.status}` } as unknown as T;
-    }
     const contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      return { success: false, message: 'অপ্রত্যাশিত রেসপন্স' } as unknown as T;
+    if (contentType.includes('application/json')) {
+      const data = await res.json();
+      return data as T;
     }
-    return await res.json();
+    if (!res.ok) {
+      return { success: false, message: `সার্ভার সংযোগে সমস্যা হয়েছে (কোড: ${res.status})` } as unknown as T;
+    }
+    return { success: false, message: 'অপ্রত্যাশিত রেসপন্স' } as unknown as T;
   } catch (err: any) {
     // Graceful silent fallback for client resilience during server wake-up/restarts
-    return { success: false, message: 'নেটওয়ার্ক পুনঃসংযোগ হচ্ছে...' } as unknown as T;
+    return { success: false, message: 'নেটওয়ার্ক সংযোগ পুনঃস্থাপন করা হচ্ছে, অনুগ্রহ করে আবার চেষ্টা করুন...' } as unknown as T;
   }
 }
 
