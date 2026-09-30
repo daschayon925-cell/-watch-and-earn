@@ -596,11 +596,34 @@ export const AdminDashboard: React.FC = () => {
       {/* 4. USERS & ANTI-FRAUD TAB */}
       {activeTab === 'users' && (
         <div className="space-y-3">
-          <h3 className="font-bold text-xs text-slate-300 uppercase tracking-wider">
-            ইউজার তালিকা ও সিকিউরিটি অডিট ({usersList.length})
-          </h3>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-cyan-400" />
+                নিবন্ধিত ইউজার তালিকা ({usersList.length} জন)
+              </h3>
+              <p className="text-[10px] text-slate-400">অ্যাপের সকল সক্রিয় ও নতুন ব্যবহারকারীর তথ্য</p>
+            </div>
+            
+            <button
+              onClick={() => {
+                loadAllAdminData(true);
+                showToast('🔄 ইউজার ডাটা রিফ্রেশ করা হয়েছে!', 'ক্লাউড ও সার্ভার থেকে সর্বশেষ ইউজার তালিকা সিঙ্ক হয়েছে।', 'success');
+              }}
+              className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow"
+            >
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: loading ? '1s' : '0s' }} />
+              <span>রিফ্রেশ / সিঙ্ক</span>
+            </button>
+          </div>
 
-          <div className="space-y-2">
+          {usersList.length === 0 ? (
+            <div className="p-8 text-center rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 space-y-2">
+              <Users className="w-8 h-8 text-slate-600 mx-auto" />
+              <p className="text-xs">এখনো কোনো ইউজার লোড হয়নি। উপরের "রিফ্রেশ / সিঙ্ক" বাটনে চাপ দিন।</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
             {usersList.map((u) => (
               <div
                 key={u.uid}
@@ -690,7 +713,8 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
