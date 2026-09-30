@@ -1232,6 +1232,8 @@ app.post('/api/reward/ad-click', (req, res) => {
     createdAt: new Date().toISOString()
   });
 
+  saveDbToDisk();
+
   res.json({
     success: true,
     earnedCoins: rewardAmount,

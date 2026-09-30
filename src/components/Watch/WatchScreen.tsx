@@ -846,11 +846,19 @@ export const WatchScreen: React.FC = () => {
         </div>
       )}
 
-      {/* ⚡ INSTANT BONUS ACTION BUTTON */}
+      {/* ⚡ INSTANT BONUS ACTION BUTTON (Opens Adsterra Direct Link & Triggers Reward) */}
       <div className="px-3 pt-2">
         <button
-          onClick={() => setShowAd(true)}
-          className="w-full py-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs rounded-2xl shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2 active:scale-98 transition"
+          onClick={() => {
+            try {
+              const directLink = settings?.adsConfig?.adsterraDirectLink?.trim();
+              if (directLink) {
+                window.open(directLink, '_blank', 'noopener,noreferrer');
+              }
+            } catch (e) {}
+            setShowAd(true);
+          }}
+          className="w-full py-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs rounded-2xl shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2 active:scale-98 transition cursor-pointer"
         >
           <Zap className="w-4 h-4 fill-slate-950" />
           <span>{language === 'bn' ? '🎁 বিজ্ঞাপন দেখুন ও এখনই +৫০ কয়েন নিন' : '🎁 Watch Ad & Earn +50 Coins Now'}</span>

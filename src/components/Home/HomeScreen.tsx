@@ -317,6 +317,9 @@ export const HomeScreen: React.FC = () => {
         </div>
       </div>
 
+      {/* ⭐ 1ST PROMINENT CLICKABLE ADSTERRA BANNER SPOT (+15 COINS PER CLICK) */}
+      <MiniBannerAd slotId="home_top_hero_slot" category="finance" />
+
       {/* Pro-Level Live YouTube Entertainment Carousel & Watch Hub (স্লিক ও প্রিমিয়াম ডিজাইন) */}
       <div className="rounded-3xl bg-gradient-to-br from-[#090E17] via-[#0E1526] to-[#0A111F] border border-slate-800/90 p-4 shadow-xl space-y-3">
         <div className="flex items-center justify-between">

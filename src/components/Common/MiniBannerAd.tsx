@@ -72,26 +72,40 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
   const adIndex = Math.abs((slotId.charCodeAt(0) || 0) + slotId.length) % ads.length;
   const currentAd = ads[adIndex];
 
-  const handleAdClick = async () => {
+  const handleAdClick = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+
     if (isLimitReached) {
       showToast('🔒 আজকের সীমা শেষ!', 'আপনি আজকে সর্বোচ্চ ১০টি বিজ্ঞাপনে ক্লিক করেছেন। অ্যাকাউন্ট সুরক্ষার জন্য আগামীকাল আবার চালু হবে।', 'info');
       return;
     }
 
-    // Primary monetize via Adsterra Direct Link if configured
+    // Direct monetization: Adsterra Direct Link (Opens immediately in new tab)
     const targetUrl = settings?.adsConfig?.adsterraDirectLink?.trim() || currentAd.link;
-    window.open(targetUrl, '_blank');
+    
+    // Immediate audio feedback
+    soundService.playCoinReward();
+
+    // Reliably open ad in new tab even on strict mobile Chrome
+    try {
+      const win = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      if (!win) {
+        window.location.href = targetUrl;
+      }
+    } catch {
+      window.location.href = targetUrl;
+    }
+
     setClicked(true);
 
     try {
       const res = await api.claimAdClick();
       if (res?.success) {
-        soundService.playCoinReward();
         triggerConfetti();
         await refreshUser();
         showToast(
           `🎁 +${res.earnedCoins || 15} কয়েন আপনার অ্যাকাউন্টে যোগ হয়েছে!`,
-          `আজকের বাকি ক্লিক: ${res.remainingClicks || 0}টি।`,
+          `আজকের বাকি ক্লিক: ${res.remainingClicks ?? (maxClicks - clicksToday - 1)}টি।`,
           'coin'
         );
       } else if (res?.limitReached) {
@@ -104,7 +118,10 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
   };
 
   return (
-    <div className="w-full relative overflow-hidden rounded-2xl border-2 border-amber-500/40 shadow-xl group transition-all duration-300 hover:border-amber-400">
+    <div 
+      onClick={() => handleAdClick()}
+      className="w-full relative overflow-hidden rounded-2xl border-2 border-amber-500/50 shadow-xl group transition-all duration-300 hover:border-amber-400 cursor-pointer active:scale-[0.99]"
+    >
       {/* 🌟 1. FULL-BLEED BACKGROUND BANNER IMAGE (পুরো ঘর জুড়ে ছবি) */}
       <div 
         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
