@@ -92,10 +92,17 @@ export const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     loadAllAdminData();
+
+    // 🔄 Live Auto-Polling every 3 seconds to fetch new users, coin rewards, and withdrawal requests in realtime
+    const pollInterval = setInterval(() => {
+      loadAllAdminData(false);
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
   }, []);
 
-  const loadAllAdminData = async () => {
-    setLoading(true);
+  const loadAllAdminData = async (showFullLoader: boolean = true) => {
+    if (showFullLoader) setLoading(true);
     try {
       const [ov, vids, usrs, wths, reps, freshSettings] = await Promise.all([
         api.getAdminOverview(),
@@ -105,20 +112,20 @@ export const AdminDashboard: React.FC = () => {
         api.getAdminReports(),
         api.getSettings()
       ]);
-      setKpis(ov.kpis);
-      setVideos(vids);
-      setUsersList(usrs);
-      setWithdrawals(wths);
-      setReports(reps);
+      setKpis(ov?.kpis);
+      setVideos(vids || []);
+      setUsersList(usrs || []);
+      setWithdrawals(wths || []);
+      setReports(reps || []);
       if (freshSettings) {
         setEditSettings(freshSettings);
       } else if (settings) {
         setEditSettings(settings);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Admin auto sync error', err);
     } finally {
-      setLoading(false);
+      if (showFullLoader) setLoading(false);
     }
   };
 
