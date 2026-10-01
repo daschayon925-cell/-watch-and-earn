@@ -895,13 +895,13 @@ export const WatchScreen: React.FC = () => {
         </div>
       )}
 
-      {/* 📢 THE 50-SECOND AUTOMATIC MULTI-AD OVERLAY (3 SPONSOR ADS SEQUENTIALLY) */}
+      {/* 📢 THE 25-SECOND SPONSOR AD OVERLAY WITH INSTANT BACK BUTTON */}
       {showAd && (
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-3 animate-in fade-in">
           <div className="relative w-full max-w-md h-[90vh] bg-black rounded-3xl overflow-hidden border-2 border-amber-500/60 shadow-2xl flex flex-col justify-center">
             <AdInterstitial
               adNumber={adCycleCount}
-              durationSeconds={50} // ৫০ সেকেন্ডের টাইমলাইনে ৩টি বিজ্ঞাপন
+              durationSeconds={25} // ২৫ সেকেন্ডের বিজ্ঞাপন ও সহজে ফিরে আসার বাটন
               rewardCoins={50}
               onAdCompleted={handleAdFinished}
               onAdSkipped={handleAdFinished}

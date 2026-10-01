@@ -25,7 +25,10 @@ import {
   Smartphone,
   Lock,
   Download,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Copy,
+  MessageCircle,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -531,10 +534,43 @@ export const AdminDashboard: React.FC = () => {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <h5 className="text-xs font-bold text-white">{w.userName}</h5>
-                    <span className="text-[11px] font-mono font-semibold text-cyan-400 block mt-0.5">
-                      {w.method} ({w.accountType}) • {w.mobileNumber}
-                    </span>
+                    <h5 className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>{w.userName}</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-mono">
+                        {w.method} ({w.accountType})
+                      </span>
+                    </h5>
+                    
+                    {/* 1-Click Phone Actions (Copy & WhatsApp) */}
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded-lg border border-cyan-500/30">
+                        {w.mobileNumber}
+                      </span>
+                      
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(w.mobileNumber);
+                          showToast('নম্বর কপি করা হয়েছে! 📋', w.mobileNumber, 'success');
+                        }}
+                        className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold flex items-center gap-1 active:scale-95 transition"
+                        title="নম্বর কপি করুন"
+                      >
+                        <Copy className="w-3 h-3 text-cyan-400" />
+                        <span>কপি</span>
+                      </button>
+
+                      {/* 1-Click WhatsApp Button */}
+                      <a
+                        href={`https://wa.me/88${w.mobileNumber}?text=${encodeURIComponent(`প্রিয় ${w.userName}, Watch & Earn BD থেকে আপনার ৳${w.bdtAmount} (${w.method}) ক্যাশআউট সফলভাবে পরিশোধ করা হয়েছে। ধন্যবাদ আমাদের সাথে থাকার জন্য!`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-0.5 rounded-lg bg-emerald-950/80 border border-emerald-500/40 hover:bg-emerald-900/90 text-emerald-300 text-[10px] font-bold flex items-center gap-1 active:scale-95 transition"
+                        title="ইউজারকে হোয়াটসঅ্যাপে মেসেজ দিন"
+                      >
+                        <MessageCircle className="w-3 h-3 text-emerald-400 fill-emerald-400/20" />
+                        <span>WhatsApp</span>
+                      </a>
+                    </div>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                     w.status === 'Paid'
@@ -1184,7 +1220,7 @@ export const AdminDashboard: React.FC = () => {
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                    অ্যাডমিনের মোবাইল নম্বর (Admin Phone - ঐচ্ছিক):
+                    অ্যাডমিনের মোবাইল নম্বর (উইথড্র নোটিফিকেশন ও এসএমএস পাওয়ার নম্বর):
                   </label>
                   <input
                     type="tel"
@@ -1201,6 +1237,9 @@ export const AdminDashboard: React.FC = () => {
                     placeholder="01XXXXXXXXX"
                     className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-400"
                   />
+                  <p className="text-[10px] text-cyan-400 mt-1">
+                    📲 ইউজার টাকা উইথড্র সাবমিট করলেই এই মোবাইল নম্বরে সরাসরি এসএমএস অ্যালার্ট চলে যাবে।
+                  </p>
                 </div>
 
                 <div>

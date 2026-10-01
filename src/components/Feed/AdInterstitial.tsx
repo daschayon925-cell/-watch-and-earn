@@ -99,13 +99,19 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       {/* Top Header */}
       <div className="flex items-center justify-between z-10">
         <div className="flex items-center gap-2">
+          {onAdSkipped && (
+            <button
+              onClick={onAdSkipped}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-bold border border-slate-700 active:scale-95 transition"
+              title="বিজ্ঞাপন বন্ধ করে ভিডিওতে ফিরে যান"
+            >
+              <span>✕ ফিরে যান</span>
+            </button>
+          )}
+
           <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg bg-amber-400 text-slate-950 shadow-md flex items-center gap-1">
             <Sparkles className="w-3 h-3 fill-slate-950" />
-            স্পন্সরড অ্যাড {currentSlotIndex + 1}/৩
-          </span>
-          <span className="text-[10px] text-slate-400 flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3 text-emerald-400" />
-            {currentAd.badge}
+            স্পন্সরড অ্যাড
           </span>
         </div>
 
@@ -229,7 +235,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
         {/* Revenue sharing text */}
         <div className="mt-4 pt-3 border-t border-white/10 w-full flex items-center justify-center gap-1.5 text-[10px] text-white/80">
           <span className="text-amber-300 font-bold">💎 স্পন্সর বোনাস:</span>
-          <span>৫০ সেকেন্ড শেষ হলেই আপনার অ্যাকাউন্টে রিওয়ার্ড কয়েন জমা হবে</span>
+          <span>{durationSeconds} সেকেন্ড দেখা শেষ হলেই কয়েন জমা হবে</span>
         </div>
       </div>
 
@@ -238,7 +244,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
         <p className="text-[11px] text-slate-400 font-medium">
           {canSkip
             ? '✅ সময় পূর্ণ হয়েছে! কয়েন নিতে উপরের বাটনে ট্যাপ করুন।'
-            : `⏳ মাল্টি-অ্যাড স্ট্রীম চলছে... বাকি আছে ${secondsRemaining} সেকেন্ড`}
+            : `⏳ বিজ্ঞাপন চলছে... বাকি আছে ${secondsRemaining} সেকেন্ড`}
         </p>
       </div>
     </div>

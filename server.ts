@@ -1130,14 +1130,36 @@ app.post('/api/reward/daily-checkin', (req, res) => {
   });
 });
 
-// 6. Rewarded Ad Simulation with Backend Verification
+// 6. Rewarded Ad Simulation with Backend Verification & Anti-Bot Guard
+const lastAdClaimTimes: Map<string, number> = new Map();
+
 app.post('/api/reward/ad-reward', (req, res) => {
   const user = getUser(req);
-  const { adToken } = req.body;
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'লগইন আবশ্যক' });
+  }
+
+  const { adToken } = req.body || {};
+  if (user.accountStatus === 'suspended') {
+    return res.status(403).json({ success: false, message: 'অস্বাভাবিক কার্যক্রমের কারণে আপনার অ্যাকাউন্ট স্থগিত করা হয়েছে।' });
+  }
+
+  // 🛡️ Anti-Bot Check 2: Minimum 20 seconds cooldown between rewarded ad claims
+  const now = Date.now();
+  const lastClaim = lastAdClaimTimes.get(user.uid) || 0;
+  if (now - lastClaim < 20000) {
+    const waitSeconds = Math.ceil((20000 - (now - lastClaim)) / 1000);
+    return res.status(429).json({
+      success: false,
+      message: `বট প্রতিরোধ নিরাপত্তা: পরবর্তী বিজ্ঞাপন দেখার পূর্বে অনুগ্রহ করে ${waitSeconds} সেকেন্ড অপেক্ষা করুন।`
+    });
+  }
 
   if (!db.settings.adsConfig.rewardedAdsEnabled) {
     return res.status(400).json({ success: false, message: 'রিওয়ার্ডেড বিজ্ঞাপন বর্তমানে নিষ্ক্রিয়।' });
   }
+
+  lastAdClaimTimes.set(user.uid, now);
 
   const rewardAmount = adToken === 'reel_auto_loop' 
     ? (db.settings.videoReward || db.settings.rewardedAdBonus || 25)
@@ -1229,6 +1251,24 @@ app.post('/api/reward/ad-click', (req, res) => {
   if (!user) {
     return res.status(401).json({ success: false, message: 'লগইন আবশ্যক' });
   }
+
+  // 🛡️ Anti-Bot Check 1: Suspended/Banned check
+  if (user.accountStatus === 'suspended') {
+    return res.status(403).json({ success: false, message: 'অস্বাভাবিক কার্যক্রমের কারণে আপনার অ্যাকাউন্ট স্থগিত করা হয়েছে।' });
+  }
+
+  // 🛡️ Anti-Bot Check 2: Minimum 15 seconds cooldown between ad clicks
+  const now = Date.now();
+  const lastClickTime = lastAdClaimTimes.get(user.uid + '_click') || 0;
+  if (now - lastClickTime < 15000) {
+    const waitSeconds = Math.ceil((15000 - (now - lastClickTime)) / 1000);
+    return res.status(429).json({
+      success: false,
+      message: `বট প্রতিরোধ নিরাপত্তা: পরবর্তী ক্লিকে বোনাস নেওয়ার জন্য ${waitSeconds} সেকেন্ড অপেক্ষা করুন।`
+    });
+  }
+
+  lastAdClaimTimes.set(user.uid + '_click', now);
 
   const todayStr = new Date().toISOString().split('T')[0];
   if (!user.adClicksToday || user.lastAdClickDate !== todayStr) {
@@ -1583,7 +1623,7 @@ app.post('/api/wallet/withdraw', (req, res) => {
     note: `${cleanMobile}`
   });
 
-  // Notification
+  // Notification for User
   db.notifications.unshift({
     id: 'notif_' + Date.now(),
     userId: user.uid,
@@ -1594,6 +1634,28 @@ app.post('/api/wallet/withdraw', (req, res) => {
     createdAt: new Date().toISOString(),
     linkTab: 'wallet'
   });
+
+  // 🔔 1. Alert in Admin Panel (Owner Notifications)
+  const adminUsers = db.users.filter(u => u.role === 'admin');
+  adminUsers.forEach(admin => {
+    db.notifications.unshift({
+      id: 'notif_admin_' + Date.now() + '_' + admin.uid,
+      userId: admin.uid,
+      title: '🚨 নতুন ক্যাশআউট রিকোয়েস্ট জমা হয়েছে!',
+      message: `ইউজার ${user.displayName || 'ব্যবহারকারী'} (মোবাইল: ${cleanMobile}) ${method}-এ ৳${bdtAmount.toFixed(2)} (${coinAmount} কয়েন) উত্তোলনের আবেদন করেছেন। দ্রুত অ্যাডমিন প্যানেল চেক করুন।`,
+      type: 'withdrawal',
+      read: false,
+      createdAt: new Date().toISOString(),
+      linkTab: 'admin'
+    });
+  });
+
+  // 📱 2. Send Real Instant SMS to Admin's Mobile Number (if admin phone configured)
+  const adminPhone = db.settings.adminSecurity?.adminPhone;
+  if (adminPhone && db.settings.smsGateway?.enabled) {
+    const adminSmsText = `WatchEarnBD Alert: ইউজার ${user.displayName || ''} ৳${bdtAmount} উইথড্র আবেদন করেছেন। মেথড: ${method}, মোবাইল: ${cleanMobile}। অ্যাডমিন প্যানেল চেক করুন।`;
+    dispatchRealSms(adminPhone, adminSmsText).catch(e => console.error('Admin withdrawal SMS error:', e));
+  }
 
   saveDbToDisk();
 

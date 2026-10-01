@@ -411,8 +411,8 @@ export const WalletScreen: React.FC = () => {
       {/* 💳 WITHDRAWAL CASHOUT MODAL (EXACT MATCH TO USER SCREENSHOT) */}
       {/* ========================================================= */}
       {showWithdrawModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md bg-[#0F172A] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-md bg-[#0F172A] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-3xl p-5 pb-28 shadow-2xl max-h-[92vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-start justify-between pb-3 border-b border-slate-800/80">
               <div className="flex items-center gap-3">
@@ -667,19 +667,31 @@ export const WalletScreen: React.FC = () => {
                 </div>
               )}
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={withdrawing || (user?.coins || 0) < coinsRequired}
-                className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 text-slate-950 font-black text-sm rounded-2xl shadow-lg shadow-emerald-500/25 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                {withdrawing 
-                  ? 'নিরাপদে প্রক্রিয়াধীন...' 
-                  : (user?.coins || 0) < coinsRequired
-                    ? 'পর্যাপ্ত কয়েন নেই'
-                    : `নিরাপদে উইথড্র সাবমিট করুন (৳${bdtAmountToWithdraw})`}
-              </button>
+              {/* Submit Button & Admin Notification Assurance */}
+              <div className="pt-2 space-y-2">
+                <button
+                  type="submit"
+                  disabled={withdrawing || (user?.coins || 0) < coinsRequired}
+                  className={`w-full py-4 font-black text-sm rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 active:scale-98 ${
+                    (user?.coins || 0) < coinsRequired
+                      ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed opacity-90'
+                      : 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:brightness-110 text-slate-950 shadow-emerald-500/30 cursor-pointer animate-pulse'
+                  }`}
+                >
+                  <ShieldCheck className="w-5 h-5" />
+                  <span>
+                    {withdrawing 
+                      ? 'নিরাপদে আবেদন পাঠানো হচ্ছে...' 
+                      : (user?.coins || 0) < coinsRequired
+                        ? `পর্যাপ্ত কয়েন নেই (আরও ${(coinsRequired - (user?.coins || 0)).toLocaleString()} কয়েন লাগবে)`
+                        : `নিরাপদে ক্যাশআউট করুন (৳${bdtAmountToWithdraw} টাকা)`}
+                  </span>
+                </button>
+
+                <p className="text-[10px] text-center text-slate-400">
+                  ⚡ উইথড্র বাটনে চাপ দিলে তাৎক্ষণিক অ্যাডমিন প্যানেলে নোটিফিকেশন ও এসএমএস যাবে।
+                </p>
+              </div>
             </form>
           </div>
         </div>

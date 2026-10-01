@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { soundService } from '../../services/audio';
 import { api } from '../../services/api';
+import { AdViewerModal } from './AdViewerModal';
 
 interface MiniBannerProps {
   slotId?: string;
@@ -14,6 +15,8 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
   const { showToast, triggerConfetti, settings } = useApp();
   const { user, refreshUser } = useAuth();
   const [clicked, setClicked] = useState(false);
+  const [showViewerModal, setShowViewerModal] = useState(false);
+  const [pendingAdUrl, setPendingAdUrl] = useState('');
 
   const todayStr = new Date().toISOString().split('T')[0];
   const clicksToday = user?.lastAdClickDate === todayStr ? (user?.adClicksToday || 0) : 0;
@@ -72,7 +75,7 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
   const adIndex = Math.abs((slotId.charCodeAt(0) || 0) + slotId.length) % ads.length;
   const currentAd = ads[adIndex];
 
-  const handleAdClick = async (e?: React.MouseEvent) => {
+  const handleAdClick = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
 
     if (isLimitReached) {
@@ -80,32 +83,22 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
       return;
     }
 
-    // Direct monetization: Adsterra Direct Link (Opens immediately in new tab)
     const targetUrl = settings?.adsConfig?.adsterraDirectLink?.trim() || currentAd.link;
-    
-    // Immediate audio feedback
-    soundService.playCoinReward();
+    setPendingAdUrl(targetUrl);
+    setShowViewerModal(true);
+  };
 
-    // Reliably open ad in new tab even on strict mobile Chrome
-    try {
-      const win = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-      if (!win) {
-        window.location.href = targetUrl;
-      }
-    } catch {
-      window.location.href = targetUrl;
-    }
-
+  const handleClaimAdReward = async () => {
     setClicked(true);
-
     try {
       const res = await api.claimAdClick();
       if (res?.success) {
+        soundService.playCoinReward();
         triggerConfetti();
         await refreshUser();
         showToast(
-          `🎁 +${res.earnedCoins || 15} কয়েন আপনার অ্যাকাউন্টে যোগ হয়েছে!`,
-          `আজকের বাকি ক্লিক: ${res.remainingClicks ?? (maxClicks - clicksToday - 1)}টি।`,
+          `🎁 +${res.earnedCoins || 15} কয়েন আপনার অ্যাকাউন্টে সফলভাবে যোগ হয়েছে!`,
+          `আজকের বাকি বিজ্ঞাপন: ${res.remainingClicks ?? (maxClicks - clicksToday - 1)}টি।`,
           'coin'
         );
       } else if (res?.limitReached) {
@@ -194,6 +187,16 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
           </button>
         </div>
       </div>
+
+      {/* 25-Second Safe In-App Ad Viewer with One-Click Return */}
+      <AdViewerModal
+        isOpen={showViewerModal}
+        adUrl={pendingAdUrl}
+        durationSeconds={25}
+        rewardCoins={15}
+        onCompleted={handleClaimAdReward}
+        onClose={() => setShowViewerModal(false)}
+      />
     </div>
   );
 };
