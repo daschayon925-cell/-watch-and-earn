@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, ExternalLink, ShieldCheck, X, Coins, Layers } from 'lucide-react';
+import { Sparkles, ExternalLink, ShieldCheck, X, Coins, Layers, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 interface AdInterstitialProps {
   onAdCompleted: () => void;
   onAdSkipped?: () => void;
   adNumber?: number;
-  durationSeconds?: number; // total duration e.g. 50s
+  durationSeconds?: number; // total duration e.g. 25s
   rewardCoins?: number;
   title?: string;
 }
@@ -15,15 +15,16 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
   onAdCompleted,
   onAdSkipped,
   adNumber = 1,
-  durationSeconds = 50,
+  durationSeconds = 25,
   rewardCoins = 50,
   title
 }) => {
   const { language, settings } = useApp();
   const [secondsRemaining, setSecondsRemaining] = useState<number>(durationSeconds);
   const [canSkip, setCanSkip] = useState<boolean>(false);
+  const [hasInteracted, setHasInteracted] = useState<boolean>(false);
 
-  // 3 distinct ad campaigns that sequentially display during the 50-second timeline (e.g., 0-16s Ad 1, 17-33s Ad 2, 34-50s Ad 3)
+  // 3 distinct ad campaigns that sequentially display
   const multiAds = [
     {
       adIndex: 1,
@@ -71,7 +72,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
 
   // Calculate which of the 3 ads is active based on time elapsed
   const timeElapsed = durationSeconds - secondsRemaining;
-  const slotDuration = durationSeconds / 3;
+  const slotDuration = Math.max(4, durationSeconds / 3);
   const currentSlotIndex = Math.min(2, Math.floor(timeElapsed / slotDuration));
   const currentAd = multiAds[currentSlotIndex];
 
@@ -83,7 +84,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
           setCanSkip(true);
           return 0;
         }
-        if (prev <= 3) {
+        if (prev <= 2) {
           setCanSkip(true);
         }
         return prev - 1;
@@ -92,6 +93,17 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
 
     return () => clearInterval(timer);
   }, []);
+
+  const handleAdClick = () => {
+    setHasInteracted(true);
+    setCanSkip(true);
+    setSecondsRemaining(0);
+    const directLink = settings?.adsConfig?.adsterraDirectLink?.trim();
+    const targetUrl = directLink || currentAd.ctaUrl;
+    if (typeof window !== 'undefined') {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   const progressPercentage = Math.round(((durationSeconds - secondsRemaining) / durationSeconds) * 100);
 
@@ -104,9 +116,9 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
             <button
               onClick={onAdSkipped}
               className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-bold border border-slate-700 active:scale-95 transition"
-              title="বিজ্ঞাপন বন্ধ করে ভিডিওতে ফিরে যান"
+              title="বিজ্ঞাপন বন্ধ করুন (কোনো কয়েন যোগ হবে না)"
             >
-              <span>✕ ফিরে যান</span>
+              <span>✕ বাতিল</span>
             </button>
           )}
 
@@ -121,32 +133,36 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
           {canSkip ? (
             <button
               onClick={onAdCompleted}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-lg active:scale-95 animate-pulse"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-lg active:scale-95 animate-pulse cursor-pointer border border-emerald-300"
             >
-              <span>{language === 'bn' ? `বিজ্ঞাপন সমাপ্ত (+${rewardCoins} কয়েন)` : `Complete • +${rewardCoins} Coins`}</span>
-              <X className="w-3.5 h-3.5" />
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>
+                {rewardCoins > 0 
+                  ? (language === 'bn' ? `কয়েন গ্রহণ করুন (+${rewardCoins} কয়েন)` : `Claim +${rewardCoins} Coins`)
+                  : (language === 'bn' ? 'টাস্ক আনলক করুন' : 'Unlock Task')}
+              </span>
             </button>
           ) : (
-            <div className="px-3 py-1.5 rounded-full bg-slate-800/90 border border-amber-500/40 text-xs font-mono font-bold text-amber-300 shadow">
-              ⏱️ {secondsRemaining}s
+            <div className="px-3 py-1.5 rounded-full bg-slate-800/90 border border-amber-500/40 text-xs font-mono font-bold text-amber-300 shadow flex items-center gap-1">
+              <span>⏱️ {secondsRemaining}s</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Multi-Ad Timeline Indicator (৩টি বিজ্ঞাপনের টাইমলাইন বার) */}
+      {/* Multi-Ad Timeline Indicator */}
       <div className="my-2 p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
         <div className="flex items-center justify-between text-[10px] text-slate-300 font-bold mb-1.5">
           <span className="flex items-center gap-1 text-amber-400">
             <Layers className="w-3.5 h-3.5" />
-            {language === 'bn' ? 'মাল্টি-অ্যাড স্ট্রীম (৫০ সেকেন্ডে ৩টি স্পন্সর)' : 'Multi-Ad Stream (3 Sponsors in 50s)'}
+            {language === 'bn' ? 'স্পন্সর নেটওয়ার্ক পার্টনার' : 'Sponsor Network Partner'}
           </span>
           <span className="text-emerald-400 font-mono">অ্যাড {currentSlotIndex + 1} অফ ৩</span>
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           {[0, 1, 2].map((idx) => {
-            const isCompleted = currentSlotIndex > idx;
-            const isCurrent = currentSlotIndex === idx;
+            const isCompleted = currentSlotIndex > idx || canSkip;
+            const isCurrent = currentSlotIndex === idx && !canSkip;
             return (
               <div
                 key={idx}
@@ -169,74 +185,62 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
         <div className="absolute -top-16 -left-16 w-36 h-36 bg-white/15 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-16 -right-16 w-36 h-36 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
 
-        {/* Real Ad Banner Image (Clickable for Direct Link) */}
-        {(() => {
-          const directLink = settings?.adsConfig?.adsterraDirectLink?.trim();
-          const targetUrl = directLink || currentAd.ctaUrl;
-          return (
-            <a 
-              href={targetUrl} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="w-full h-40 rounded-2xl overflow-hidden mb-3 relative shadow-lg border border-white/20 block cursor-pointer group"
-            >
-              <img 
-                src={currentAd.image} 
-                alt={currentAd.sponsorName} 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[9px] font-black text-amber-300 uppercase tracking-wider flex items-center gap-1 border border-amber-400/40">
-                <Coins className="w-3 h-3 text-amber-400" />
-                <span>+{rewardCoins} Coins</span>
-              </div>
-              <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[8px] text-white/90">
-                Ad by Partner Network ↗
-              </div>
-            </a>
-          );
-        })()}
+        {/* Real Ad Banner Image (Clickable for Direct Link & Instant Unlock) */}
+        <div 
+          onClick={handleAdClick}
+          className="w-full h-36 sm:h-40 rounded-2xl overflow-hidden mb-3 relative shadow-lg border border-white/20 block cursor-pointer group"
+        >
+          <img 
+            src={currentAd.image} 
+            alt={currentAd.sponsorName} 
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[9px] font-black text-amber-300 uppercase tracking-wider flex items-center gap-1 border border-amber-400/40">
+            <Coins className="w-3 h-3 text-amber-400" />
+            <span>{rewardCoins > 0 ? `+${rewardCoins} Coins` : 'স্পন্সর অফার'}</span>
+          </div>
+          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[8px] text-white/90">
+            Ad by Partner Network ↗
+          </div>
+        </div>
 
         <span className="text-xs font-bold text-white/90 uppercase tracking-widest mb-1">
           {currentAd.sponsorName}
         </span>
 
-        <h3 className="text-base md:text-lg font-extrabold text-white mb-1.5 leading-snug">
+        <h3 className="text-sm sm:text-base font-extrabold text-white mb-1 leading-snug">
           {language === 'bn' ? currentAd.headlineBn : currentAd.headlineEn}
         </h3>
 
-        <p className="text-xs text-slate-200 max-w-xs mb-3">
+        <p className="text-[11px] text-slate-200 max-w-xs mb-3">
           {language === 'bn' ? currentAd.taglineBn : currentAd.taglineEn}
         </p>
 
-        {/* 50-Second Total Progress */}
-        <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden p-0.5 mb-4">
+        {/* Progress Bar */}
+        <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden p-0.5 mb-3">
           <div 
             className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-1000 shadow-[0_0_10px_#eab308]"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
 
-        {/* Action Button (High CTR conversion) */}
-        {(() => {
-          const directLink = settings?.adsConfig?.adsterraDirectLink?.trim();
-          const targetUrl = directLink || currentAd.ctaUrl;
-          return (
-            <a
-              href={targetUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 hover:brightness-110 font-black text-xs shadow-xl active:scale-95 transition-all border border-amber-300"
-            >
-              <span>{directLink ? (language === 'bn' ? '🚀 অফার দেখুন ও ভিজিট করুন' : '🚀 Visit & Explore Offer') : (language === 'bn' ? currentAd.actionTextBn : currentAd.actionTextEn)}</span>
-              <ExternalLink className="w-4 h-4 text-slate-950" />
-            </a>
-          );
-        })()}
+        {/* Action Button (High CTR conversion - clicks enable instant unlock) */}
+        <button
+          onClick={handleAdClick}
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black text-xs shadow-xl active:scale-95 transition-all border border-amber-300 cursor-pointer"
+        >
+          <span>{language === 'bn' ? '🚀 অফার দেখুন ও ভিজিট করুন' : '🚀 Visit & Explore Offer'}</span>
+          <ExternalLink className="w-3.5 h-3.5 text-slate-950" />
+        </button>
 
-        {/* Revenue sharing text */}
-        <div className="mt-4 pt-3 border-t border-white/10 w-full flex items-center justify-center gap-1.5 text-[10px] text-white/80">
-          <span className="text-amber-300 font-bold">💎 স্পন্সর বোনাস:</span>
-          <span>{durationSeconds} সেকেন্ড দেখা শেষ হলেই কয়েন জমা হবে</span>
+        {/* Revenue sharing & anti-cheat notice */}
+        <div className="mt-3 pt-2 border-t border-white/10 w-full flex items-center justify-center gap-1.5 text-[10px] text-white/80">
+          <span className="text-amber-300 font-bold">💎 শর্ত:</span>
+          <span>
+            {hasInteracted 
+              ? 'অফার ভিজিট সম্পন্ন হয়েছে! উপরের বাটনে চাপ দিয়ে কয়েন সংগ্রহ করুন।' 
+              : 'অফারে ক্লিক করুন অথবা সময় শেষ হওয়া পর্যন্ত অপেক্ষা করুন।'}
+          </span>
         </div>
       </div>
 
@@ -244,10 +248,11 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       <div className="text-center z-10">
         <p className="text-[11px] text-slate-400 font-medium">
           {canSkip
-            ? '✅ সময় পূর্ণ হয়েছে! কয়েন নিতে উপরের বাটনে ট্যাপ করুন।'
+            ? '✅ সফল! রিওয়ার্ড সংগ্রহ করতে উপরের সবুজ বাটনে চাপ দিন।'
             : `⏳ বিজ্ঞাপন চলছে... বাকি আছে ${secondsRemaining} সেকেন্ড`}
         </p>
       </div>
     </div>
   );
 };
+

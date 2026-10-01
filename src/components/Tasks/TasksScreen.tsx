@@ -401,10 +401,19 @@ export const TasksScreen: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-3 animate-in fade-in">
           <div className="relative w-full max-w-md h-[90vh] bg-black rounded-3xl overflow-hidden border-2 border-purple-500/60 shadow-2xl flex flex-col justify-center">
             <AdInterstitial
-              durationSeconds={12} // Quick 12s pre-task ad
+              durationSeconds={12}
               rewardCoins={0}
+              title="টাস্ক আনলক ভেরিফিকেশন"
               onAdCompleted={handlePreAdFinished}
-              onAdSkipped={handlePreAdFinished}
+              onAdSkipped={() => {
+                setAdStage('NONE');
+                setActiveTask(null);
+                showToast(
+                  language === 'bn' ? 'টাস্ক বাতিল করা হয়েছে' : 'Task cancelled',
+                  language === 'bn' ? 'টাস্ক করতে স্পন্সর বিজ্ঞাপনটি সম্পন্ন করুন।' : 'Complete sponsor ad to unlock task.',
+                  'info'
+                );
+              }}
             />
           </div>
         </div>
@@ -414,10 +423,17 @@ export const TasksScreen: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-3 animate-in fade-in">
           <div className="relative w-full max-w-md h-[90vh] bg-black rounded-3xl overflow-hidden border-2 border-emerald-500/60 shadow-2xl flex flex-col justify-center">
             <AdInterstitial
-              durationSeconds={18} // 18s post-task ad
-              rewardCoins={taskCoins}
+              durationSeconds={18}
+              rewardCoins={taskCoins || 25}
               onAdCompleted={handlePostAdFinished}
-              onAdSkipped={handlePostAdFinished}
+              onAdSkipped={() => {
+                setAdStage('NONE');
+                showToast(
+                  language === 'bn' ? '⚠️ কয়েন বাতিল হয়েছে!' : '⚠️ Reward cancelled!',
+                  language === 'bn' ? 'বিজ্ঞাপন সম্পূর্ণ না দেখলে রিওয়ার্ড ওয়ালেটে যোগ হবে না।' : 'Watch full ad to claim reward.',
+                  'error'
+                );
+              }}
             />
           </div>
         </div>

@@ -812,7 +812,33 @@ app.post('/api/auth/switch-role', (req, res) => {
 
 // Update Profile
 app.post('/api/auth/update-profile', (req, res) => {
-  const user = getUser(req);
+  const uid = (req.headers['x-user-id'] as string) || req.body.uid;
+  if (!uid) {
+    return res.status(401).json({ success: false, message: 'অননুমোদিত অনুরোধ।' });
+  }
+
+  let user = db.users.find(u => u.uid === uid);
+  if (!user) {
+    user = {
+      uid,
+      displayName: req.body.displayName || 'ব্যবহারকারী',
+      phone: req.body.phone || '',
+      photoURL: req.body.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      coins: 100,
+      lifetimeCoins: 100,
+      todayCoins: 0,
+      todayVideosCount: 0,
+      streakDays: 1,
+      role: 'user',
+      accountStatus: 'active',
+      referralCode: 'BD' + Math.floor(1000 + Math.random() * 9000),
+      referralCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    db.users.unshift(user);
+  }
+
   const { displayName, phone, photoURL, biometricType, biometricEnrolled, biometricPhoto, webAuthnCredentialId } = req.body;
   if (displayName) user.displayName = displayName;
   if (phone) user.phone = phone;

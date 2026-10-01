@@ -179,8 +179,8 @@ export const WatchScreen: React.FC = () => {
 
       // 🛑 TIME REACHED (4 MINUTES OR 30s TEST):
       // 1. FREEZE VIDEO IMMEDIATELY
-      // 2. LOCK THE SCREEN
-      // 3. SOUND ALARM & VIBRATE
+      // 2. AUTO POPUP AD DIRECTLY (No click needed)
+      // 3. SOUND ALARM & VIBRATE & MOBILE NOTIFICATION
       if (elapsed >= targetWatchSeconds) {
         clearInterval(interval);
         startTimeRef.current = null;
@@ -189,7 +189,7 @@ export const WatchScreen: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [viewMode, isPlaying, appTaskRunning, showAd, isVideoLocked, targetWatchSeconds, watchSeconds]);
+  }, [viewMode, isPlaying, appTaskRunning, showAd, isVideoLocked, targetWatchSeconds]);
 
   // 🔒 Lock the video & stop playback until Ad is viewed
   const triggerVideoLockdown = () => {
@@ -895,16 +895,24 @@ export const WatchScreen: React.FC = () => {
         </div>
       )}
 
-      {/* 📢 THE 25-SECOND SPONSOR AD OVERLAY WITH INSTANT BACK BUTTON */}
+      {/* 📢 THE 25-SECOND SPONSOR AD OVERLAY WITH ANTI-CHEAT */}
       {showAd && (
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-3 animate-in fade-in">
           <div className="relative w-full max-w-md h-[90vh] bg-black rounded-3xl overflow-hidden border-2 border-amber-500/60 shadow-2xl flex flex-col justify-center">
             <AdInterstitial
               adNumber={adCycleCount}
-              durationSeconds={25} // ২৫ সেকেন্ডের বিজ্ঞাপন ও সহজে ফিরে আসার বাটন
-              rewardCoins={50}
+              durationSeconds={25}
+              rewardCoins={currentRewardCoins || 50}
               onAdCompleted={handleAdFinished}
-              onAdSkipped={handleAdFinished}
+              onAdSkipped={() => {
+                setShowAd(false);
+                soundService.stopPersistentAlarm();
+                showToast(
+                  language === 'bn' ? '⚠️ বিজ্ঞাপন দেখা হয়নি!' : '⚠️ Ad skipped!',
+                  language === 'bn' ? 'কয়েন পেতে বিজ্ঞাপনটি সম্পূর্ণ দেখুন বা অফারে চাপ দিন।' : 'Complete the ad to claim coins.',
+                  'error'
+                );
+              }}
             />
           </div>
         </div>

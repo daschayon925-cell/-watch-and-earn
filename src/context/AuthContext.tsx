@@ -24,18 +24,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshUser = async () => {
     try {
+      const activeUid = localStorage.getItem('we_user_id');
+      if (!activeUid) return;
+
+      const savedPhoto = localStorage.getItem(`we_user_photo_${activeUid}`);
       const u = await api.getProfile();
       if (u) {
-        setUser(u);
-        // Persist to Google Cloud Firestore permanently
-        cloudDb.saveUser(u);
+        const finalUser: User = {
+          ...u,
+          photoURL: (savedPhoto && savedPhoto.startsWith('data:')) ? savedPhoto : (u.photoURL || savedPhoto || u.photoURL)
+        };
+        setUser(finalUser);
+        localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
+        cloudDb.saveUser(finalUser);
       } else {
-        const savedUid = localStorage.getItem('we_user_id');
-        if (savedUid) {
-          const cloudUser = await cloudDb.getUser(savedUid);
-          if (cloudUser) {
-            setUser(cloudUser);
-          }
+        const cloudUser = await cloudDb.getUser(activeUid);
+        if (cloudUser) {
+          const finalUser: User = {
+            ...cloudUser,
+            photoURL: savedPhoto || cloudUser.photoURL
+          };
+          setUser(finalUser);
+          localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
         }
       }
     } catch (err) {
@@ -52,16 +62,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     setApiUserId(uid);
     localStorage.setItem('we_user_id', uid);
+    const savedPhoto = localStorage.getItem(`we_user_photo_${uid}`);
     try {
       const u = await api.getProfile();
       if (u) {
-        setUser(u);
-        cloudDb.saveUser(u);
+        const finalUser: User = {
+          ...u,
+          photoURL: savedPhoto || u.photoURL
+        };
+        setUser(finalUser);
+        localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
+        cloudDb.saveUser(finalUser);
       } else {
         // Fetch from Cloud DB directly if server just restarted
         const cloudUser = await cloudDb.getUser(uid);
         if (cloudUser) {
-          setUser(cloudUser);
+          const finalUser: User = {
+            ...cloudUser,
+            photoURL: savedPhoto || cloudUser.photoURL
+          };
+          setUser(finalUser);
+          localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
         } else {
           setUser(null);
         }
@@ -70,8 +91,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Login error', err);
       // Fallback to cloud db
       const cloudUser = await cloudDb.getUser(uid);
-      if (cloudUser) setUser(cloudUser);
-      else setUser(null);
+      if (cloudUser) {
+        const finalUser: User = {
+          ...cloudUser,
+          photoURL: savedPhoto || cloudUser.photoURL
+        };
+        setUser(finalUser);
+        localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
+      } else {
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -157,14 +186,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfile = async (data: { displayName?: string; phone?: string; photoURL?: string; biometricType?: 'fingerprint' | 'face' | 'none'; biometricEnrolled?: boolean; biometricPhoto?: string; webAuthnCredentialId?: string }) => {
     try {
+      if (user) {
+        const mergedUser: User = {
+          ...user,
+          ...data,
+          updatedAt: new Date().toISOString()
+        };
+        setUser(mergedUser);
+        localStorage.setItem('we_user_cached_profile', JSON.stringify(mergedUser));
+        if (data.photoURL) {
+          localStorage.setItem(`we_user_photo_${user.uid}`, data.photoURL);
+        }
+        await cloudDb.saveUser(mergedUser);
+      }
+
       const updated = await api.updateProfile(data);
       if (updated) {
-        setUser(updated);
-        cloudDb.saveUser(updated);
+        const finalUser: User = {
+          ...updated,
+          photoURL: data.photoURL || updated.photoURL || user?.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
+        };
+        setUser(finalUser);
+        localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
+        await cloudDb.saveUser(finalUser);
       }
     } catch (err) {
       console.error('Update profile error', err);
-      throw err;
+      // Even on API error, maintain local & cloud Firestore persist
+      if (user) {
+        const fallbackUser: User = {
+          ...user,
+          ...data,
+          updatedAt: new Date().toISOString()
+        };
+        setUser(fallbackUser);
+        localStorage.setItem('we_user_cached_profile', JSON.stringify(fallbackUser));
+        if (data.photoURL) {
+          localStorage.setItem(`we_user_photo_${user.uid}`, data.photoURL);
+        }
+        await cloudDb.saveUser(fallbackUser);
+      }
     }
   };
 
