@@ -33,8 +33,6 @@ import {
   Camera,
   UserPlus,
   Upload,
-  Fingerprint,
-  Scan,
   Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -58,8 +56,6 @@ export const ProfileScreen: React.FC = () => {
   const [editPhone, setEditPhone] = useState(user?.phone || '');
   const [selectedAvatar, setSelectedAvatar] = useState(user?.photoURL || '');
   const [customPhotoLoading, setCustomPhotoLoading] = useState(false);
-  const [biometricChoice, setBiometricChoice] = useState<'fingerprint' | 'face' | 'none'>(user?.biometricType || 'fingerprint');
-  const [biometricActive, setBiometricActive] = useState<boolean>(user?.biometricEnrolled ?? true);
   const [saving, setSaving] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -86,26 +82,59 @@ export const ProfileScreen: React.FC = () => {
     setTimeout(() => setCopiedUid(false), 2000);
   };
 
-  // Handle User Custom Photo Upload from Gallery or Camera
+  // Handle User Custom Photo Upload from Gallery or Camera with auto-compression
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check size limit: max 3MB
-    if (file.size > 3 * 1024 * 1024) {
-      showToast(language === 'bn' ? 'ছবির সাইজ ৩MB এর কম হতে হবে' : 'Image size must be less than 3MB', '', 'error');
+    // Check size limit: max 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      showToast(language === 'bn' ? 'ছবির সাইজ ১০MB এর কম হতে হবে' : 'Image size must be less than 10MB', '', 'error');
       return;
     }
 
     setCustomPhotoLoading(true);
     const reader = new FileReader();
     reader.onload = (uploadEvent) => {
-      const base64Data = uploadEvent.target?.result as string;
-      if (base64Data) {
-        setSelectedAvatar(base64Data);
-        showToast(language === 'bn' ? 'ছবি সফলভাবে লোড হয়েছে!' : 'Photo loaded successfully!', '', 'success');
-      }
-      setCustomPhotoLoading(false);
+      const img = new Image();
+      img.onload = () => {
+        // Compress image to a smooth 320x320 avatar so it saves instantly in localStorage & cloud
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 320;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          setSelectedAvatar(compressedDataUrl);
+          showToast(language === 'bn' ? 'ছবি সফলভাবে লোড হয়েছে! সংরক্ষণ করুন বাটনে চাপ দিন' : 'Photo loaded successfully! Click Save Changes', '', 'success');
+        } else {
+          const rawBase64 = uploadEvent.target?.result as string;
+          setSelectedAvatar(rawBase64);
+        }
+        setCustomPhotoLoading(false);
+      };
+      img.onerror = () => {
+        showToast(language === 'bn' ? 'ছবি পড়তে সমস্যা হয়েছে' : 'Failed to process image', '', 'error');
+        setCustomPhotoLoading(false);
+      };
+      img.src = uploadEvent.target?.result as string;
     };
     reader.onerror = () => {
       showToast(language === 'bn' ? 'ছবি পড়তে সমস্যা হয়েছে' : 'Failed to read image', '', 'error');
@@ -121,14 +150,12 @@ export const ProfileScreen: React.FC = () => {
       await updateProfile({
         displayName: editName.trim(),
         phone: editPhone.trim(),
-        photoURL: selectedAvatar,
-        biometricType: biometricChoice,
-        biometricEnrolled: biometricActive
+        photoURL: selectedAvatar
       });
       setShowEditModal(false);
-      showToast(language === 'bn' ? 'প্রোফাইল ও সিকিউরিটি সফলভাবে আপডেট হয়েছে!' : 'Profile and security updated successfully!', '', 'success');
+      showToast(language === 'bn' ? 'প্রোফাইল তথ্য ও ছবি সফলভাবে সংরক্ষিত হয়েছে!' : 'Profile updated successfully!', '', 'success');
     } catch {
-      showToast(language === 'bn' ? 'আপডেট করা যায়নি' : 'Failed to update', '', 'error');
+      showToast(language === 'bn' ? 'সংরক্ষণ করা যায়নি, পুনরায় চেষ্টা করুন' : 'Failed to save', '', 'error');
     } finally {
       setSaving(false);
     }
@@ -632,59 +659,6 @@ export const ProfileScreen: React.FC = () => {
                   maxLength={11}
                   className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                 />
-              </div>
-
-              {/* 🔐 বায়োমেট্রিক ও ক্যাশআউট সিকিউরিটি অপশন */}
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-950/40 to-cyan-950/40 border border-emerald-500/30 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-                    <Fingerprint className="w-4 h-4 text-emerald-400" />
-                    <span>ক্যাশআউট বায়োমেট্রিক সিকিউরিটি</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={biometricActive}
-                      onChange={(e) => setBiometricActive(e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                  </label>
-                </div>
-                
-                <p className="text-[10px] text-slate-300">
-                  টাকা তোলার সময় অতিরিক্ত ফিঙ্গারপ্রিন্ট বা ফেস ভেরিফিকেশন দিয়ে আপনার ব্যালেন্স শতভাগ সুরক্ষিত রাখুন।
-                </p>
-
-                {biometricActive && (
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setBiometricChoice('fingerprint')}
-                      className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${
-                        biometricChoice === 'fingerprint'
-                          ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'
-                          : 'border-slate-800 bg-slate-950 text-slate-400'
-                      }`}
-                    >
-                      <Fingerprint className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>ফিঙ্গারপ্রিন্ট</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setBiometricChoice('face')}
-                      className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${
-                        biometricChoice === 'face'
-                          ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
-                          : 'border-slate-800 bg-slate-950 text-slate-400'
-                      }`}
-                    >
-                      <Scan className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>ফেস আনলক</span>
-                    </button>
-                  </div>
-                )}
               </div>
 
               <div className="flex items-center gap-2 pt-2">

@@ -211,9 +211,9 @@ export const WatchScreen: React.FC = () => {
       }
     } catch (e) {}
 
-    // Play loud alert beep + success fanfare + persistent alarm
+    // Play loud alert beep + success fanfare + continuous persistent alarm
     soundService.ensureUnlocked();
-    soundService.playAlarmBeep();
+    soundService.startPersistentAlarm();
     soundService.playSuccessFanfare();
 
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {

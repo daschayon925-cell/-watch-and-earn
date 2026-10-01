@@ -97,8 +97,8 @@ export const cloudDb = {
   // --- WITHDRAWALS COLLECTION ---
   saveWithdrawal: async (w: Withdrawal): Promise<void> => {
     try {
-      if (!w || !w.id) return;
-      const ref = doc(db, 'withdrawals', w.id);
+      if (!w || !w.withdrawalId) return;
+      const ref = doc(db, 'withdrawals', w.withdrawalId);
       await setDoc(ref, w, { merge: true });
     } catch (e) {
       console.warn('[Firebase] saveWithdrawal error:', e);

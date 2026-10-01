@@ -129,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           await api.register({
             displayName: cloudUser.displayName,
-            phone: cloudUser.phone,
+            phone: cloudUser.phone || '',
             password: cloudUser.password,
             otpCode: 'bypass_synced'
           });

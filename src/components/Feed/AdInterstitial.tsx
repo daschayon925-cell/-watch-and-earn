@@ -13,6 +13,7 @@ interface AdInterstitialProps {
 
 export const AdInterstitial: React.FC<AdInterstitialProps> = ({
   onAdCompleted,
+  onAdSkipped,
   adNumber = 1,
   durationSeconds = 50,
   rewardCoins = 50,

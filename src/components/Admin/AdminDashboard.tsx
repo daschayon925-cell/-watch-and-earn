@@ -269,8 +269,8 @@ export const AdminDashboard: React.FC = () => {
         `"${u.role || 'user'}"`,
         `"${u.accountStatus || 'active'}"`,
         u.coins || 0,
-        u.dailyVideosWatched || 0,
-        u.dailyAdsClicked || 0,
+        u.todayVideosCount || 0,
+        u.adClicksToday || 0,
         `"${u.referralCode || ''}"`,
         `"${u.referredBy || ''}"`,
         u.referralCount || 0,
@@ -387,7 +387,7 @@ export const AdminDashboard: React.FC = () => {
             <Lock className="w-4 h-4" />
           </button>
           <button
-            onClick={loadAllAdminData}
+            onClick={() => loadAllAdminData(true)}
             title="রিফ্রেশ করুন"
             className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white"
           >

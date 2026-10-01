@@ -33,7 +33,7 @@ export const DailyCheckInStreak: React.FC = () => {
 
     setLoading(true);
     try {
-      const res = await api.claimDailyBonus();
+      const res = await api.dailyCheckIn();
       if (res?.success) {
         soundService.playCoinReward();
         triggerConfetti();

@@ -11,7 +11,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-app.use(express.json());
+// Increase request entity size limits to 50MB for image snapshots, avatar uploads, and database sync
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // In-Memory sliding-window rate limiter to protect server controller from spam and abusive bots
 const ipRequestCounts = new Map<string, { count: number; resetAt: number }>();
