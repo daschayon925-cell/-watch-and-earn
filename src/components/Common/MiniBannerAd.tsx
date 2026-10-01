@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { soundService } from '../../services/audio';
 import { api } from '../../services/api';
 import { AdViewerModal } from './AdViewerModal';
+import { AdsterraBannerUnit } from './AdsterraBannerUnit';
 
 interface MiniBannerProps {
   slotId?: string;
@@ -84,6 +85,11 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
     }
 
     const targetUrl = settings?.adsConfig?.adsterraDirectLink?.trim() || currentAd.link;
+    try {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      console.warn('Popup blocked, fallback modal', err);
+    }
     setPendingAdUrl(targetUrl);
     setShowViewerModal(true);
   };
@@ -111,10 +117,17 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
   };
 
   return (
-    <div 
-      onClick={() => handleAdClick()}
-      className="w-full relative overflow-hidden rounded-2xl border-2 border-amber-500/50 shadow-xl group transition-all duration-300 hover:border-amber-400 cursor-pointer active:scale-[0.99]"
-    >
+    <div className="space-y-3 w-full">
+      {/* 🌟 1. Real Official Adsterra 300x250 Banner */}
+      {settings?.adsConfig?.bannerEnabled !== false && (
+        <AdsterraBannerUnit />
+      )}
+
+      {/* 🌟 2. Interactive Rewarded Sponsor Offer Banner */}
+      <div 
+        onClick={() => handleAdClick()}
+        className="w-full relative overflow-hidden rounded-2xl border-2 border-amber-500/50 shadow-xl group transition-all duration-300 hover:border-amber-400 cursor-pointer active:scale-[0.99]"
+      >
       {/* 🌟 1. FULL-BLEED BACKGROUND BANNER IMAGE (পুরো ঘর জুড়ে ছবি) */}
       <div 
         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
@@ -197,6 +210,7 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
         onCompleted={handleClaimAdReward}
         onClose={() => setShowViewerModal(false)}
       />
+      </div>
     </div>
   );
 };

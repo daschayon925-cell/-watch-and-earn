@@ -97,10 +97,10 @@ export const AdViewerModal: React.FC<AdViewerModalProps> = ({
 
           <button
             onClick={onClose}
-            className="flex items-center gap-1 px-3 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition active:scale-95 border border-slate-700"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-black transition active:scale-95 border border-rose-400 shadow-md cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>ফিরে যান</span>
+            <ArrowLeft className="w-4 h-4 stroke-[3]" />
+            <span>✕ বন্ধ করে ফিরুন</span>
           </button>
         </div>
 

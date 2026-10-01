@@ -88,8 +88,8 @@ export interface RewardTransaction {
   note?: string;
 }
 
-export type PaymentMethod = 'bKash' | 'Nagad' | 'Recharge';
-export type AccountType = 'Personal' | 'Agent' | 'Prepaid' | 'Postpaid';
+export type PaymentMethod = 'bKash' | 'Nagad' | 'Recharge' | 'Binance';
+export type AccountType = 'Personal' | 'Agent' | 'Prepaid' | 'Postpaid' | 'Binance Pay / USDT';
 export type WithdrawalStatus = 'Pending' | 'Approved' | 'Paid' | 'Rejected';
 
 export interface Withdrawal {
@@ -137,6 +137,7 @@ export interface AdminSettings {
     adsterraDirectLink?: string; // Adsterra Smartlink / Direct Link URL
     adsterraBannerCode?: string; // Adsterra Banner Script / iFrame code
     adsterraPopunderCode?: string; // Adsterra Popunder Script
+    adsterraSocialBarCode?: string; // Adsterra Social Bar Script (High CPM)
   };
   activeNotice?: {
     enabled: boolean;

@@ -1,4 +1,4 @@
-import { AdminSettings, Comment, NotificationItem, Report, RewardTransaction, User, Video, Withdrawal } from '../types';
+import { AdminSettings, Comment, NotificationItem, Report, RewardTransaction, User, Video, Withdrawal, PaymentMethod, AccountType } from '../types';
 
 let currentUserId = typeof window !== 'undefined' ? localStorage.getItem('we_user_id') || '' : '';
 
@@ -245,7 +245,7 @@ export const api = {
     return data?.payouts || [];
   },
 
-  requestWithdrawal: async (payload: { method: 'bKash' | 'Nagad' | 'Recharge'; accountType: 'Personal' | 'Agent' | 'Prepaid' | 'Postpaid'; mobileNumber: string; coins: number; password?: string }) => {
+  requestWithdrawal: async (payload: { method: PaymentMethod; accountType: AccountType | string; mobileNumber: string; coins: number; password?: string }) => {
     return await safeJsonFetch('/api/wallet/withdraw', {
       method: 'POST',
       headers: headers(),

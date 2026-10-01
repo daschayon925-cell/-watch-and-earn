@@ -91,8 +91,20 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, []);
+    // If user leaves tab to explore sponsor link and comes back, unlock immediately
+    const handleVis = () => {
+      if (document.visibilityState === 'visible' && hasInteracted) {
+        setCanSkip(true);
+        setSecondsRemaining(0);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVis);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVis);
+    };
+  }, [hasInteracted]);
 
   const handleAdClick = () => {
     setHasInteracted(true);
@@ -109,16 +121,17 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col justify-between p-4 sm:p-5 bg-gradient-to-b from-slate-900 via-slate-950 to-black text-white backdrop-blur-xl animate-fadeIn">
-      {/* Top Header */}
-      <div className="flex items-center justify-between z-10">
+      {/* Top Header Bar */}
+      <div className="flex items-center justify-between z-10 gap-2">
         <div className="flex items-center gap-2">
           {onAdSkipped && (
             <button
               onClick={onAdSkipped}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-bold border border-slate-700 active:scale-95 transition"
-              title="বিজ্ঞাপন বন্ধ করুন (কোনো কয়েন যোগ হবে না)"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-bold border border-slate-700 active:scale-95 transition cursor-pointer"
+              title="বিজ্ঞাপন বাতিল করুন"
             >
-              <span>✕ বাতিল</span>
+              <X className="w-3.5 h-3.5" />
+              <span>বাতিল</span>
             </button>
           )}
 
@@ -128,30 +141,38 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
           </span>
         </div>
 
-        {/* Countdown / Claim button */}
-        <div>
+        {/* Top-Right Close / Claim Button */}
+        <div className="flex items-center gap-2">
           {canSkip ? (
             <button
               onClick={onAdCompleted}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-lg active:scale-95 animate-pulse cursor-pointer border border-emerald-300"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-400 to-green-500 hover:from-emerald-300 text-slate-950 font-black text-xs transition-all shadow-[0_0_15px_#10b981] active:scale-95 animate-pulse cursor-pointer border-2 border-white"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>
-                {rewardCoins > 0 
-                  ? (language === 'bn' ? `কয়েন গ্রহণ করুন (+${rewardCoins} কয়েন)` : `Claim +${rewardCoins} Coins`)
-                  : (language === 'bn' ? 'টাস্ক আনলক করুন' : 'Unlock Task')}
-              </span>
+              <CheckCircle2 className="w-4 h-4 fill-slate-950 text-emerald-400" />
+              <span>✕ রিওয়ার্ড নিয়ে বন্ধ করুন (+{rewardCoins} কয়েন)</span>
             </button>
           ) : (
-            <div className="px-3 py-1.5 rounded-full bg-slate-800/90 border border-amber-500/40 text-xs font-mono font-bold text-amber-300 shadow flex items-center gap-1">
-              <span>⏱️ {secondsRemaining}s</span>
+            <div className="flex items-center gap-2">
+              <div className="px-2.5 py-1 rounded-full bg-slate-900 border border-amber-500/60 text-xs font-mono font-black text-amber-300 shadow flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block" />
+                <span>⏱️ {secondsRemaining}s</span>
+              </div>
+              
+              <button
+                onClick={onAdCompleted}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-rose-650/80 hover:bg-rose-600 bg-rose-900/80 text-rose-200 hover:text-white text-xs font-bold transition active:scale-95 border border-rose-500/50 cursor-pointer shadow-lg"
+                title="বিজ্ঞাপন বন্ধ করে ভিডিওতে ফিরুন"
+              >
+                <X className="w-3.5 h-3.5 stroke-[3]" />
+                <span>✕ বন্ধ করুন</span>
+              </button>
             </div>
           )}
         </div>
       </div>
 
       {/* Multi-Ad Timeline Indicator */}
-      <div className="my-2 p-2.5 rounded-2xl bg-slate-900/80 border border-slate-800">
+      <div className="my-2 p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800">
         <div className="flex items-center justify-between text-[10px] text-slate-300 font-bold mb-1.5">
           <span className="flex items-center gap-1 text-amber-400">
             <Layers className="w-3.5 h-3.5" />
@@ -180,7 +201,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       </div>
 
       {/* Center Ad Billboard */}
-      <div className={`my-auto flex flex-col items-center text-center p-5 rounded-3xl bg-gradient-to-br ${currentAd.bgGradient} border border-white/10 shadow-2xl relative overflow-hidden backdrop-blur-md transition-all duration-700`}>
+      <div className={`my-auto flex flex-col items-center text-center p-4 sm:p-5 rounded-3xl bg-gradient-to-br ${currentAd.bgGradient} border border-white/15 shadow-2xl relative overflow-hidden backdrop-blur-md transition-all duration-700`}>
         {/* Ambient glow */}
         <div className="absolute -top-16 -left-16 w-36 h-36 bg-white/15 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-16 -right-16 w-36 h-36 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
@@ -188,7 +209,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
         {/* Real Ad Banner Image (Clickable for Direct Link & Instant Unlock) */}
         <div 
           onClick={handleAdClick}
-          className="w-full h-36 sm:h-40 rounded-2xl overflow-hidden mb-3 relative shadow-lg border border-white/20 block cursor-pointer group"
+          className="w-full h-32 sm:h-36 rounded-2xl overflow-hidden mb-3 relative shadow-lg border border-white/20 block cursor-pointer group"
         >
           <img 
             src={currentAd.image} 
@@ -208,7 +229,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
           {currentAd.sponsorName}
         </span>
 
-        <h3 className="text-sm sm:text-base font-extrabold text-white mb-1 leading-snug">
+        <h3 className="text-sm sm:text-base font-black text-white mb-1 leading-snug">
           {language === 'bn' ? currentAd.headlineBn : currentAd.headlineEn}
         </h3>
 
@@ -232,25 +253,29 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
           <span>{language === 'bn' ? '🚀 অফার দেখুন ও ভিজিট করুন' : '🚀 Visit & Explore Offer'}</span>
           <ExternalLink className="w-3.5 h-3.5 text-slate-950" />
         </button>
-
-        {/* Revenue sharing & anti-cheat notice */}
-        <div className="mt-3 pt-2 border-t border-white/10 w-full flex items-center justify-center gap-1.5 text-[10px] text-white/80">
-          <span className="text-amber-300 font-bold">💎 শর্ত:</span>
-          <span>
-            {hasInteracted 
-              ? 'অফার ভিজিট সম্পন্ন হয়েছে! উপরের বাটনে চাপ দিয়ে কয়েন সংগ্রহ করুন।' 
-              : 'অফারে ক্লিক করুন অথবা সময় শেষ হওয়া পর্যন্ত অপেক্ষা করুন।'}
-          </span>
-        </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="text-center z-10">
-        <p className="text-[11px] text-slate-400 font-medium">
-          {canSkip
-            ? '✅ সফল! রিওয়ার্ড সংগ্রহ করতে উপরের সবুজ বাটনে চাপ দিন।'
-            : `⏳ বিজ্ঞাপন চলছে... বাকি আছে ${secondsRemaining} সেকেন্ড`}
-        </p>
+      {/* Prominent Bottom Action Bar for User Convenience */}
+      <div className="pt-2 z-10 flex flex-col items-center gap-2">
+        {canSkip ? (
+          <button
+            onClick={onAdCompleted}
+            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-400 via-green-400 to-emerald-500 hover:from-emerald-300 text-slate-950 font-black text-sm shadow-[0_0_20px_#10b981] flex items-center justify-center gap-2 active:scale-95 transition animate-bounce cursor-pointer border-2 border-white"
+          >
+            <CheckCircle2 className="w-5 h-5 fill-slate-950 text-emerald-400" />
+            <span>🎉 ২৫ সেকেন্ড শেষ! অ্যাড বন্ধ করুন ও +{rewardCoins} কয়েন নিন</span>
+          </button>
+        ) : (
+          <div className="w-full py-2.5 px-3 rounded-2xl bg-slate-900/90 border border-slate-800 text-center space-y-1">
+            <p className="text-xs text-amber-300 font-bold flex items-center justify-center gap-1.5">
+              <span>⏳ ২৫ সেকেন্ড পর বন্ধ করার বাটন আসবে</span>
+              <span className="font-mono text-white bg-slate-800 px-2 py-0.5 rounded-lg">({secondsRemaining}s বাকি)</span>
+            </p>
+            <p className="text-[10px] text-slate-300">
+              💡 অফারে ক্লিক করলে বিজ্ঞাপনের পেজ দেখে ফোনের <b>ব্যাক বাটন (◀)</b> চাপুন বা এই ট্যাবে ফিরে আসুন।
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -34,9 +34,9 @@ export const WalletScreen: React.FC = () => {
 
   // Withdrawal Modal State
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [method, setMethod] = useState<'bKash' | 'Nagad' | 'Recharge'>('Recharge');
+  const [method, setMethod] = useState<'bKash' | 'Nagad' | 'Recharge' | 'Binance'>('Recharge');
   const [operator, setOperator] = useState<string>('গ্রামীণফোন (GP)');
-  const [accountType, setAccountType] = useState<'Personal' | 'Agent' | 'Prepaid' | 'Postpaid'>('Prepaid');
+  const [accountType, setAccountType] = useState<'Personal' | 'Agent' | 'Prepaid' | 'Postpaid' | 'Binance Pay / USDT'>('Prepaid');
   // Auto-fill user's own registered phone ONLY if it is a real standard user phone, never fallback to owner phone
   const [mobileNumber, setMobileNumber] = useState<string>(() => {
     if (user?.phone && user.role !== 'admin') {
@@ -58,11 +58,14 @@ export const WalletScreen: React.FC = () => {
   const coinsRequired = Math.ceil(bdtAmountToWithdraw / rate);
 
   // Automatically update preset when changing payment method
-  const selectMethod = (newMethod: 'bKash' | 'Nagad' | 'Recharge') => {
+  const selectMethod = (newMethod: 'bKash' | 'Nagad' | 'Recharge' | 'Binance') => {
     setMethod(newMethod);
     if (newMethod === 'Recharge') {
       setAccountType('Prepaid');
       setBdtAmountToWithdraw(30);
+    } else if (newMethod === 'Binance') {
+      setAccountType('Binance Pay / USDT');
+      setBdtAmountToWithdraw(120); // $1 USDT
     } else {
       setAccountType('Personal');
       setBdtAmountToWithdraw(100);
@@ -90,10 +93,17 @@ export const WalletScreen: React.FC = () => {
 
   const validatePhone = (num: string) => {
     const cleaned = num.replace(/\s+/g, '');
-    const regex = /^01[3-9]\d{8}$/;
-    if (!regex.test(cleaned)) {
-      setPhoneError(language === 'bn' ? 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)' : 'Invalid 11-digit BD mobile number');
-      return false;
+    if (method === 'Binance') {
+      if (!cleaned || cleaned.length < 4) {
+        setPhoneError('সঠিক Binance Pay ID, ইমেইল বা USDT অ্যাড্রেস দিন');
+        return false;
+      }
+    } else {
+      const regex = /^01[3-9]\d{8}$/;
+      if (!regex.test(cleaned)) {
+        setPhoneError(language === 'bn' ? 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)' : 'Invalid 11-digit BD mobile number');
+        return false;
+      }
     }
     setPhoneError('');
     return true;
@@ -118,6 +128,15 @@ export const WalletScreen: React.FC = () => {
     if ((method === 'bKash' || method === 'Nagad') && bdtWillGet < minBkashNagadBDT) {
       showToast(
         language === 'bn' ? `${method}-এ ক্যাশআউটে সর্বনিম্ন ৳${minBkashNagadBDT} প্রয়োজন` : `Minimum ${method} is ৳${minBkashNagadBDT}`,
+        '',
+        'error'
+      );
+      return;
+    }
+
+    if (method === 'Binance' && bdtWillGet < 120) {
+      showToast(
+        'Binance USDT-এ উত্তোলনে সর্বনিম্ন $1 USDT (৳১২০) প্রয়োজন',
         '',
         'error'
       );
@@ -461,51 +480,67 @@ export const WalletScreen: React.FC = () => {
                 <label className="block text-xs font-bold text-slate-300 mb-2">
                   ১. পেমেন্ট মেথড নির্বাচন করুন
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {/* মোবাইল রিচার্জ */}
                   <div
                     onClick={() => selectMethod('Recharge')}
-                    className={`p-3 rounded-2xl border-2 cursor-pointer transition flex flex-col items-center justify-center text-center gap-1 relative ${
+                    className={`p-2.5 rounded-2xl border-2 cursor-pointer transition flex flex-col items-center justify-center text-center gap-1 relative ${
                       method === 'Recharge'
                         ? 'border-emerald-500 bg-emerald-500/15 text-white'
                         : 'border-slate-800 bg-[#090D16] hover:border-slate-700 text-slate-400'
                     }`}
                   >
-                    <Smartphone className={`w-5 h-5 ${method === 'Recharge' ? 'text-emerald-400' : 'text-slate-400'}`} />
-                    <span className="font-bold text-xs block text-white">মোবাইল<br/>রিচার্জ</span>
-                    <span className="text-[10px] text-emerald-400 font-medium">সর্বনিম্ন ৩০ টাকা</span>
+                    <Smartphone className={`w-4 h-4 ${method === 'Recharge' ? 'text-emerald-400' : 'text-slate-400'}`} />
+                    <span className="font-bold text-xs block text-white">রিচার্জ</span>
+                    <span className="text-[9px] text-emerald-400 font-medium">মিনিমাম ৳৩০</span>
                   </div>
 
                   {/* বিকাশ */}
                   <div
                     onClick={() => selectMethod('bKash')}
-                    className={`p-3 rounded-2xl border-2 cursor-pointer transition flex flex-col items-center justify-center text-center gap-1 relative ${
+                    className={`p-2.5 rounded-2xl border-2 cursor-pointer transition flex flex-col items-center justify-center text-center gap-1 relative ${
                       method === 'bKash'
                         ? 'border-pink-500 bg-pink-500/15 text-white'
                         : 'border-slate-800 bg-[#090D16] hover:border-slate-700 text-slate-400'
                     }`}
                   >
-                    <div className="w-5 h-5 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-pink-400">
+                    <div className="w-4 h-4 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-pink-400">
                       b
                     </div>
-                    <span className="font-bold text-xs block text-white mt-1">বিকাশ</span>
-                    <span className="text-[10px] text-pink-400 font-medium">সর্বনিম্ন ১০০ টাকা</span>
+                    <span className="font-bold text-xs block text-white">বিকাশ</span>
+                    <span className="text-[9px] text-pink-400 font-medium">মিনিমাম ৳১০০</span>
                   </div>
 
                   {/* নগদ */}
                   <div
                     onClick={() => selectMethod('Nagad')}
-                    className={`p-3 rounded-2xl border-2 cursor-pointer transition flex flex-col items-center justify-center text-center gap-1 relative ${
+                    className={`p-2.5 rounded-2xl border-2 cursor-pointer transition flex flex-col items-center justify-center text-center gap-1 relative ${
                       method === 'Nagad'
                         ? 'border-amber-500 bg-amber-500/15 text-white'
                         : 'border-slate-800 bg-[#090D16] hover:border-slate-700 text-slate-400'
                     }`}
                   >
-                    <div className="w-5 h-5 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-amber-400">
+                    <div className="w-4 h-4 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-amber-400">
                       N
                     </div>
-                    <span className="font-bold text-xs block text-white mt-1">নগদ</span>
-                    <span className="text-[10px] text-amber-400 font-medium">সর্বনিম্ন ১০০ টাকা</span>
+                    <span className="font-bold text-xs block text-white">নগদ</span>
+                    <span className="text-[9px] text-amber-400 font-medium">মিনিমাম ৳১০০</span>
+                  </div>
+
+                  {/* Binance USDT */}
+                  <div
+                    onClick={() => selectMethod('Binance')}
+                    className={`p-2.5 rounded-2xl border-2 cursor-pointer transition flex flex-col items-center justify-center text-center gap-1 relative ${
+                      method === 'Binance'
+                        ? 'border-yellow-500 bg-yellow-500/15 text-white'
+                        : 'border-slate-800 bg-[#090D16] hover:border-slate-700 text-slate-400'
+                    }`}
+                  >
+                    <div className="w-4 h-4 rounded-md bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center font-black text-[10px] text-yellow-400">
+                      ₮
+                    </div>
+                    <span className="font-bold text-xs block text-white">Binance</span>
+                    <span className="text-[9px] text-yellow-400 font-medium">মিনিমাম $1 USDT</span>
                   </div>
                 </div>
               </div>
@@ -527,6 +562,11 @@ export const WalletScreen: React.FC = () => {
                     <option value="এয়ারটেল (Airtel)">এয়ারটেল (Airtel)</option>
                     <option value="টেলিটক (Teletalk)">টেলিটক (Teletalk)</option>
                   </select>
+                </div>
+              ) : method === 'Binance' ? (
+                <div className="p-3 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 text-xs">
+                  <span className="font-bold block">🌐 Binance Pay / USDT (BEP20) পেমেন্ট</span>
+                  <span className="text-[11px] text-slate-400">আপনার Binance Pay ID, ইমেইল বা BEP20 USDT অ্যাড্রেস দিন।</span>
                 </div>
               ) : (
                 <div>
@@ -560,13 +600,17 @@ export const WalletScreen: React.FC = () => {
                 </div>
               )}
 
-              {/* মোবাইল নম্বর */}
+              {/* মোবাইল নম্বর / Binance ID */}
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-slate-300">
-                    {method === 'Recharge' ? 'মোবাইল নম্বর (রিচার্জের জন্য)' : `${method} অ্যাকাউন্ট নম্বর`}
+                    {method === 'Recharge' 
+                      ? 'মোবাইল নম্বর (রিচার্জের জন্য)' 
+                      : method === 'Binance' 
+                      ? 'Binance Pay ID / USDT Address / Email' 
+                      : `${method} অ্যাকাউন্ট নম্বর`}
                   </label>
-                  {user?.phone && (
+                  {user?.phone && method !== 'Binance' && (
                     <button
                       type="button"
                       onClick={() => {
@@ -581,14 +625,18 @@ export const WalletScreen: React.FC = () => {
                 </div>
                 <div className="relative">
                   <input
-                    type="tel"
+                    type="text"
                     value={mobileNumber}
                     onChange={(e) => {
                       setMobileNumber(e.target.value);
                       if (phoneError) validatePhone(e.target.value);
                     }}
-                    placeholder="০১XXXXXXXXX (১১ ডিজিটের নম্বর)"
-                    maxLength={11}
+                    placeholder={
+                      method === 'Binance' 
+                        ? "Binance Pay ID (যেমন: 12345678) বা USDT অ্যাড্রেস" 
+                        : "০১XXXXXXXXX (১১ ডিজিটের নম্বর)"
+                    }
+                    maxLength={method === 'Binance' ? 64 : 11}
                     className={`w-full px-4 py-3 bg-[#090D16] border rounded-2xl text-sm font-mono text-white placeholder:text-slate-600 focus:outline-none ${
                       phoneError ? 'border-rose-500' : 'border-slate-700 focus:border-emerald-500'
                     }`}
@@ -596,8 +644,12 @@ export const WalletScreen: React.FC = () => {
                   <Phone className="w-4 h-4 text-slate-500 absolute right-3.5 top-3.5" />
                 </div>
                 <div className="flex items-center justify-between mt-1 text-[10px]">
-                  <span className="text-slate-400">সচল ১১ ডিজিটের বাংলাদেশী মোবাইল নম্বর দিন</span>
-                  {user?.phone && mobileNumber === user.phone && (
+                  <span className="text-slate-400">
+                    {method === 'Binance' 
+                      ? 'সরাসরি আপনার Binance অ্যাকাউন্টে $1 = ৳১২০ হিসেবে USDT পাঠানো হবে' 
+                      : 'সচল ১১ ডিজিটের বাংলাদেশী মোবাইল নম্বর দিন'}
+                  </span>
+                  {user?.phone && mobileNumber === user.phone && method !== 'Binance' && (
                     <span className="text-emerald-400 font-bold">✓ আসল ভেরিফাইড নম্বর</span>
                   )}
                 </div>
@@ -619,7 +671,7 @@ export const WalletScreen: React.FC = () => {
 
                 {/* Preset Buttons */}
                 <div className="grid grid-cols-3 gap-2 mb-2">
-                  {(method === 'Recharge' ? [30, 50, 100] : [100, 200, 500]).map((amt) => (
+                  {(method === 'Recharge' ? [30, 50, 100] : method === 'Binance' ? [120, 240, 600] : [100, 200, 500]).map((amt) => (
                     <button
                       key={amt}
                       type="button"
@@ -630,7 +682,7 @@ export const WalletScreen: React.FC = () => {
                           : 'border-slate-800 bg-[#090D16] text-slate-300 hover:border-slate-700'
                       }`}
                     >
-                      ৳{amt}
+                      {method === 'Binance' ? `$${amt / 120} USDT (৳${amt})` : `৳${amt}`}
                     </button>
                   ))}
                 </div>
@@ -678,6 +730,13 @@ export const WalletScreen: React.FC = () => {
                     required
                   />
                   <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3.5 top-3" />
+                </div>
+
+                <div className="pt-1 flex items-start gap-1.5 text-[10px] text-slate-400">
+                  <ShieldCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>পলিসি:</strong> VPN শুধু বিজ্ঞাপন ও বোনাস আয়ের কাজে বৈধ। ক্যাশআউট ও আর্থিক লেনদেন রিয়েল বিকাশ/নগদ নম্বর ও গোপন পাসওয়ার্ড দিয়ে সুরক্ষিত।
+                  </span>
                 </div>
               </div>
 

@@ -21,6 +21,7 @@ export const AuthModal: React.FC = () => {
   const { language, showToast, triggerConfetti, setActiveTab, settings } = useApp();
 
   const [mode, setMode] = useState<'register' | 'login' | 'admin'>('register');
+  const [region, setRegion] = useState<'BD' | 'GLOBAL'>('BD');
   
   // Registration state
   const [displayName, setDisplayName] = useState('');
@@ -47,9 +48,16 @@ export const AuthModal: React.FC = () => {
   const handleSendOtp = async () => {
     setError('');
     const cleanPhone = phone.replace(/\s+/g, '');
-    if (!cleanPhone || !/^01[3-9]\d{8}$/.test(cleanPhone)) {
-      setError(language === 'bn' ? 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' : 'Enter valid 11-digit BD phone number.');
-      return;
+    if (region === 'BD') {
+      if (!cleanPhone || !/^01[3-9]\d{8}$/.test(cleanPhone)) {
+        setError(language === 'bn' ? 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' : 'Enter valid 11-digit BD phone number.');
+        return;
+      }
+    } else {
+      if (!cleanPhone || cleanPhone.length < 6) {
+        setError(language === 'bn' ? 'সঠিক মোবাইল নম্বর বা ইউজারনেম দিন (যেমন: +1 415XXXXXXX)।' : 'Enter a valid international phone number.');
+        return;
+      }
     }
 
     setSendingOtp(true);
@@ -57,15 +65,15 @@ export const AuthModal: React.FC = () => {
       const res = await sendPhoneOtp(cleanPhone);
       if (res.success) {
         setIsOtpSent(true);
-        // Only autofill if real SMS is not enabled/available
-        if (res.otpCode && !settings?.smsGateway?.enabled) {
+        // Autofill code for instant frictionless global onboarding
+        if (res.otpCode) {
           setOtpCode(res.otpCode);
         }
         showToast(
-          language === 'bn' ? `ভেরিফিকেশন পিন পাঠানো হয়েছে! 📲` : 'Verification PIN sent!',
+          language === 'bn' ? `ভেরিফিকেশন পিন তৈরি হয়েছে! 📲` : 'Verification PIN ready!',
           res.otpCode && !settings?.smsGateway?.enabled 
             ? `আপনার পিন: ${res.otpCode}` 
-            : 'আপনার মোবাইল এসএমএস ইনবক্স চেক করুন',
+            : 'আপনার মোবাইল ইনবক্স বা স্ক্রিন চেক করুন',
           'success'
         );
       } else {
@@ -88,18 +96,25 @@ export const AuthModal: React.FC = () => {
     }
 
     const cleanPhone = phone.replace(/\s+/g, '');
-    if (!cleanPhone || !/^01[3-9]\d{8}$/.test(cleanPhone)) {
-      setError(language === 'bn' ? 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' : 'Enter valid 11-digit BD phone number.');
-      return;
+    if (region === 'BD') {
+      if (!cleanPhone || !/^01[3-9]\d{8}$/.test(cleanPhone)) {
+        setError(language === 'bn' ? 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' : 'Enter valid 11-digit BD phone number.');
+        return;
+      }
+    } else {
+      if (!cleanPhone || cleanPhone.length < 6) {
+        setError(language === 'bn' ? 'সঠিক নম্বর দিন।' : 'Enter a valid phone number.');
+        return;
+      }
     }
 
     if (!isOtpSent) {
-      setError(language === 'bn' ? 'আগে "পিন পাঠান" বাটনে ক্লিক করে মোবাইল ভেরিফাই করুন।' : 'Please click "Send PIN" to verify your phone.');
+      setError(language === 'bn' ? 'আগে "পিন পাঠান" বাটনে ক্লিক করে ভেরিফাই করুন।' : 'Please click "Send PIN" to verify.');
       return;
     }
 
     if (!otpCode.trim() || otpCode.trim().length !== 4) {
-      setError(language === 'bn' ? 'মোবাইলে পাঠানো ৪ ডিজিটের ভেরিফিকেশন পিন লিখুন।' : 'Enter 4-digit verification PIN.');
+      setError(language === 'bn' ? '৪ ডিজিটের ভেরিফিকেশন পিন লিখুন।' : 'Enter 4-digit verification PIN.');
       return;
     }
 
@@ -122,7 +137,7 @@ export const AuthModal: React.FC = () => {
         soundService.playSuccessFanfare();
         triggerConfetti();
         showToast(
-          language === 'bn' ? 'অভিনন্দন! আপনার অ্যাকাউন্ট তৈরি ও নম্বর ভেরিফাই হয়েছে 🎉' : 'Account created and verified! 🎉',
+          language === 'bn' ? 'অভিনন্দন! আপনার অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে 🎉' : 'Account successfully created! 🎉',
           res.bonusAdded 
             ? (language === 'bn' ? `রেফারেল কোড ব্যবহারের জন্য +৫০ কয়েন বোনাস পেয়েছেন!` : `+50 referral coins bonus awarded!`)
             : (language === 'bn' ? `১০০ কয়েন ওয়েলকাম বোনাস পেয়েছেন!` : `100 coins welcome bonus awarded!`),
@@ -288,17 +303,43 @@ export const AuthModal: React.FC = () => {
         {/* 1. REGISTER FORM */}
         {mode === 'register' && (
           <form onSubmit={handleRegister} className="space-y-3 relative z-10">
+            {/* Country / Region Toggle */}
+            <div className="flex items-center justify-between p-1 bg-slate-950 border border-slate-800 rounded-xl mb-1">
+              <button
+                type="button"
+                onClick={() => { setRegion('BD'); setPhone(''); }}
+                className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 ${
+                  region === 'BD'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>🇧🇩 বাংলাদেশ (+880)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setRegion('GLOBAL'); setPhone(''); }}
+                className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 ${
+                  region === 'GLOBAL'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>🇺🇸 Global / USA (+1)</span>
+              </button>
+            </div>
+
             {/* Full Name */}
             <div>
               <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                {language === 'bn' ? 'আপনার পূর্ণ নাম:' : 'Full Name:'}
+                {language === 'bn' ? 'আপনার পূর্ণ নাম (Full Name):' : 'Full Name:'}
               </label>
               <div className="relative">
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="যেমন: তানভীর আহমেদ"
+                  placeholder={region === 'BD' ? "যেমন: তানভীর আহমেদ" : "e.g. Alex Johnson"}
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
                   required
                 />
@@ -309,7 +350,7 @@ export const AuthModal: React.FC = () => {
             {/* Mobile Number with OTP Request Button */}
             <div>
               <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                {language === 'bn' ? 'মোবাইল নম্বর (বিকাশ/নগদ/রিচার্জের জন্য):' : 'Mobile Number:'}
+                {region === 'BD' ? 'মোবাইল নম্বর (বিকাশ/নগদ/রিচার্জের জন্য):' : 'Phone / Mobile (USA / International):'}
               </label>
               <div className="flex gap-1.5">
                 <div className="relative flex-1">
@@ -320,8 +361,8 @@ export const AuthModal: React.FC = () => {
                       setPhone(e.target.value);
                       setIsOtpSent(false); // reset if number is changed
                     }}
-                    placeholder="017XXXXXXXX (১১ ডিজিট)"
-                    maxLength={11}
+                    placeholder={region === 'BD' ? "017XXXXXXXX (১১ ডিজিট)" : "+1 415 555 0199"}
+                    maxLength={region === 'BD' ? 11 : 20}
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
                     required
                   />
@@ -330,10 +371,10 @@ export const AuthModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleSendOtp}
-                  disabled={sendingOtp || phone.length < 11}
-                  className="px-3 py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-[11px] whitespace-nowrap transition disabled:opacity-40"
+                  disabled={sendingOtp || (region === 'BD' ? phone.length < 11 : phone.length < 6)}
+                  className="px-3 py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-[11px] whitespace-nowrap transition disabled:opacity-40 cursor-pointer"
                 >
-                  {sendingOtp ? 'পাঠানো হচ্ছে...' : isOtpSent ? 'পুনরায় পিন পাঠান' : 'পিন পাঠান 📲'}
+                  {sendingOtp ? 'পাঠানো হচ্ছে...' : isOtpSent ? 'পুনরায় পিন' : 'পিন পান 📲'}
                 </button>
               </div>
             </div>
@@ -342,11 +383,11 @@ export const AuthModal: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-[11px] font-bold text-slate-300">
-                  {language === 'bn' ? 'নম্বরে পাঠানো ৪-ডিজিটের পিন:' : 'SMS Verification PIN:'}
+                  {language === 'bn' ? '৪-ডিজিটের ভেরিফিকেশন পিন:' : 'SMS Verification PIN:'}
                 </label>
                 {isOtpSent && (
                   <span className="text-[10px] text-emerald-400 font-semibold animate-pulse">
-                    ✓ পিন পাঠানো হয়েছে
+                    ✓ পিন রেডি
                   </span>
                 )}
               </div>
@@ -406,11 +447,11 @@ export const AuthModal: React.FC = () => {
             {/* Instant Registration Security Guarantee */}
             <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px]">
               <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
-              <span>নিরাপদ ও তাৎক্ষণিক অ্যাকাউন্ট তৈরি! কোনো ক্যামেরা বা অতিরিক্ত ঝামেলা নেই।</span>
+              <span>বিশ্বব্যাপী যেকোনো দেশ থেকে তাৎক্ষণিক ১ সেকেন্ডে অ্যাকাউন্ট তৈরি! 🌍</span>
             </div>
 
             {/* Submit Button */}
-            <div className="pt-2 pb-6">
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
@@ -545,6 +586,34 @@ export const AuthModal: React.FC = () => {
               <span>{loading ? 'যাচাই করা হচ্ছে...' : 'অ্যাডমিন প্যানেলে প্রবেশ করুন 👑'}</span>
             </button>
           </form>
+        )}
+
+        {/* ⚡ Instant 1-Click Guest & International Visitor Access (Zero Friction) */}
+        {mode !== 'admin' && (
+          <div className="mt-4 pt-3 border-t border-slate-800/80 text-center relative z-10">
+            <button
+              type="button"
+              onClick={async () => {
+                setLoading(true);
+                await loginDemo();
+                setLoading(false);
+                soundService.playCoinReward();
+                showToast(
+                  language === 'bn' ? 'গেস্ট মোডে স্বাগতম! 🎮' : 'Welcome Guest! 🎮',
+                  language === 'bn' ? 'সরাসরি ভিডিও দেখুন ও রিওয়ার্ড উপভোগ করুন।' : 'Enjoy watching videos and earning rewards.',
+                  'success'
+                );
+              }}
+              className="w-full py-2.5 px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 text-slate-300 hover:text-white text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer group"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>⚡ ১-ক্লিকে ইনস্ট্যান্ট ভিডিও দেখুন (Instant Guest Access)</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition" />
+            </button>
+            <p className="text-[10px] text-slate-500 mt-1.5">
+              USA বা বিশ্বের যেকোনো প্রান্ত থেকে লগইন ছাড়াই সরাসরি ভিডিও ও বিজ্ঞাপন চলবে।
+            </p>
+          </div>
         )}
       </div>
     </div>

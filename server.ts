@@ -11,7 +11,19 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-// Increase request entity size limits to 50MB for image snapshots, avatar uploads, and database sync
+// 🛡️ International Enterprise-Grade Security Headers & Anti-Tamper Guard
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('X-DNS-Prefetch-Control', 'off');
+  res.setHeader('X-Download-Options', 'noopen');
+  res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// Increase request entity size limits to 50mb for image snapshots, avatar uploads, and database sync
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -129,7 +141,10 @@ const db: {
       adPublisherId: 'ca-pub-9842103859218491',
       adSlotBanner: '1092837465',
       adSlotRewarded: '5647382910',
-      adsterraDirectLink: 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4'
+      adsterraDirectLink: 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4',
+      adsterraBannerCode: '<script type="text/javascript">atOptions = { key : "026df0717402ab99e2cfeea66cbde373", format : "iframe", height : 250, width : 300, params : {} };</script><script type="text/javascript" src="https://www.highrevenueformat.com/026df0717402ab99e2cfeea66cbde373/invoke.js"></script>',
+      adsterraPopunderCode: '<script src="https://pl31611746.profitableratecpmnetwork.com/11/4f/12/114f12061c28bd123f51ddc1fb9c6111.js"></script>',
+      adsterraSocialBarCode: '<script src="https://pl31612557.profitableratecpmnetwork.com/4b/5b/f5/4b5bf560a60882eaf9fc46b3684fb3f4.js"></script>'
     },
     activeNotice: {
       enabled: true,
@@ -576,12 +591,12 @@ async function dispatchRealSms(phone: string, text: string): Promise<{ sent: boo
   return { sent: false };
 }
 
-// Request Phone OTP Pin for Registration
+// Request Phone OTP Pin for Registration (Supports Bangladesh & Global/USA +1, +91, etc.)
 app.post('/api/auth/send-otp', async (req, res) => {
   const { phone } = req.body;
   const cleanPhone = (phone || '').replace(/\s+/g, '');
-  if (!cleanPhone || !/^01[3-9]\d{8}$/.test(cleanPhone)) {
-    return res.status(400).json({ success: false, message: 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' });
+  if (!cleanPhone || cleanPhone.length < 6) {
+    return res.status(400).json({ success: false, message: 'সঠিক মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX বা +1 234XXXXXX)।' });
   }
 
   // Check if phone already registered
@@ -597,16 +612,17 @@ app.post('/api/auth/send-otp', async (req, res) => {
   const smsText = `Watch & Earn BD: আপনার অ্যাকাউন্ট ভেরিফিকেশন পিন হলো ${code}। পিনটি কাউকে বলবেন না।`;
   console.log(`[SMS OTP GATEWAY] Sending code ${code} to ${cleanPhone}`);
 
-  // Dispatch real SMS if configured
-  const smsResult = await dispatchRealSms(cleanPhone, smsText);
+  // Dispatch real SMS if configured (for BD numbers)
+  const isBdNumber = /^01[3-9]\d{8}$/.test(cleanPhone) || /^(\+?8801)[3-9]\d{8}$/.test(cleanPhone);
+  const smsResult = isBdNumber ? await dispatchRealSms(cleanPhone, smsText) : { sent: false };
 
-  // Return message indicating real SMS sent to user's phone
+  // Return message indicating verification PIN
   res.json({
     success: true,
     message: smsResult.sent 
       ? `আপনার মোবাইল নম্বরে এসএমএস এর মাধ্যমে ৪-ডিজিটের ভেরিফিকেশন পিন পাঠানো হয়েছে।` 
-      : `আপনার নম্বরে ভেরিফিকেশন পিন পাঠানো হয়েছে। (SMS গেটওয়ে কনফিগার করা থাকলে সরাসরি ইনবক্সে আসবে)`,
-    // Never show OTP in UI if gateway is live
+      : `আপনার নম্বরে ভেরিফিকেশন পিন জেনারেট হয়েছে।`,
+    // Show OTP in UI if foreign or gateway is not delivering international SMS
     otpCode: (db.settings.smsGateway?.enabled && smsResult.sent) ? undefined : code,
     phone: cleanPhone,
     isRealSms: smsResult.sent
@@ -621,8 +637,8 @@ app.post('/api/auth/register', (req, res) => {
   }
 
   const cleanPhone = (phone || '').replace(/\s+/g, '');
-  if (!cleanPhone || !/^01[3-9]\d{8}$/.test(cleanPhone)) {
-    return res.status(400).json({ success: false, message: 'সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' });
+  if (!cleanPhone || cleanPhone.length < 6) {
+    return res.status(400).json({ success: false, message: 'সঠিক মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX বা +1 234XXXXXX)।' });
   }
 
   if (!password || password.length < 4) {
@@ -1585,15 +1601,21 @@ app.post('/api/wallet/withdraw', (req, res) => {
   }
 
   // Validation
-  if (method !== 'bKash' && method !== 'Nagad' && method !== 'Recharge') {
-    return res.status(400).json({ success: false, message: 'পেমেন্ট মেথড হিসেবে মোবাইল রিচার্জ, bKash অথবা Nagad নির্বাচন করুন।' });
+  if (method !== 'bKash' && method !== 'Nagad' && method !== 'Recharge' && method !== 'Binance') {
+    return res.status(400).json({ success: false, message: 'পেমেন্ট মেথড হিসেবে বিকাশ, নগদ, রিচার্জ অথবা Binance USDT নির্বাচন করুন।' });
   }
 
-  // BD Phone number regex: 01[3-9]XXXXXXXX (11 digits)
-  const bdPhoneRegex = /^01[3-9]\d{8}$/;
   const cleanMobile = (mobileNumber || '').replace(/\s+/g, '');
-  if (!cleanMobile || !bdPhoneRegex.test(cleanMobile)) {
-    return res.status(400).json({ success: false, message: 'সঠিক ১১ ডিজিটের বাংলাদেশি মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' });
+  if (method === 'Binance') {
+    if (!cleanMobile || cleanMobile.length < 4) {
+      return res.status(400).json({ success: false, message: 'সঠিক Binance Pay ID বা USDT (BEP20) অ্যাড্রেস দিন।' });
+    }
+  } else {
+    // BD Phone number regex: 01[3-9]XXXXXXXX (11 digits)
+    const bdPhoneRegex = /^01[3-9]\d{8}$/;
+    if (!cleanMobile || !bdPhoneRegex.test(cleanMobile)) {
+      return res.status(400).json({ success: false, message: 'সঠিক ১১ ডিজিটের বাংলাদেশি মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।' });
+    }
   }
 
   const coinAmount = parseInt(coins, 10);
@@ -1605,7 +1627,7 @@ app.post('/api/wallet/withdraw', (req, res) => {
   const rate = db.settings.coinToBDTRate || 0.015;
   const bdtAmount = Math.round(coinAmount * rate * 100) / 100;
 
-  // Limit checks: Mobile Recharge min 30 BDT, bKash / Nagad min 100 BDT
+  // Limit checks: Mobile Recharge min 30 BDT, bKash / Nagad min 100 BDT, Binance min 120 BDT ($1 USDT)
   if (method === 'Recharge' && bdtAmount < (db.settings.minRechargeBDT || 30)) {
     const requiredCoins = Math.ceil((db.settings.minRechargeBDT || 30) / rate);
     return res.status(400).json({
@@ -1619,6 +1641,14 @@ app.post('/api/wallet/withdraw', (req, res) => {
     return res.status(400).json({
       success: false,
       message: `${method}-এ ক্যাশআউটের জন্য সর্বনিম্ন ১০০ টাকা (${requiredCoins} কয়েন) ব্যালেন্স প্রয়োজন।`
+    });
+  }
+
+  if (method === 'Binance' && bdtAmount < 120) {
+    const requiredCoins = Math.ceil(120 / rate);
+    return res.status(400).json({
+      success: false,
+      message: `Binance USDT উত্তোলনে সর্বনিম্ন $1 USDT বা ৳১২০ (${requiredCoins} কয়েন) প্রয়োজন।`
     });
   }
 

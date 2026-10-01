@@ -1152,7 +1152,7 @@ export const AdminDashboard: React.FC = () => {
 
                     <div>
                       <label className="block text-[10px] font-bold text-slate-300 mb-1">
-                        📜 Adsterra ব্যানার / স্ক্রিপ্ট কোড (Banner Script HTML):
+                        📜 Adsterra ব্যানার কোড (Banner 300x250 HTML):
                       </label>
                       <textarea
                         rows={2}
@@ -1163,6 +1163,41 @@ export const AdminDashboard: React.FC = () => {
                         })}
                         placeholder="<script ...></script> বা <iframe ...></iframe>"
                         className="w-full p-2 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-slate-300"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                        🚀 Adsterra Popunder কোড (সবচেয়ে বেশি CPM আয়):
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={editSettings.adsConfig?.adsterraPopunderCode ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          adsConfig: { ...editSettings.adsConfig, adsterraPopunderCode: e.target.value } as any
+                        })}
+                        placeholder="<script type='text/javascript' src='//pl...js'></script>"
+                        className="w-full p-2 bg-slate-950 border border-emerald-500/40 rounded-xl text-xs font-mono text-emerald-300"
+                      />
+                      <span className="text-[9px] text-slate-400 block mt-0.5">
+                        💡 Popunder কোড দিলে প্রতি ক্লিকের সর্বোচ্চ $২-$৫ CPM পাওয়া যায়।
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                        💬 Adsterra Social Bar কোড (ইন-পেজ পুশ নোটিফিকেশন):
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={editSettings.adsConfig?.adsterraSocialBarCode ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          adsConfig: { ...editSettings.adsConfig, adsterraSocialBarCode: e.target.value } as any
+                        })}
+                        placeholder="<script type='text/javascript' src='//pl...js'></script>"
+                        className="w-full p-2 bg-slate-950 border border-cyan-500/40 rounded-xl text-xs font-mono text-cyan-300"
                       />
                     </div>
                   </div>

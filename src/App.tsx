@@ -15,6 +15,7 @@ import { NotificationDrawer } from './components/Notifications/NotificationDrawe
 import { ToastContainer } from './components/UI/ToastContainer';
 import { InstallPrompt } from './components/PWA/InstallPrompt';
 import { AuthModal } from './components/Auth/AuthModal';
+import { AdsterraScriptInjector } from './components/Common/AdsterraScriptInjector';
 
 const MainLayout: React.FC = () => {
   const { activeTab } = useApp();
@@ -57,6 +58,7 @@ const MainLayout: React.FC = () => {
       <NotificationDrawer />
       <ToastContainer />
       <InstallPrompt />
+      <AdsterraScriptInjector />
       {!user && <AuthModal />}
     </div>
   );
