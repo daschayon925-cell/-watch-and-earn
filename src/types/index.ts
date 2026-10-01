@@ -56,6 +56,10 @@ export interface User {
   spinsToday?: number;
   lastSpinDate?: string;
   isVerifiedMember?: boolean;
+  biometricType?: 'fingerprint' | 'face' | 'none';
+  biometricEnrolled?: boolean;
+  biometricPhoto?: string; // Captured real camera face selfie
+  webAuthnCredentialId?: string; // Device hardware fingerprint key
   createdAt: string;
   updatedAt: string;
 }
@@ -92,6 +96,8 @@ export interface Withdrawal {
   withdrawalId: string;
   userId: string;
   userName: string;
+  registeredPhone?: string;
+  isPhoneMatching?: boolean;
   method: PaymentMethod;
   accountType: AccountType;
   mobileNumber: string;

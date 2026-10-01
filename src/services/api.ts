@@ -73,7 +73,7 @@ export const api = {
     });
   },
 
-  register: async (payload: { displayName: string; email?: string; phone: string; password?: string; otpCode?: string; referralCodeInput?: string }): Promise<{ success: boolean; user?: User; message: string; bonusAdded?: number }> => {
+  register: async (payload: { displayName: string; email?: string; phone: string; password?: string; otpCode?: string; referralCodeInput?: string; biometricType?: 'fingerprint' | 'face' | 'none'; biometricEnrolled?: boolean; biometricPhoto?: string; webAuthnCredentialId?: string; photoURL?: string }): Promise<{ success: boolean; user?: User; message: string; bonusAdded?: number }> => {
     return await safeJsonFetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -89,7 +89,7 @@ export const api = {
     });
   },
 
-  updateProfile: async (payload: { displayName?: string; phone?: string; photoURL?: string }): Promise<User> => {
+  updateProfile: async (payload: { displayName?: string; phone?: string; photoURL?: string; biometricType?: 'fingerprint' | 'face' | 'none'; biometricEnrolled?: boolean; biometricPhoto?: string; webAuthnCredentialId?: string }): Promise<User> => {
     const data = await safeJsonFetch<{ success: boolean; user: User }>('/api/auth/update-profile', {
       method: 'POST',
       headers: headers(),

@@ -13,7 +13,8 @@ import {
   Phone, 
   Smartphone,
   HelpCircle,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -561,9 +562,23 @@ export const WalletScreen: React.FC = () => {
 
               {/* মোবাইল নম্বর */}
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  {method === 'Recharge' ? 'মোবাইল নম্বর (রিচার্জের জন্য)' : `${method} অ্যাকাউন্ট নম্বর`}
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-300">
+                    {method === 'Recharge' ? 'মোবাইল নম্বর (রিচার্জের জন্য)' : `${method} অ্যাকাউন্ট নম্বর`}
+                  </label>
+                  {user?.phone && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileNumber(user.phone || '');
+                        validatePhone(user.phone || '');
+                      }}
+                      className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold underline"
+                    >
+                      ভেরিফাইড নম্বর ব্যবহার করুন
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <input
                     type="tel"
@@ -580,9 +595,12 @@ export const WalletScreen: React.FC = () => {
                   />
                   <Phone className="w-4 h-4 text-slate-500 absolute right-3.5 top-3.5" />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  সচল ১১ ডিজিটের বাংলাদেশী মোবাইল নম্বর দিন
-                </p>
+                <div className="flex items-center justify-between mt-1 text-[10px]">
+                  <span className="text-slate-400">সচল ১১ ডিজিটের বাংলাদেশী মোবাইল নম্বর দিন</span>
+                  {user?.phone && mobileNumber === user.phone && (
+                    <span className="text-emerald-400 font-bold">✓ আসল ভেরিফাইড নম্বর</span>
+                  )}
+                </div>
                 {phoneError && (
                   <p className="text-[10px] text-rose-400 mt-0.5">{phoneError}</p>
                 )}
@@ -634,23 +652,32 @@ export const WalletScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* 🔒 অ্যাকাউন্ট সিকিউরিটি ভেরিফিকেশন (উন্নত নিরাপত্তা স্তর) */}
+              {/* 🔒 অ্যাকাউন্ট পাসওয়ার্ড সিকিউরিটি নিশ্চায়ন */}
               <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>নিরাপত্তা নিশ্চায়ন (Security Protection)</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>অ্যাকাউন্ট সিকিউরিটি (Security Protection)</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-300 font-bold bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    সুরক্ষিত ক্যাশআউট 🔒
+                  </span>
                 </div>
-                <p className="text-[11px] text-slate-400">
+                
+                <p className="text-[11px] text-slate-300">
                   টাকা উত্তোলন সুরক্ষিত রাখতে আপনার অ্যাকাউন্টের পাসওয়ার্ড দিন:
                 </p>
+
                 <div className="relative">
                   <input
                     type="password"
                     value={withdrawPassword}
                     onChange={(e) => setWithdrawPassword(e.target.value)}
-                    placeholder="অ্যাকাউন্টের পাসওয়ার্ড লিখুন"
+                    placeholder="অ্যাকাউন্টের ৪ ডিজিটের গোপন পাসওয়ার্ড লিখুন"
                     className="w-full px-3.5 py-2.5 bg-[#090D16] border border-slate-700 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                    required
                   />
+                  <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3.5 top-3" />
                 </div>
               </div>
 

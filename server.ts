@@ -613,7 +613,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
 
 // Register New Account with Phone OTP Verification, Password, and Referral bonus
 app.post('/api/auth/register', (req, res) => {
-  const { displayName, email, phone, password, otpCode, referralCodeInput } = req.body;
+  const { displayName, email, phone, password, otpCode, referralCodeInput, biometricType, biometricEnrolled, biometricPhoto, webAuthnCredentialId, photoURL } = req.body;
   if (!displayName || !displayName.trim()) {
     return res.status(400).json({ success: false, message: 'আপনার পূর্ণ নাম প্রদান করুন।' });
   }
@@ -702,7 +702,11 @@ app.post('/api/auth/register', (req, res) => {
     phone: cleanPhone,
     password: password.trim(),
     phoneVerified: true,
-    photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    photoURL: photoURL || biometricPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    biometricType: biometricType || 'fingerprint',
+    biometricEnrolled: Boolean(biometricEnrolled),
+    biometricPhoto: biometricPhoto || undefined,
+    webAuthnCredentialId: webAuthnCredentialId || undefined,
     coins: initialCoins,
     pendingWithdrawalCoins: 0,
     lifetimeCoins: initialCoins,
@@ -807,11 +811,16 @@ app.post('/api/auth/switch-role', (req, res) => {
 // Update Profile
 app.post('/api/auth/update-profile', (req, res) => {
   const user = getUser(req);
-  const { displayName, phone, photoURL } = req.body;
+  const { displayName, phone, photoURL, biometricType, biometricEnrolled, biometricPhoto, webAuthnCredentialId } = req.body;
   if (displayName) user.displayName = displayName;
   if (phone) user.phone = phone;
   if (photoURL) user.photoURL = photoURL;
+  if (biometricType !== undefined) user.biometricType = biometricType;
+  if (biometricEnrolled !== undefined) user.biometricEnrolled = biometricEnrolled;
+  if (biometricPhoto) user.biometricPhoto = biometricPhoto;
+  if (webAuthnCredentialId) user.webAuthnCredentialId = webAuthnCredentialId;
   user.updatedAt = new Date().toISOString();
+  saveDbToDisk();
   res.json({ success: true, user });
 });
 
@@ -1598,6 +1607,8 @@ app.post('/api/wallet/withdraw', (req, res) => {
     withdrawalId: 'wth_' + Date.now(),
     userId: user.uid,
     userName: user.displayName,
+    registeredPhone: user.phone || 'N/A',
+    isPhoneMatching: user.phone ? user.phone === cleanMobile : false,
     method,
     accountType: accountType || (method === 'Recharge' ? 'Prepaid' : 'Personal'),
     mobileNumber: cleanMobile,

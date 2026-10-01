@@ -31,7 +31,11 @@ import {
   AlertTriangle,
   Send,
   Camera,
-  UserPlus
+  UserPlus,
+  Upload,
+  Fingerprint,
+  Scan,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -53,6 +57,9 @@ export const ProfileScreen: React.FC = () => {
   const [editName, setEditName] = useState(user?.displayName || '');
   const [editPhone, setEditPhone] = useState(user?.phone || '');
   const [selectedAvatar, setSelectedAvatar] = useState(user?.photoURL || '');
+  const [customPhotoLoading, setCustomPhotoLoading] = useState(false);
+  const [biometricChoice, setBiometricChoice] = useState<'fingerprint' | 'face' | 'none'>(user?.biometricType || 'fingerprint');
+  const [biometricActive, setBiometricActive] = useState<boolean>(user?.biometricEnrolled ?? true);
   const [saving, setSaving] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -79,6 +86,34 @@ export const ProfileScreen: React.FC = () => {
     setTimeout(() => setCopiedUid(false), 2000);
   };
 
+  // Handle User Custom Photo Upload from Gallery or Camera
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check size limit: max 3MB
+    if (file.size > 3 * 1024 * 1024) {
+      showToast(language === 'bn' ? 'ছবির সাইজ ৩MB এর কম হতে হবে' : 'Image size must be less than 3MB', '', 'error');
+      return;
+    }
+
+    setCustomPhotoLoading(true);
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const base64Data = uploadEvent.target?.result as string;
+      if (base64Data) {
+        setSelectedAvatar(base64Data);
+        showToast(language === 'bn' ? 'ছবি সফলভাবে লোড হয়েছে!' : 'Photo loaded successfully!', '', 'success');
+      }
+      setCustomPhotoLoading(false);
+    };
+    reader.onerror = () => {
+      showToast(language === 'bn' ? 'ছবি পড়তে সমস্যা হয়েছে' : 'Failed to read image', '', 'error');
+      setCustomPhotoLoading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -86,10 +121,12 @@ export const ProfileScreen: React.FC = () => {
       await updateProfile({
         displayName: editName.trim(),
         phone: editPhone.trim(),
-        photoURL: selectedAvatar
+        photoURL: selectedAvatar,
+        biometricType: biometricChoice,
+        biometricEnrolled: biometricActive
       });
       setShowEditModal(false);
-      showToast(language === 'bn' ? 'প্রোফাইল সফলভাবে আপডেট হয়েছে!' : 'Profile updated successfully!', '', 'success');
+      showToast(language === 'bn' ? 'প্রোফাইল ও সিকিউরিটি সফলভাবে আপডেট হয়েছে!' : 'Profile and security updated successfully!', '', 'success');
     } catch {
       showToast(language === 'bn' ? 'আপডেট করা যায়নি' : 'Failed to update', '', 'error');
     } finally {
@@ -526,11 +563,35 @@ export const ProfileScreen: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveProfile} className="space-y-4 my-4">
-              {/* Avatar Selector */}
+              {/* Avatar & Photo Upload Selector */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-2">
-                  {language === 'bn' ? 'প্রোফাইল ছবি নির্বাচন করুন:' : 'Choose Avatar:'}
+                  {language === 'bn' ? 'প্রোফাইল ছবি বা ফটো আপলোড:' : 'Choose Avatar or Upload Photo:'}
                 </label>
+                
+                {/* Custom Photo Upload Card */}
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-950 border border-slate-800 mb-3">
+                  <img
+                    src={selectedAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                    alt="Current Avatar"
+                    className="w-14 h-14 rounded-full object-cover border-2 border-emerald-400 shadow-md"
+                  />
+                  <div className="flex-1">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-bold text-xs cursor-pointer hover:opacity-90 active:scale-95 transition shadow">
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>{customPhotoLoading ? 'আপলোড হচ্ছে...' : 'নিজের ছবি আপলোড'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-[10px] text-slate-400 mt-1">গ্যালারি বা ক্যামেরা থেকে ছবি তুলুন</p>
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-slate-400 mb-1.5 font-medium">অথবা ডিফল্ট অবতার বেছে নিন:</div>
                 <div className="grid grid-cols-6 gap-2">
                   {avatarPresets.map((av, idx) => (
                     <img
@@ -571,6 +632,59 @@ export const ProfileScreen: React.FC = () => {
                   maxLength={11}
                   className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                 />
+              </div>
+
+              {/* 🔐 বায়োমেট্রিক ও ক্যাশআউট সিকিউরিটি অপশন */}
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-950/40 to-cyan-950/40 border border-emerald-500/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                    <Fingerprint className="w-4 h-4 text-emerald-400" />
+                    <span>ক্যাশআউট বায়োমেট্রিক সিকিউরিটি</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={biometricActive}
+                      onChange={(e) => setBiometricActive(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                  </label>
+                </div>
+                
+                <p className="text-[10px] text-slate-300">
+                  টাকা তোলার সময় অতিরিক্ত ফিঙ্গারপ্রিন্ট বা ফেস ভেরিফিকেশন দিয়ে আপনার ব্যালেন্স শতভাগ সুরক্ষিত রাখুন।
+                </p>
+
+                {biometricActive && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setBiometricChoice('fingerprint')}
+                      className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                        biometricChoice === 'fingerprint'
+                          ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'
+                          : 'border-slate-800 bg-slate-950 text-slate-400'
+                      }`}
+                    >
+                      <Fingerprint className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>ফিঙ্গারপ্রিন্ট</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setBiometricChoice('face')}
+                      className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                        biometricChoice === 'face'
+                          ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
+                          : 'border-slate-800 bg-slate-950 text-slate-400'
+                      }`}
+                    >
+                      <Scan className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>ফেস আনলক</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2 pt-2">

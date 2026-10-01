@@ -571,6 +571,21 @@ export const AdminDashboard: React.FC = () => {
                         <span>WhatsApp</span>
                       </a>
                     </div>
+
+                    {/* 🛡️ Real Phone Verification Status Badge */}
+                    <div className="flex items-center gap-2 mt-1.5 text-[10px]">
+                      {w.isPhoneMatching ? (
+                        <span className="text-emerald-400 font-bold flex items-center gap-1 bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                          ভেরিফাইড আসল সিম নম্বর (১০০% নিরাপদ)
+                        </span>
+                      ) : (
+                        <span className="text-amber-400 font-medium flex items-center gap-1 bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-500/30">
+                          <AlertTriangle className="w-3 h-3 text-amber-400" />
+                          অ্যাকাউন্ট খোলার নম্বর: {w.registeredPhone || 'অজানা'} (অন্য নম্বরে উইথড্র দেওয়া হয়েছে)
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                     w.status === 'Paid'
@@ -1505,10 +1520,24 @@ export const AdminDashboard: React.FC = () => {
               <button onClick={() => setSelectedWithdrawal(null)} className="text-slate-400 hover:text-white">✕</button>
             </div>
 
-            <div className="text-xs text-slate-300 space-y-1">
+            <div className="text-xs text-slate-300 space-y-1 p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
               <div>ইউজার: <span className="font-bold text-white">{selectedWithdrawal.userName}</span></div>
-              <div>পেমেন্ট: <span className="font-bold text-emerald-400">{selectedWithdrawal.method} ({selectedWithdrawal.mobileNumber})</span></div>
-              <div>পরিমাণ: <span className="font-bold text-white">৳{selectedWithdrawal.bdtAmount.toFixed(2)} ({selectedWithdrawal.coins} কয়েন)</span></div>
+              <div>পেমেন্ট মেথড: <span className="font-bold text-emerald-400">{selectedWithdrawal.method}</span></div>
+              <div>উইথড্র নম্বর: <span className="font-mono font-bold text-cyan-300">{selectedWithdrawal.mobileNumber}</span></div>
+              <div>পরিমাণ: <span className="font-bold text-emerald-400">৳{selectedWithdrawal.bdtAmount.toFixed(2)} ({selectedWithdrawal.coins} কয়েন)</span></div>
+              
+              {/* Account phone match indicator */}
+              <div className="pt-1 mt-1 border-t border-slate-800 text-[10px]">
+                {selectedWithdrawal.isPhoneMatching ? (
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    ✓ অ্যাকাউন্ট সিম ও উইথড্র নম্বর একই (১০০% আসল অ্যাকাউন্ট)
+                  </span>
+                ) : (
+                  <span className="text-amber-400 font-medium">
+                    ⚠️ অ্যাকাউন্টের নম্বর: {selectedWithdrawal.registeredPhone || 'অজানা'} (অন্য নম্বরে উইথড্র আবেদন করেছে)
+                  </span>
+                )}
+              </div>
             </div>
 
             <div>

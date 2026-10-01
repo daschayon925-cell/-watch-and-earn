@@ -8,9 +8,9 @@ interface AuthContextType {
   loading: boolean;
   loginDemo: (uid?: string) => Promise<void>;
   sendPhoneOtp: (phone: string) => Promise<{ success: boolean; message: string; otpCode?: string }>;
-  registerUser: (data: { displayName: string; phone: string; password?: string; otpCode?: string; email?: string; referralCodeInput?: string }) => Promise<{ success: boolean; message: string; bonusAdded?: number }>;
+  registerUser: (data: { displayName: string; phone: string; password?: string; otpCode?: string; email?: string; referralCodeInput?: string; biometricType?: 'fingerprint' | 'face' | 'none'; biometricEnrolled?: boolean; biometricPhoto?: string; webAuthnCredentialId?: string; photoURL?: string }) => Promise<{ success: boolean; message: string; bonusAdded?: number }>;
   loginUser: (identifier: string, password?: string) => Promise<{ success: boolean; message: string }>;
-  updateProfile: (data: { displayName?: string; phone?: string; photoURL?: string }) => Promise<void>;
+  updateProfile: (data: { displayName?: string; phone?: string; photoURL?: string; biometricType?: 'fingerprint' | 'face' | 'none'; biometricEnrolled?: boolean; biometricPhoto?: string; webAuthnCredentialId?: string }) => Promise<void>;
   toggleAdminRole: () => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -155,7 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateProfile = async (data: { displayName?: string; phone?: string; photoURL?: string }) => {
+  const updateProfile = async (data: { displayName?: string; phone?: string; photoURL?: string; biometricType?: 'fingerprint' | 'face' | 'none'; biometricEnrolled?: boolean; biometricPhoto?: string; webAuthnCredentialId?: string }) => {
     try {
       const updated = await api.updateProfile(data);
       if (updated) {

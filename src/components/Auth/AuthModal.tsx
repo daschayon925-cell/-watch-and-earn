@@ -211,8 +211,8 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
-      <div className="w-full max-w-sm rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#090D16] to-[#0A1A12] border border-emerald-500/40 p-6 shadow-2xl relative overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in overflow-y-auto">
+      <div className="w-full max-w-sm rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#090D16] to-[#0A1A12] border border-emerald-500/40 p-5 sm:p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto my-auto">
         {/* Glow ambient */}
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
@@ -384,13 +384,13 @@ export const AuthModal: React.FC = () => {
             </div>
 
             {/* 🎁 Referral Code Input */}
-            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-teal-500/10 border border-amber-500/30 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black text-amber-300 flex items-center gap-1">
-                  <Gift className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                  <Gift className="w-4 h-4 text-amber-400" />
                   {language === 'bn' ? 'রেফারেল কোড (ঐচ্ছিক):' : 'Referral Code (Optional):'}
                 </span>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
                   +৫০ কয়েন বোনাস 🎁
                 </span>
               </div>
@@ -399,19 +399,27 @@ export const AuthModal: React.FC = () => {
                 value={referralCodeInput}
                 onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
                 placeholder="যেমন: CHAYON77"
-                className="w-full px-3 py-2 bg-slate-950 border border-amber-500/40 rounded-xl text-xs font-mono text-amber-300 placeholder:text-slate-600 focus:outline-none focus:border-amber-400 uppercase"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-amber-500/40 rounded-xl text-xs font-mono text-amber-300 placeholder:text-slate-600 focus:outline-none focus:border-amber-400 uppercase font-bold"
               />
             </div>
 
+            {/* Instant Registration Security Guarantee */}
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px]">
+              <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
+              <span>নিরাপদ ও তাৎক্ষণিক অ্যাকাউন্ট তৈরি! কোনো ক্যামেরা বা অতিরিক্ত ঝামেলা নেই।</span>
+            </div>
+
             {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition active:scale-98 flex items-center justify-center gap-1.5 disabled:opacity-50"
-            >
-              <Sparkles className="w-4 h-4 fill-slate-950" />
-              <span>{loading ? 'অ্যাকাউন্ট তৈরি হচ্ছে...' : (language === 'bn' ? 'অ্যাকাউন্ট তৈরি করুন ও বোনাস নিন' : 'Create Account & Claim')}</span>
-            </button>
+            <div className="pt-2 pb-6">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 text-slate-950 font-black text-sm rounded-xl shadow-lg shadow-emerald-500/20 transition active:scale-98 flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 fill-slate-950" />
+                <span>{loading ? 'অ্যাকাউন্ট তৈরি হচ্ছে...' : (language === 'bn' ? 'অ্যাকাউন্ট তৈরি করুন ও বোনাস নিন' : 'Create Account & Claim')}</span>
+              </button>
+            </div>
           </form>
         )}
 
