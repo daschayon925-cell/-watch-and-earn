@@ -13,6 +13,38 @@ const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
 
+// In-Memory sliding-window rate limiter to protect server controller from spam and abusive bots
+const ipRequestCounts = new Map<string, { count: number; resetAt: number }>();
+app.use('/api', (req, res, next) => {
+  const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const record = ipRequestCounts.get(ip);
+
+  if (!record || now > record.resetAt) {
+    ipRequestCounts.set(ip, { count: 1, resetAt: now + 60 * 1000 });
+    return next();
+  }
+
+  record.count++;
+  // Maximum 120 API calls per minute per IP for normal usage
+  if (record.count > 120) {
+    return res.status(429).json({
+      success: false,
+      message: 'খুব দ্রুত অনুরোধ পাঠানো হচ্ছে। অনুগ্রহ করে কয়েক সেকেন্ড অপেক্ষা করে আবার চেষ্টা করুন।'
+    });
+  }
+
+  next();
+});
+
+// Periodic cleanup of rate limit map every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of ipRequestCounts.entries()) {
+    if (now > data.resetAt) ipRequestCounts.delete(ip);
+  }
+}, 5 * 60 * 1000);
+
 // In-Memory & Disk-Persisted Database for Permanent Data Storage
 const DB_FILE = path.resolve(process.cwd(), 'database_data.json');
 

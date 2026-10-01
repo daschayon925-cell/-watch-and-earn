@@ -23,7 +23,9 @@ import {
   Radio,
   Sparkles,
   Smartphone,
-  Lock
+  Lock,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -39,6 +41,7 @@ export const AdminDashboard: React.FC = () => {
   const [kpis, setKpis] = useState<any>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [usersList, setUsersList] = useState<User[]>([]);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
@@ -245,6 +248,47 @@ export const AdminDashboard: React.FC = () => {
       showToast('নেটওয়ার্ক সমস্যা', '', 'error');
     } finally {
       setSendingBroadcast(false);
+    }
+  };
+
+  const handleExportUsersToCSV = () => {
+    if (usersList.length === 0) {
+      showToast('কোনো ইউজার ডাটা নেই', 'ডাউনলোড করার জন্য ইউজার তালিকা খালি', 'error');
+      return;
+    }
+
+    try {
+      const headers = ['UID', 'Name', 'Phone', 'Role', 'Status', 'Coins', 'Today Videos', 'Today Ads', 'Referral Code', 'Invited By', 'Total Referrals', 'Joined Date'];
+      const rows = usersList.map(u => [
+        `"${u.uid || ''}"`,
+        `"${(u.displayName || '').replace(/"/g, '""')}"`,
+        `"${(u.phone || u.email || '').replace(/"/g, '""')}"`,
+        `"${u.role || 'user'}"`,
+        `"${u.accountStatus || 'active'}"`,
+        u.coins || 0,
+        u.dailyVideosWatched || 0,
+        u.dailyAdsClicked || 0,
+        `"${u.referralCode || ''}"`,
+        `"${u.referredBy || ''}"`,
+        u.referralCount || 0,
+        `"${u.createdAt ? new Date(u.createdAt).toLocaleDateString('bn-BD') : ''}"`
+      ]);
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `WatchEarnBD_Users_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast('✅ এক্সেল ফাইল ডাউনলোড হয়েছে!', `${usersList.length} জন ইউজারের ডাটা এক্সেল শিটে সেভ হয়েছে।`, 'success');
+    } catch (e) {
+      console.error('CSV export failed', e);
+      showToast('ডাউনলোড ব্যর্থ হয়েছে', 'এক্সেল ফাইল তৈরি করতে সমস্যা হয়েছে', 'error');
     }
   };
 
@@ -596,25 +640,56 @@ export const AdminDashboard: React.FC = () => {
       {/* 4. USERS & ANTI-FRAUD TAB */}
       {activeTab === 'users' && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div>
               <h3 className="font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-cyan-400" />
                 নিবন্ধিত ইউজার তালিকা ({usersList.length} জন)
               </h3>
-              <p className="text-[10px] text-slate-400">অ্যাপের সকল সক্রিয় ও নতুন ব্যবহারকারীর তথ্য</p>
+              <p className="text-[10px] text-slate-400">অ্যাপের সকল সক্রিয় ও নতুন ব্যবহারকারীর লাইভ ডাটাবেজ</p>
             </div>
             
-            <button
-              onClick={() => {
-                loadAllAdminData(true);
-                showToast('🔄 ইউজার ডাটা রিফ্রেশ করা হয়েছে!', 'ক্লাউড ও সার্ভার থেকে সর্বশেষ ইউজার তালিকা সিঙ্ক হয়েছে।', 'success');
-              }}
-              className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow"
-            >
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: loading ? '1s' : '0s' }} />
-              <span>রিফ্রেশ / সিঙ্ক</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportUsersToCSV}
+                className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow"
+                title="সকল ইউজার ডাটা Excel / CSV ফাইলে ডাউনলোড করুন"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>এক্সেল ডাউনলোড</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  loadAllAdminData(true);
+                  showToast('🔄 ইউজার ডাটা রিফ্রেশ করা হয়েছে!', 'ক্লাউড ও সার্ভার থেকে সর্বশেষ ইউজার তালিকা সিঙ্ক হয়েছে।', 'success');
+                }}
+                className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow"
+              >
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: loading ? '1s' : '0s' }} />
+                <span>রিফ্রেশ / সিঙ্ক</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Search & Filter Bar */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="মোবাইল নম্বর, নাম বা রেফার কোড দিয়ে খুঁজুন..."
+              value={userSearchTerm}
+              onChange={(e) => setUserSearchTerm(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
+            />
+            {userSearchTerm && (
+              <button
+                onClick={() => setUserSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {usersList.length === 0 ? (
@@ -624,7 +699,19 @@ export const AdminDashboard: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-2">
-            {usersList.map((u) => (
+            {usersList
+              .filter(u => {
+                if (!userSearchTerm.trim()) return true;
+                const q = userSearchTerm.toLowerCase().trim();
+                return (
+                  (u.displayName && u.displayName.toLowerCase().includes(q)) ||
+                  (u.phone && u.phone.includes(q)) ||
+                  (u.email && u.email.toLowerCase().includes(q)) ||
+                  (u.referralCode && u.referralCode.toLowerCase().includes(q)) ||
+                  (u.uid && u.uid.toLowerCase().includes(q))
+                );
+              })
+              .map((u) => (
               <div
                 key={u.uid}
                 className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2"
