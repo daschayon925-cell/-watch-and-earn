@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ExternalLink, Sparkles, ArrowLeft, CheckCircle2, ShieldAlert, MousePointerClick, AlertCircle } from 'lucide-react';
+import { ExternalLink, Sparkles, ArrowLeft, CheckCircle2, MousePointerClick, ShieldCheck, X } from 'lucide-react';
 import { soundService } from '../../services/audio';
 
 interface AdViewerModalProps {
@@ -21,27 +21,42 @@ export const AdViewerModal: React.FC<AdViewerModalProps> = ({
 }) => {
   const [remaining, setRemaining] = useState<number>(durationSeconds);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
-  const [hasInteractedWithAd, setHasInteractedWithAd] = useState<boolean>(false);
-  const [showWarning, setShowWarning] = useState<boolean>(false);
+  const [hasInteractedWithAd, setHasInteractedWithAd] = useState<boolean>(true);
+
+  // 🛡️ Safe Hardware Back Button Navigation Handler (ইউজার ব্যাক বাটনে চাপলে সুন্দরভাবে অ্যাপে ফিরবে)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    try {
+      window.history.pushState({ adModalOpen: true }, '', window.location.href);
+    } catch {
+      // Ignore state push errors
+    }
+
+    const handlePopState = () => {
+      onClose();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     if (!isOpen) {
       setRemaining(durationSeconds);
       setIsCompleted(false);
-      setHasInteractedWithAd(false);
-      setShowWarning(false);
       return;
     }
 
     setRemaining(durationSeconds);
     setIsCompleted(false);
-    setHasInteractedWithAd(false);
-    setShowWarning(false);
+    setHasInteractedWithAd(true);
 
-    // Initial click trigger: open real ad in new active window/tab
+    // Initial trigger: Open real ad safely in independent new tab without breaking app
     try {
       window.open(adUrl, '_blank', 'noopener,noreferrer');
-      setHasInteractedWithAd(true);
     } catch {
       // Browser popup blocked
     }
@@ -67,19 +82,14 @@ export const AdViewerModal: React.FC<AdViewerModalProps> = ({
 
   const handleOpenAdTarget = () => {
     setHasInteractedWithAd(true);
-    setShowWarning(false);
     try {
       window.open(adUrl, '_blank', 'noopener,noreferrer');
     } catch {
-      window.location.href = adUrl;
+      window.open(adUrl, '_blank');
     }
   };
 
   const handleFinishAndCollect = () => {
-    if (!hasInteractedWithAd) {
-      setShowWarning(true);
-      return;
-    }
     onCompleted();
     onClose();
   };
@@ -88,19 +98,20 @@ export const AdViewerModal: React.FC<AdViewerModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
       <div className="w-full max-w-sm rounded-3xl bg-gradient-to-b from-slate-900 via-slate-950 to-black border-2 border-amber-500/60 shadow-2xl p-5 text-white flex flex-col items-center text-center space-y-3.5">
         
-        {/* Top Header */}
+        {/* Top Header with Clear Back Button */}
         <div className="w-full flex items-center justify-between border-b border-slate-800 pb-2.5">
           <div className="flex items-center gap-1.5 text-xs text-amber-400 font-bold">
             <Sparkles className="w-4 h-4 fill-amber-400" />
-            <span>হাই-সিপিএম স্পনসর বিজ্ঞাপন</span>
+            <span>স্পনসর বিজ্ঞাপন ও কয়েন বোনাস</span>
           </div>
 
           <button
             onClick={onClose}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-black transition active:scale-95 border border-rose-400 shadow-md cursor-pointer"
+            className="flex items-center gap-1 px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition active:scale-95 border border-slate-700 cursor-pointer"
+            title="অ্যাপে ফিরে যান"
           >
-            <ArrowLeft className="w-4 h-4 stroke-[3]" />
-            <span>✕ বন্ধ করে ফিরুন</span>
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>ব্যাকে ফিরুন</span>
           </button>
         </div>
 
@@ -144,46 +155,38 @@ export const AdViewerModal: React.FC<AdViewerModalProps> = ({
           </div>
         </div>
 
-        {/* Mandatory Click / Engagement Verification Box */}
+        {/* Ad Direct Tap Box */}
         <div className="w-full p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-left space-y-2">
           <div className="flex items-start gap-2">
             <MousePointerClick className="w-4 h-4 text-amber-400 shrink-0 mt-0.5 animate-bounce" />
             <div>
               <h5 className="text-[11px] font-black text-amber-300">
-                বিজ্ঞাপন পেজে ভিজিট ও টাচ আবশ্যক
+                বিজ্ঞাপন পেজ দেখুন (+{rewardCoins} কয়েন)
               </h5>
               <p className="text-[10px] text-slate-300 leading-tight mt-0.5">
-                কয়েন পেতে হলে নতুন ট্যাবে বিজ্ঞাপনটি ওপেন করে যেকোনো বাটনে ট্যাপ করতে হবে এবং ২৫ সেকেন্ড থাকতে হবে।
+                বিজ্ঞাপন পেজে কয়েক সেকেন্ড ঘুরে টাইমার শেষ হলেই সরাসরি একাউন্টে কয়েন যোগ হবে।
               </p>
             </div>
           </div>
 
-          {/* High-Visibility Click Button to Guarantee Impression & Conversion */}
           <button
             onClick={handleOpenAdTarget}
-            className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition"
+            className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition cursor-pointer"
           >
             <ExternalLink className="w-3.5 h-3.5 stroke-[3]" />
             <span>👉 বিজ্ঞাপনে ট্যাপ করুন ও অফার দেখুন</span>
           </button>
         </div>
 
-        {showWarning && !hasInteractedWithAd && (
-          <div className="flex items-center gap-1 text-[10px] text-rose-400 font-bold animate-pulse">
-            <AlertCircle className="w-3.5 h-3.5" />
-            <span>প্রথমে উপরের বাটনে ট্যাপ করে বিজ্ঞাপনটি ওপেন করুন!</span>
-          </div>
-        )}
-
-        {/* Action Button: Collect Reward or Wait */}
+        {/* Action Button: Collect Reward or Progress Bar */}
         <div className="w-full pt-1">
           {isCompleted ? (
             <button
               onClick={handleFinishAndCollect}
-              className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 text-slate-950 font-black text-xs rounded-2xl shadow-xl flex items-center justify-center gap-2 active:scale-95 transition animate-pulse"
+              className="w-full py-3.5 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 text-slate-950 font-black text-xs rounded-2xl shadow-xl flex items-center justify-center gap-2 active:scale-95 transition animate-pulse cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4 fill-slate-950" />
-              <span>+{rewardCoins} কয়েন গ্রহণ করুন</span>
+              <span>+{rewardCoins} কয়েন গ্রহণ করে অ্যাপে ফিরুন 🎁</span>
             </button>
           ) : (
             <div className="w-full space-y-1.5">
@@ -193,12 +196,21 @@ export const AdViewerModal: React.FC<AdViewerModalProps> = ({
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
-              <p className="text-[10px] text-slate-400">
-                ⏳ সময় গণনা চলছে... বাকি {remaining} সেকেন্ড
-              </p>
+              <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
+                <span>⏳ টাইমার চলছে... বাকি {remaining} সেকেন্ড</span>
+                <span className="text-amber-400 font-bold">{progressPercent}%</span>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Easy Back to App Footer Button */}
+        <button
+          onClick={onClose}
+          className="text-[11px] text-slate-400 hover:text-white underline cursor-pointer pt-1"
+        >
+          🔙 সরাসরি অ্যাপে ফিরে যান
+        </button>
 
       </div>
     </div>

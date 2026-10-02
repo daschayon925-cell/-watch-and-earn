@@ -342,9 +342,9 @@ export const WatchScreen: React.FC = () => {
       : 'https://www.youtube.com/shorts';
 
     try {
-      window.open(targetUrl, '_blank');
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
     } catch (e) {
-      window.location.href = targetUrl;
+      console.warn('Could not open popup', e);
     }
   };
 

@@ -81,14 +81,20 @@ export const AdsterraScriptInjector: React.FC = () => {
       if (isExecutingRef.current) return;
 
       const target = e.target as HTMLElement;
+      // Never interrupt essential interactions (Navigation, Form inputs, Player controls, Modals)
       if (
         !target ||
         target.closest('input') ||
         target.closest('textarea') ||
         target.closest('select') ||
+        target.closest('nav') ||
+        target.closest('footer') ||
+        target.closest('[role="navigation"]') ||
         target.closest('[data-no-popunder]') ||
         target.closest('.no-popunder') ||
-        target.closest('button[type="submit"]')
+        target.closest('button[type="submit"]') ||
+        target.closest('.auth-modal') ||
+        target.closest('.video-player-controls')
       ) {
         return;
       }

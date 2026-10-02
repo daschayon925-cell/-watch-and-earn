@@ -10,7 +10,9 @@ import {
   CheckCircle2, 
   ShieldCheck, 
   Lock,
-  Share2
+  Share2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -31,6 +33,11 @@ export const AuthModal: React.FC = () => {
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [referralCodeInput, setReferralCodeInput] = useState('');
+
+  // Password / PIN Show/Hide toggles
+  const [showPassword, setShowPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showAdminCode, setShowAdminCode] = useState(false);
   
   // User Login form state
   const [loginIdentifier, setLoginIdentifier] = useState('');
@@ -412,15 +419,22 @@ export const AuthModal: React.FC = () => {
               </label>
               <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="কমপক্ষে ৪ ডিজিটের পাসওয়ার্ড দিন"
                   minLength={4}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                  className="w-full pl-3.5 pr-10 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
                   required
                 />
-                <Lock className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-white transition p-0.5 cursor-pointer"
+                  title={showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4 text-emerald-400" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -490,14 +504,21 @@ export const AuthModal: React.FC = () => {
               </label>
               <div className="relative">
                 <input
-                  type="password"
+                  type={showLoginPassword ? 'text' : 'password'}
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="আপনার গোপন পাসওয়ার্ড দিন"
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                  className="w-full pl-3.5 pr-10 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
                   required
                 />
-                <Lock className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3" />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-white transition p-0.5 cursor-pointer"
+                  title={showLoginPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"}
+                >
+                  {showLoginPassword ? <EyeOff className="w-4 h-4 text-emerald-400" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -565,15 +586,22 @@ export const AuthModal: React.FC = () => {
               </label>
               <div className="relative">
                 <input
-                  type="password"
+                  type={showAdminCode ? 'text' : 'password'}
                   maxLength={4}
                   value={adminCodeInput}
                   onChange={(e) => setAdminCodeInput(e.target.value)}
                   placeholder="৪ সংখ্যার গোপন পিন"
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-amber-500/50 rounded-xl text-xs font-mono text-amber-300 tracking-widest text-center focus:outline-none focus:border-amber-400 font-bold"
+                  className="w-full pl-3.5 pr-10 py-2.5 bg-slate-950 border border-amber-500/50 rounded-xl text-xs font-mono text-amber-300 tracking-widest text-center focus:outline-none focus:border-amber-400 font-bold"
                   required
                 />
-                <Lock className="w-3.5 h-3.5 text-amber-400 absolute right-3 top-3" />
+                <button
+                  type="button"
+                  onClick={() => setShowAdminCode(!showAdminCode)}
+                  className="absolute right-3 top-2.5 text-amber-400/70 hover:text-amber-300 transition p-0.5 cursor-pointer"
+                  title={showAdminCode ? "পিন লুকান" : "পিন দেখুন"}
+                >
+                  {showAdminCode ? <EyeOff className="w-4 h-4 text-amber-400" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
