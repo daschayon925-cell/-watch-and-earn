@@ -203,14 +203,6 @@ export const WatchScreen: React.FC = () => {
       videoRef.current.pause();
     }
 
-    // Auto-open adsterra direct link offer in background/new tab for maximum revenue
-    try {
-      const directLink = settings?.adsConfig?.adsterraDirectLink?.trim();
-      if (directLink) {
-        window.open(directLink, '_blank');
-      }
-    } catch (e) {}
-
     // Play loud alert beep + success fanfare + continuous persistent alarm
     soundService.ensureUnlocked();
     soundService.startPersistentAlarm();

@@ -122,7 +122,9 @@ const DB_FILE = path.resolve(process.cwd(), 'database_data.json');
 
 function saveDbToDisk() {
   try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+    const tmpFile = `${DB_FILE}.tmp`;
+    fs.writeFileSync(tmpFile, JSON.stringify(db, null, 2), 'utf-8');
+    fs.renameSync(tmpFile, DB_FILE);
   } catch (err) {
     console.error('Failed to save db to disk', err);
   }
@@ -202,7 +204,7 @@ const db: {
       adsterraDirectLink: 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4',
       adsterraBannerCode: '<script async="async" data-cfasync="false" src="https://pl31616461.profitableratecpmnetwork.com/ba831837bc8426c844a5c5f130f56557/invoke.js"></script><div id="container-ba831837bc8426c844a5c5f130f56557"></div>',
       adsterraPopunderCode: '',
-      adsterraSocialBarCode: '',
+      adsterraSocialBarCode: '<script src="https://pl31612557.profitableratecpmnetwork.com/4b/5b/f5/4b5bf560a60882eaf9fc46b3684fb3f4.js"></script>',
       popunderEnabled: true,
       popunderIntervalMinutes: 3,
       popunderDailyCap: 8
@@ -2250,9 +2252,14 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.resolve(process.cwd(), 'dist');
+    app.use('/sw.js', (req, res, next) => {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      next();
+    });
     app.use('/assets', express.static(path.join(distPath, 'assets'), { maxAge: '1y', immutable: true }));
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

@@ -23,7 +23,8 @@
       "adPublisherId": "ca-pub-9842103859218491",
       "adSlotBanner": "1092837465",
       "adSlotRewarded": "5647382910",
-      "adsterraDirectLink": "https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4"
+      "adsterraDirectLink": "https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4",
+      "adsterraSocialBarCode": "<script src=\"https://pl31612557.profitableratecpmnetwork.com/4b/5b/f5/4b5bf560a60882eaf9fc46b3684fb3f4.js\"></script>"
     },
     "activeNotice": {
       "enabled": true,
@@ -54,22 +55,24 @@
       "password": "7788",
       "phoneVerified": true,
       "photoURL": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-      "coins": 15,
+      "coins": 100,
       "pendingWithdrawalCoins": 0,
-      "lifetimeCoins": 15,
-      "todayCoins": 15,
+      "lifetimeCoins": 100,
+      "todayCoins": 100,
       "todayVideosCount": 0,
       "streakDays": 1,
-      "lastCheckInDate": "2026-09-30",
+      "lastCheckInDate": "2026-10-02",
       "role": "admin",
       "accountStatus": "active",
       "riskScore": 0,
       "referralCode": "CHAYON77",
       "referralCount": 0,
       "createdAt": "2026-09-30T11:16:00.487Z",
-      "updatedAt": "2026-09-30T15:38:47.400Z",
+      "updatedAt": "2026-10-02T08:00:29.255Z",
       "adClicksToday": 1,
-      "lastAdClickDate": "2026-09-30"
+      "lastAdClickDate": "2026-09-30",
+      "spinsToday": 1,
+      "lastSpinDate": "2026-10-02"
     }
   ],
   "videos": [
@@ -452,6 +455,36 @@
     }
   ],
   "transactions": [
+    {
+      "transactionId": "trx_ad_1790928029255",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 50,
+      "bdtEquivalent": 0.75,
+      "source": "স্পনসরড বিজ্ঞাপন বোনাস",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-02T08:00:29.255Z"
+    },
+    {
+      "transactionId": "trx_spin_1790927536880",
+      "userId": "usr_admin_owner",
+      "type": "GAME_REWARD",
+      "amount": 25,
+      "bdtEquivalent": 0.375,
+      "source": "🎡 লাকি স্পিন রিওয়ার্ড (1/5)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-02T07:52:16.880Z"
+    },
+    {
+      "transactionId": "trx_chk_1790925492497",
+      "userId": "usr_admin_owner",
+      "type": "DAILY_BONUS",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "দৈনিক চেক-ইন বোনাস (দিন 1)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-02T07:18:12.497Z"
+    },
     {
       "transactionId": "trx_adclk_1790782727400",
       "userId": "usr_admin_owner",

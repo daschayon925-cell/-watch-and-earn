@@ -44,7 +44,6 @@ export const HomeScreen: React.FC = () => {
   const [trendingVideos, setTrendingVideos] = useState<Video[]>([]);
   const [checkingIn, setCheckingIn] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
-  const [adCountdown, setAdCountdown] = useState(0);
   const [showSpinModal, setShowSpinModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
 
@@ -99,21 +98,9 @@ export const HomeScreen: React.FC = () => {
   };
 
   // Rewarded Ad Simulation
-  const handleWatchRewardedAd = async () => {
+  const handleWatchRewardedAd = () => {
     if (watchingAd) return;
     setWatchingAd(true);
-    setAdCountdown(8);
-
-    const interval = setInterval(() => {
-      setAdCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          finishRewardedAd();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
   const finishRewardedAd = async () => {

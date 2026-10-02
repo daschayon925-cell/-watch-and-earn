@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { ExternalLink, Sparkles, Coins, Zap } from 'lucide-react';
+import { Sparkles, Zap, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { soundService } from '../../services/audio';
 import { api } from '../../services/api';
-import { AdViewerModal } from './AdViewerModal';
 import { AdsterraBannerUnit } from './AdsterraBannerUnit';
 
 interface MiniBannerProps {
@@ -15,9 +14,7 @@ interface MiniBannerProps {
 export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', category = 'finance' }) => {
   const { showToast, triggerConfetti, settings } = useApp();
   const { user, refreshUser } = useAuth();
-  const [clicked, setClicked] = useState(false);
-  const [showViewerModal, setShowViewerModal] = useState(false);
-  const [pendingAdUrl, setPendingAdUrl] = useState('');
+  const [claiming, setClaiming] = useState(false);
 
   const todayStr = new Date().toISOString().split('T')[0];
   const clicksToday = user?.lastAdClickDate === todayStr ? (user?.adClicksToday || 0) : 0;
@@ -30,8 +27,8 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
       title: 'নগদ মেগা বোনাস! ৫০ টাকা নিশ্চিত ক্যাশব্যাক',
       desc: 'বিজ্ঞাপনে এক ক্লিকেই অফার পেজ দেখুন এবং জিতে নিন বিশেষ ছাড়!',
       sponsor: 'Nagad Official Promo 🇧🇩',
-      tag: 'AD • 320x100 SPONSOR',
-      cta: 'অফার নিন (+১৫ কয়েন)',
+      tag: 'AD • SPONSOR OFFER',
+      cta: 'অফার দেখুন (+১৫ কয়েন)',
       link: 'https://nagad.com.bd',
       bannerBg: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=80',
       badgeGradient: 'from-amber-500 to-orange-500 text-slate-950',
@@ -52,7 +49,7 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
       title: 'বিকাশ সেন্ড মানি সম্পূর্ণ ফ্রি ও ক্যাশআউট বোনাস!',
       desc: 'প্রিয় ৫টি নাম্বারে ০% খরচে টাকা পাঠান ও আকর্ষণীয় ভাউচার পান।',
       sponsor: 'bKash Payments 📲',
-      tag: 'AD • PREMIUM OFFER',
+      tag: 'PREMIUM PARTNER',
       cta: 'বিস্তারিত দেখুন (+১৫ কয়েন)',
       link: 'https://bkash.com',
       bannerBg: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop&q=80',
@@ -72,11 +69,11 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
     }
   ];
 
-  // Pick ad based on slotId
   const adIndex = Math.abs((slotId.charCodeAt(0) || 0) + slotId.length) % ads.length;
   const currentAd = ads[adIndex];
 
-  const handleAdClick = (e?: React.MouseEvent) => {
+  // ⚡ 1-Click Direct Action: Opens ad in new tab & instantly awards coins directly
+  const handleAdClick = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
 
     if (isLimitReached) {
@@ -84,13 +81,21 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
       return;
     }
 
-    const targetUrl = settings?.adsConfig?.adsterraDirectLink?.trim() || currentAd.link;
-    setPendingAdUrl(targetUrl);
-    setShowViewerModal(true);
-  };
+    if (claiming) return;
+    setClaiming(true);
 
-  const handleClaimAdReward = async () => {
-    setClicked(true);
+    const targetUrl = settings?.adsConfig?.adsterraDirectLink?.trim() || currentAd.link;
+
+    // Open ad safely in a separate tab
+    try {
+      if (typeof window !== 'undefined') {
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch {
+      // Ignore popup blocker if any
+    }
+
+    // Immediately claim reward and notify user
     try {
       const res = await api.claimAdClick();
       if (res?.success) {
@@ -98,16 +103,18 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
         triggerConfetti();
         await refreshUser();
         showToast(
-          `🎁 +${res.earnedCoins || 15} কয়েন আপনার অ্যাকাউন্টে সফলভাবে যোগ হয়েছে!`,
-          `আজকের বাকি বিজ্ঞাপন: ${res.remainingClicks ?? (maxClicks - clicksToday - 1)}টি।`,
+          `🎉 +${res.earnedCoins || 15} কয়েন আপনার অ্যাকাউন্টে যোগ হয়েছে!`,
+          `আজকের বাকি বিজ্ঞাপন: ${res.remainingClicks ?? (maxClicks - clicksToday - 1)}টি`,
           'coin'
         );
       } else if (res?.limitReached) {
         showToast('🔒 আজকের সীমা সম্পন্ন হয়েছে!', res.message || '১০টি ক্লিক পূর্ণ হয়েছে। আগামীকাল আবার নতুন ক্লিক চালু হবে।', 'info');
         await refreshUser();
       }
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error('Ad claim error:', err);
+    } finally {
+      setTimeout(() => setClaiming(false), 1500);
     }
   };
 
@@ -120,7 +127,7 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
 
       {/* 🌟 2. Interactive Rewarded Sponsor Offer Banner */}
       <div 
-        onClick={() => handleAdClick()}
+        onClick={handleAdClick}
         className="w-full relative overflow-hidden rounded-2xl border-2 border-amber-500/50 shadow-xl group transition-all duration-300 hover:border-amber-400 cursor-pointer active:scale-[0.99]"
       >
         {/* Full-bleed background */}
@@ -160,30 +167,21 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            <span className="text-[10px] text-amber-300 font-medium">
-              ⚡ ট্যাপ করে অফার দেখুন ও কয়েন নিন
+            <span className="text-[10px] text-amber-300 font-medium flex items-center gap-1">
+              <Zap className="w-3 h-3 text-amber-400 fill-amber-400" />
+              <span>১ ক্লিকে অফার দেখুন ও কয়েন নিন</span>
             </span>
 
             <button
               type="button"
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-black text-xs shadow-lg flex items-center gap-1.5 active:scale-95 transition"
             >
-              <Zap className="w-3.5 h-3.5 fill-slate-950" />
               <span>{currentAd.cta}</span>
+              <ExternalLink className="w-3 h-3 text-slate-950" />
             </button>
           </div>
         </div>
       </div>
-
-      {/* In-App Safe Ad Modal with prominent close button */}
-      <AdViewerModal
-        isOpen={showViewerModal}
-        adUrl={pendingAdUrl}
-        durationSeconds={8}
-        rewardCoins={15}
-        onCompleted={handleClaimAdReward}
-        onClose={() => setShowViewerModal(false)}
-      />
     </div>
   );
 };
