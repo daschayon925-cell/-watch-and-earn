@@ -85,11 +85,6 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
     }
 
     const targetUrl = settings?.adsConfig?.adsterraDirectLink?.trim() || currentAd.link;
-    try {
-      window.open(targetUrl, '_blank', 'noopener,noreferrer');
-    } catch (err) {
-      console.warn('Popup blocked, fallback modal', err);
-    }
     setPendingAdUrl(targetUrl);
     setShowViewerModal(true);
   };
@@ -128,89 +123,67 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
         onClick={() => handleAdClick()}
         className="w-full relative overflow-hidden rounded-2xl border-2 border-amber-500/50 shadow-xl group transition-all duration-300 hover:border-amber-400 cursor-pointer active:scale-[0.99]"
       >
-      {/* 🌟 1. FULL-BLEED BACKGROUND BANNER IMAGE (পুরো ঘর জুড়ে ছবি) */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-        style={{ backgroundImage: `url(${currentAd.bannerBg})` }}
-      />
+        {/* Full-bleed background */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+          style={{ backgroundImage: `url(${currentAd.bannerBg})` }}
+        />
 
-      {/* 🌟 2. DARK GRADIENT OVERLAY (লেখা ও বাটনের স্পষ্টতার জন্য সুন্দর সিনেমাটিক লেয়ার) */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-slate-950/85 to-black/70 backdrop-blur-[1px]" />
+        {/* Dark Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-slate-950/85 to-black/70 backdrop-blur-[1px]" />
 
-      {/* 🌟 3. BANNER CONTENT CONTAINER */}
-      <div className="relative z-10 p-3.5 flex flex-col justify-between min-h-[110px]">
-        {/* Top Badges Header */}
-        <div className="flex items-center justify-between gap-2 mb-1.5">
-          <div className="flex items-center gap-1.5">
-            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-gradient-to-r ${currentAd.badgeGradient} shadow-sm`}>
-              {currentAd.tag}
-            </span>
-            <span className="text-[10px] text-amber-300 font-bold flex items-center gap-1 drop-shadow">
-              <Sparkles className="w-3 h-3 text-amber-400 fill-amber-400" />
-              {currentAd.highlightBadge}
-            </span>
-          </div>
-
-          {/* Daily Coin Quota Pill */}
-          <div className="flex items-center gap-1 text-[9px] font-black">
-            {isLimitReached ? (
-              <span className="text-rose-300 bg-rose-950/80 px-2 py-0.5 rounded-full border border-rose-500/50">
-                🔒 দৈনিক ১০/১০ সম্পন্ন
+        {/* Banner Content */}
+        <div className="relative z-10 p-3.5 sm:p-4 flex flex-col justify-between min-h-[110px] space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[9px] tracking-wider uppercase flex items-center gap-1 shadow-md">
+                <Sparkles className="w-2.5 h-2.5 fill-slate-950" />
+                {currentAd.tag}
               </span>
-            ) : (
-              <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-full text-amber-300">
-                <Coins className="w-3 h-3 text-amber-400 animate-pulse" />
-                <span>+১৫ কয়েন ({clicksToday}/১০)</span>
-              </div>
-            )}
+              <span className="text-[10px] font-bold text-slate-300">
+                {currentAd.sponsor}
+              </span>
+            </div>
+
+            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold border border-emerald-500/40">
+              +{clicksToday}/{maxClicks} সম্পন্ন
+            </span>
           </div>
-        </div>
 
-        {/* Middle: Title & Sponsor Info */}
-        <div className="my-auto pr-1">
-          <span className="text-[10px] font-semibold text-slate-300 block mb-0.5">
-            {currentAd.sponsor}
-          </span>
-          <h4 className="text-[13px] font-black text-white leading-tight drop-shadow-md">
-            {currentAd.title}
-          </h4>
-          <p className="text-[10px] text-slate-200 mt-1 line-clamp-1 drop-shadow">
-            {isLimitReached ? 'আজকের কোটা শেষ। আগামীকাল আবার ক্লিক করে ১৫ কয়েন পাবেন।' : currentAd.desc}
-          </p>
-        </div>
+          <div>
+            <h4 className="text-xs sm:text-sm font-black text-white leading-tight drop-shadow-md">
+              {currentAd.title}
+            </h4>
+            <p className="text-[11px] text-slate-300 line-clamp-1 mt-0.5">
+              {currentAd.desc}
+            </p>
+          </div>
 
-        {/* Bottom CTA Action Bar */}
-        <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between gap-3">
-          <span className="text-[10px] font-medium text-amber-200/90 flex items-center gap-1">
-            <Zap className="w-3 h-3 text-amber-400 fill-amber-400" />
-            <span>ক্লিক করলেই সরাসরি ১৫ কয়েন ওয়ালেটে জমা হবে</span>
-          </span>
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-[10px] text-amber-300 font-medium">
+              ⚡ ট্যাপ করে অফার দেখুন ও কয়েন নিন
+            </span>
 
-          <button
-            onClick={handleAdClick}
-            disabled={isLimitReached}
-            className={`px-3.5 py-1.5 font-black text-[11px] rounded-xl shadow-lg transition-all flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 ${
-              isLimitReached
-                ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
-                : 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black shadow-amber-500/25 border border-amber-300'
-            }`}
-          >
-            <span>{isLimitReached ? '🔒 কোটা শেষ' : currentAd.cta}</span>
-            {!isLimitReached && <ExternalLink className="w-3 h-3 stroke-[3]" />}
-          </button>
+            <button
+              type="button"
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+            >
+              <Zap className="w-3.5 h-3.5 fill-slate-950" />
+              <span>{currentAd.cta}</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* 25-Second Safe In-App Ad Viewer with One-Click Return */}
+      {/* In-App Safe Ad Modal with prominent close button */}
       <AdViewerModal
         isOpen={showViewerModal}
         adUrl={pendingAdUrl}
-        durationSeconds={25}
+        durationSeconds={8}
         rewardCoins={15}
         onCompleted={handleClaimAdReward}
         onClose={() => setShowViewerModal(false)}
       />
-      </div>
     </div>
   );
 };

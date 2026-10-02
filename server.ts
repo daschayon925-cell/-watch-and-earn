@@ -1102,146 +1102,151 @@ app.post('/api/reward/heartbeat', (req, res) => {
 
 // Step 3: Claim reward with anti-abuse validation
 app.post('/api/reward/claim', (req, res) => {
-  const user = getUser(req);
-  const { sessionId } = req.body;
-  const session = activeSessions.get(sessionId);
+  try {
+    const user = getUser(req);
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'লগইন আবশ্যক' });
+    }
+    const { sessionId } = req.body;
+    const session = activeSessions.get(sessionId);
 
-  if (!session) {
-    return res.status(400).json({ success: false, message: 'সেশন পাওয়া যায়নি বা মেয়াদোত্তীর্ণ।' });
-  }
+    if (!session) {
+      return res.status(400).json({ success: false, message: 'সেশন পাওয়া যায়নি বা মেয়াদোত্তীর্ণ।' });
+    }
 
-  if (session.userId !== user.uid) {
-    user.riskScore += 15;
-    return res.status(403).json({ success: false, message: 'সেশন সিকিউরিটি অসংগতি।' });
-  }
+    if (session.userId !== user.uid) {
+      user.riskScore = (user.riskScore || 0) + 15;
+      return res.status(403).json({ success: false, message: 'সেশন সিকিউরিটি অসংগতি।' });
+    }
 
-  if (session.claimed) {
-    return res.status(400).json({ success: false, message: 'এই ভিডিওটির জন্য পুরস্কার ইতিমধ্যে গ্রহণ করা হয়েছে।' });
-  }
+    if (session.claimed) {
+      return res.status(400).json({ success: false, message: 'এই ভিডিওটির জন্য পুরস্কার ইতিমধ্যে গ্রহণ করা হয়েছে।' });
+    }
 
-  // Calculate required seconds based on server duration
-  const requiredSeconds = session.duration * (db.settings.minWatchPercentage / 100);
-  const actualElapsed = (Date.now() - session.startedAt) / 1000;
+    // Calculate required seconds based on server duration
+    const requiredSeconds = session.duration * (db.settings.minWatchPercentage / 100);
+    const actualElapsed = (Date.now() - session.startedAt) / 1000;
 
-  // Anti-cheat checks:
-  // 1. Did the user really spend at least minimum physical seconds?
-  if (actualElapsed < db.settings.minWatchSeconds) {
-    user.riskScore += 10;
-    return res.status(400).json({
-      success: false,
-      message: `ভিডিওটি পর্যাপ্ত সময় ধরে দেখা হয়নি। নূন্যতম ${Math.ceil(requiredSeconds)} সেকেন্ড দেখতে হবে।`
+    // Anti-cheat checks:
+    if (actualElapsed < db.settings.minWatchSeconds) {
+      user.riskScore = (user.riskScore || 0) + 10;
+      return res.status(400).json({
+        success: false,
+        message: `ভিডিওটি পর্যাপ্ত সময় ধরে দেখা হয়নি। নূন্যতম ${Math.ceil(requiredSeconds)} সেকেন্ড দেখতে হবে।`
+      });
+    }
+
+    if (session.watchedSeconds < (requiredSeconds - 1.0)) {
+      return res.status(400).json({
+        success: false,
+        message: `ভিডিওটির কমপক্ষে ${db.settings.minWatchPercentage}% দেখা সম্পন্ন করুন।`
+      });
+    }
+
+    // Check daily limit
+    const rewardAmount = db.settings.videoReward || 50;
+    if ((user.todayCoins || 0) + rewardAmount > (db.settings.dailyRewardLimit || 1200)) {
+      return res.status(400).json({
+        success: false,
+        message: 'আজকের সর্বাধিক কয়েন লিমিট পূর্ণ হয়েছে।'
+      });
+    }
+
+    // Mark session claimed
+    session.claimed = true;
+    session.completed = true;
+
+    // Credit user
+    user.coins = (user.coins || 0) + rewardAmount;
+    user.lifetimeCoins = (user.lifetimeCoins || 0) + rewardAmount;
+    user.todayCoins = (user.todayCoins || 0) + rewardAmount;
+    user.todayVideosCount = (user.todayVideosCount || 0) + 1;
+    user.updatedAt = new Date().toISOString();
+
+    const video = db.videos.find(v => v.id === session.videoId);
+    const trx: any = {
+      transactionId: 'trx_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      userId: user.uid,
+      type: 'WATCH_REWARD',
+      amount: rewardAmount,
+      bdtEquivalent: rewardAmount * db.settings.coinToBDTRate,
+      source: `ভিডিও রিওয়ার্ড: ${video?.title ? video.title.slice(0, 30) + '...' : 'Shorts'}`,
+      videoId: session.videoId,
+      status: 'COMPLETED',
+      createdAt: new Date().toISOString()
+    };
+
+    db.transactions.unshift(trx);
+    saveDbToDisk();
+
+    res.json({
+      success: true,
+      earnedCoins: rewardAmount,
+      newBalance: user.coins,
+      todayCoins: user.todayCoins,
+      todayVideosCount: user.todayVideosCount,
+      bdtEquivalent: user.coins * db.settings.coinToBDTRate
     });
+  } catch (err: any) {
+    console.error('Reward claim error:', err);
+    res.status(200).json({ success: false, message: 'রিওয়ার্ড প্রক্রিয়াকরণে সমস্যা হয়েছে, পুনরায় চেষ্টা করুন।' });
   }
-
-  // 2. Did the heartbeat watch counter reach the minimum percentage?
-  if (session.watchedSeconds < (requiredSeconds - 1.0)) {
-    return res.status(400).json({
-      success: false,
-      message: `ভিডিওটির কমপক্ষে ${db.settings.minWatchPercentage}% দেখা সম্পন্ন করুন।`
-    });
-  }
-
-  // Check daily limit
-  const rewardAmount = db.settings.videoReward;
-  if (user.todayCoins + rewardAmount > db.settings.dailyRewardLimit) {
-    return res.status(400).json({
-      success: false,
-      message: 'আজকের সর্বাধিক কয়েন লিমিট পূর্ণ হয়েছে।'
-    });
-  }
-
-  // Mark session claimed
-  session.claimed = true;
-  session.completed = true;
-
-  // Credit user
-  user.coins += rewardAmount;
-  user.lifetimeCoins += rewardAmount;
-  user.todayCoins += rewardAmount;
-  user.todayVideosCount += 1;
-  user.updatedAt = new Date().toISOString();
-
-  // Create immutable ledger entry
-  const video = db.videos.find(v => v.id === session.videoId);
-  const trx: any = {
-    transactionId: 'trx_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-    userId: user.uid,
-    type: 'WATCH_REWARD',
-    amount: rewardAmount,
-    bdtEquivalent: rewardAmount * db.settings.coinToBDTRate,
-    source: `ভিডিও রিওয়ার্ড: ${video?.title ? video.title.slice(0, 30) + '...' : 'Shorts'}`,
-    videoId: session.videoId,
-    status: 'COMPLETED',
-    createdAt: new Date().toISOString()
-  };
-
-  db.transactions.unshift(trx);
-
-  // Add in-app notification
-  db.notifications.unshift({
-    id: 'notif_' + Date.now(),
-    userId: user.uid,
-    title: `+${rewardAmount} কয়েন অর্জিত! 🎉`,
-    message: `ভিডিও সফলভাবে দেখার জন্য আপনার ওয়ালেটে ${rewardAmount} কয়েন যোগ হয়েছে।`,
-    type: 'reward',
-    read: false,
-    createdAt: new Date().toISOString(),
-    linkTab: 'wallet'
-  });
-
-  res.json({
-    success: true,
-    earnedCoins: rewardAmount,
-    newBalance: user.coins,
-    todayCoins: user.todayCoins,
-    todayVideosCount: user.todayVideosCount,
-    bdtEquivalent: user.coins * db.settings.coinToBDTRate
-  });
 });
 
 // 5. Daily Check-in & Streak
 app.post('/api/reward/daily-checkin', (req, res) => {
-  const user = getUser(req);
-  const todayStr = new Date().toISOString().split('T')[0];
+  try {
+    const user = getUser(req);
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'বোনাস পেতে অনুগ্রহ করে প্রথমে লগইন বা একাউন্ট তৈরি করুন।' });
+    }
 
-  if (user.lastCheckInDate === todayStr) {
-    return res.status(400).json({ success: false, message: 'আজকের বোনাস ইতিমধ্যেই গ্রহণ করেছেন।' });
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    if (user.lastCheckInDate === todayStr) {
+      return res.status(200).json({ success: false, message: 'আজকের বোনাস ইতিমধ্যেই গ্রহণ করেছেন।' });
+    }
+
+    // Check streak
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    if (user.lastCheckInDate === yesterday) {
+      user.streakDays = ((user.streakDays || 0) % 7) + 1;
+    } else {
+      user.streakDays = 1;
+    }
+
+    const streakRewards = [10, 15, 20, 25, 35, 45, 75];
+    const rewardAmount = streakRewards[user.streakDays - 1] || 10;
+
+    user.lastCheckInDate = todayStr;
+    user.coins = (user.coins || 0) + rewardAmount;
+    user.lifetimeCoins = (user.lifetimeCoins || 0) + rewardAmount;
+    user.todayCoins = (user.todayCoins || 0) + rewardAmount;
+    user.updatedAt = new Date().toISOString();
+
+    db.transactions.unshift({
+      transactionId: 'trx_chk_' + Date.now(),
+      userId: user.uid,
+      type: 'DAILY_BONUS',
+      amount: rewardAmount,
+      bdtEquivalent: rewardAmount * db.settings.coinToBDTRate,
+      source: `দৈনিক চেক-ইন বোনাস (দিন ${user.streakDays})`,
+      status: 'COMPLETED',
+      createdAt: new Date().toISOString()
+    });
+
+    saveDbToDisk();
+
+    res.json({
+      success: true,
+      earnedCoins: rewardAmount,
+      streakDays: user.streakDays,
+      newBalance: user.coins
+    });
+  } catch (err: any) {
+    console.error('Daily checkin error:', err);
+    res.status(200).json({ success: false, message: 'বোনাস ক্লেইম করা যায়নি।' });
   }
-
-  // Check streak
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-  if (user.lastCheckInDate === yesterday) {
-    user.streakDays = (user.streakDays % 7) + 1;
-  } else {
-    user.streakDays = 1;
-  }
-
-  const streakRewards = [10, 15, 20, 25, 35, 45, 75];
-  const rewardAmount = streakRewards[user.streakDays - 1] || 10;
-
-  user.lastCheckInDate = todayStr;
-  user.coins += rewardAmount;
-  user.lifetimeCoins += rewardAmount;
-  user.todayCoins += rewardAmount;
-  user.updatedAt = new Date().toISOString();
-
-  db.transactions.unshift({
-    transactionId: 'trx_chk_' + Date.now(),
-    userId: user.uid,
-    type: 'DAILY_BONUS',
-    amount: rewardAmount,
-    bdtEquivalent: rewardAmount * db.settings.coinToBDTRate,
-    source: `দৈনিক চেক-ইন বোনাস (দিন ${user.streakDays})`,
-    status: 'COMPLETED',
-    createdAt: new Date().toISOString()
-  });
-
-  res.json({
-    success: true,
-    earnedCoins: rewardAmount,
-    streakDays: user.streakDays,
-    newBalance: user.coins
-  });
 });
 
 // 6. Rewarded Ad Simulation with Backend Verification & Anti-Bot Guard
