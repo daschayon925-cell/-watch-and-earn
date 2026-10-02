@@ -28,7 +28,8 @@ import {
   FileSpreadsheet,
   Copy,
   MessageCircle,
-  ExternalLink
+  ExternalLink,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -1142,7 +1143,7 @@ export const AdminDashboard: React.FC = () => {
                           ...editSettings,
                           adsConfig: { ...editSettings.adsConfig, adsterraDirectLink: e.target.value } as any
                         })}
-                        placeholder="https://beta.publishers.adsterra.com/... বা ডাইরেক্ট লিঙ্ক"
+                        placeholder="https://www.profitableratecpmnetwork.com/..."
                         className="w-full p-2.5 bg-slate-950 border border-amber-500/40 rounded-xl text-xs font-mono text-amber-300 focus:outline-none focus:border-amber-400"
                       />
                       <span className="text-[9px] text-slate-400 block mt-0.5">
@@ -1150,9 +1151,74 @@ export const AdminDashboard: React.FC = () => {
                       </span>
                     </div>
 
+                    {/* 🚀 SMART POPUNDER FREQUENCY CAP CONTROLLER */}
+                    <div className="p-3 rounded-xl bg-slate-950 border border-emerald-500/40 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+                          <span className="text-xs font-black text-emerald-300">
+                            স্মার্ট পপআন্ডার ইঞ্জিন (Smart Popunder 3.0)
+                          </span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={editSettings.adsConfig?.popunderEnabled ?? true}
+                          onChange={(e) => setEditSettings({
+                            ...editSettings,
+                            adsConfig: { ...editSettings.adsConfig, popunderEnabled: e.target.checked } as any
+                          })}
+                          className="w-4 h-4 accent-emerald-500 cursor-pointer"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                            ⏱️ ক্লিকের বিরতি (Interval):
+                          </label>
+                          <select
+                            value={editSettings.adsConfig?.popunderIntervalMinutes ?? 3}
+                            onChange={(e) => setEditSettings({
+                              ...editSettings,
+                              adsConfig: { ...editSettings.adsConfig, popunderIntervalMinutes: parseInt(e.target.value, 10) } as any
+                            })}
+                            className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white"
+                          >
+                            <option value={1}>প্রতি ১ মিনিট পর পর</option>
+                            <option value={2}>প্রতি ২ মিনিট পর পর</option>
+                            <option value={3}>প্রতি ৩ মিনিট পর পর (রেকমেন্ডেড)</option>
+                            <option value={5}>প্রতি ৫ মিনিট পর পর</option>
+                            <option value={10}>প্রতি ১০ মিনিট পর পর</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                            🎯 দৈনিক সর্বোচ্চ সীমা (Daily Cap):
+                          </label>
+                          <select
+                            value={editSettings.adsConfig?.popunderDailyCap ?? 8}
+                            onChange={(e) => setEditSettings({
+                              ...editSettings,
+                              adsConfig: { ...editSettings.adsConfig, popunderDailyCap: parseInt(e.target.value, 10) } as any
+                            })}
+                            className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white"
+                          >
+                            <option value={5}>ইউজার প্রতি দৈনিক ৫ বার</option>
+                            <option value={8}>ইউজার প্রতি দৈনিক ৮ বার (সর্বোচ্চ CPM)</option>
+                            <option value={10}>ইউজার প্রতি দৈনিক ১০ বার</option>
+                            <option value={15}>ইউজার প্রতি দৈনিক ১৫ বার</option>
+                          </select>
+                        </div>
+                      </div>
+                      <p className="text-[9px] text-slate-400">
+                        🛡️ সুরক্ষা ফিল্টার: নির্দিষ্ট বিরতির আগে ইউজার স্ক্রিনে যতবারই চাপুক কোনো অ্যাড আসবে না। নির্দিষ্ট সময় পর কেবল ১ম ক্লিকে ১ বার ব্যাকগ্রাউন্ড পপআন্ডার কার্যকর হবে।
+                      </p>
+                    </div>
+
                     <div>
                       <label className="block text-[10px] font-bold text-slate-300 mb-1">
-                        📜 Adsterra ব্যানার কোড (Banner 300x250 HTML):
+                        📜 Adsterra ব্যানার কোড (Verified Non-Adult Native Banner HTML):
                       </label>
                       <textarea
                         rows={2}
@@ -1161,33 +1227,14 @@ export const AdminDashboard: React.FC = () => {
                           ...editSettings,
                           adsConfig: { ...editSettings.adsConfig, adsterraBannerCode: e.target.value } as any
                         })}
-                        placeholder="<script ...></script> বা <iframe ...></iframe>"
-                        className="w-full p-2 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-slate-300"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-300 mb-1">
-                        🚀 Adsterra Popunder কোড (সবচেয়ে বেশি CPM আয়):
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={editSettings.adsConfig?.adsterraPopunderCode ?? ''}
-                        onChange={(e) => setEditSettings({
-                          ...editSettings,
-                          adsConfig: { ...editSettings.adsConfig, adsterraPopunderCode: e.target.value } as any
-                        })}
-                        placeholder="<script type='text/javascript' src='//pl...js'></script>"
+                        placeholder="<script ...></script><div id='...'></div>"
                         className="w-full p-2 bg-slate-950 border border-emerald-500/40 rounded-xl text-xs font-mono text-emerald-300"
                       />
-                      <span className="text-[9px] text-slate-400 block mt-0.5">
-                        💡 Popunder কোড দিলে প্রতি ক্লিকের সর্বোচ্চ $২-$৫ CPM পাওয়া যায়।
-                      </span>
                     </div>
 
                     <div>
                       <label className="block text-[10px] font-bold text-slate-300 mb-1">
-                        💬 Adsterra Social Bar কোড (ইন-পেজ পুশ নোটিফিকেশন):
+                        💬 Adsterra সোশ্যাল বার কোড (ভবিষ্যতে ফ্রেশ কোড পেলে এখানে পেস্ট করবেন):
                       </label>
                       <textarea
                         rows={2}
@@ -1196,9 +1243,12 @@ export const AdminDashboard: React.FC = () => {
                           ...editSettings,
                           adsConfig: { ...editSettings.adsConfig, adsterraSocialBarCode: e.target.value } as any
                         })}
-                        placeholder="<script type='text/javascript' src='//pl...js'></script>"
-                        className="w-full p-2 bg-slate-950 border border-cyan-500/40 rounded-xl text-xs font-mono text-cyan-300"
+                        placeholder="ভবিষ্যতে ফ্রেশ নন-এডাল্ট সোশ্যাল বার কোড পেলে এখানে দিন (এখন খালি রাখা হয়েছে)"
+                        className="w-full p-2 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-cyan-300"
                       />
+                      <span className="text-[9px] text-slate-400 block mt-0.5">
+                        💡 এটি এখন বন্ধ আছে। ভবিষ্যতে Adsterra থেকে নতুন ফ্রেশ কোড পেলে এখানে দিলে সাথে সাথে সক্রিয় হবে।
+                      </span>
                     </div>
                   </div>
                 </div>

@@ -20,7 +20,65 @@ app.use((req, res, next) => {
   res.setHeader('X-Download-Options', 'noopen');
   res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Robots-Tag', 'all, index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
   next();
+});
+
+// Explicit SEO Routes for Googlebot Crawler
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.setHeader('X-Robots-Tag', 'all, index, follow');
+  const host = req.headers.host || 'watch-and-earn-z5hx.onrender.com';
+  res.send(`User-agent: *
+Allow: /
+Sitemap: https://${host}/sitemap.xml
+`);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml');
+  res.setHeader('X-Robots-Tag', 'all, index, follow');
+  const host = req.headers.host || 'watch-and-earn-z5hx.onrender.com';
+  const today = new Date().toISOString().split('T')[0];
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://${host}/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://${host}/?tab=watch</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://${host}/?tab=wallet</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://${host}/?tab=rewards</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://${host}/?tab=tasks</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://${host}/?tab=games</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+</urlset>`);
 });
 
 // Increase request entity size limits to 50mb for image snapshots, avatar uploads, and database sync
@@ -142,9 +200,12 @@ const db: {
       adSlotBanner: '1092837465',
       adSlotRewarded: '5647382910',
       adsterraDirectLink: 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4',
-      adsterraBannerCode: '<script type="text/javascript">atOptions = { key : "026df0717402ab99e2cfeea66cbde373", format : "iframe", height : 250, width : 300, params : {} };</script><script type="text/javascript" src="https://www.highrevenueformat.com/026df0717402ab99e2cfeea66cbde373/invoke.js"></script>',
-      adsterraPopunderCode: '<script src="https://pl31611746.profitableratecpmnetwork.com/11/4f/12/114f12061c28bd123f51ddc1fb9c6111.js"></script>',
-      adsterraSocialBarCode: '<script src="https://pl31612557.profitableratecpmnetwork.com/4b/5b/f5/4b5bf560a60882eaf9fc46b3684fb3f4.js"></script>'
+      adsterraBannerCode: '<script async="async" data-cfasync="false" src="https://pl31616461.profitableratecpmnetwork.com/ba831837bc8426c844a5c5f130f56557/invoke.js"></script><div id="container-ba831837bc8426c844a5c5f130f56557"></div>',
+      adsterraPopunderCode: '',
+      adsterraSocialBarCode: '',
+      popunderEnabled: true,
+      popunderIntervalMinutes: 3,
+      popunderDailyCap: 8
     },
     activeNotice: {
       enabled: true,

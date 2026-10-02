@@ -138,6 +138,9 @@ export interface AdminSettings {
     adsterraBannerCode?: string; // Adsterra Banner Script / iFrame code
     adsterraPopunderCode?: string; // Adsterra Popunder Script
     adsterraSocialBarCode?: string; // Adsterra Social Bar Script (High CPM)
+    popunderEnabled?: boolean; // Smart Popunder Engine On/Off
+    popunderIntervalMinutes?: number; // Smart Popunder Cooldown in minutes (e.g. 3)
+    popunderDailyCap?: number; // Max popunders per user daily (e.g. 8)
   };
   activeNotice?: {
     enabled: boolean;
