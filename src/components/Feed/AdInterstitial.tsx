@@ -186,7 +186,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
   const currentAd = rewardedAds[selectedAdIndex] || rewardedAds[0];
 
   useEffect(() => {
-    // ⏱️ Strict 20-25 second countdown timer
+    // ⏱️ Strict 15-20 second countdown timer
     const timer = setInterval(() => {
       setSecondsRemaining((prev) => {
         if (prev <= 1) {
@@ -197,9 +197,11 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
             if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
               navigator.vibrate([200, 100, 300]);
             }
-          } catch {
-            // Ignore sound error
-          }
+          } catch {}
+          // 🏆 Auto-award coins when countdown finishes!
+          setTimeout(() => {
+            onAdCompleted();
+          }, 600);
           return 0;
         }
         return prev - 1;
@@ -209,7 +211,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
     return () => {
       clearInterval(timer);
     };
-  }, []);
+  }, [onAdCompleted]);
 
   const handleAdClick = () => {
     // 🔊 Audio reward feedback
@@ -230,10 +232,8 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       }
     }
 
-    // If countdown finished, immediately award reward and exit
-    if (secondsRemaining <= 0 || canSkip) {
-      onAdCompleted();
-    }
+    // Immediately award reward and return to video!
+    onAdCompleted();
   };
 
   const watchedSeconds = initialDuration - secondsRemaining;
@@ -244,11 +244,8 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       e.preventDefault();
       e.stopPropagation();
     }
-    if (onAdSkipped) {
-      onAdSkipped();
-    } else {
-      onAdCompleted();
-    }
+    // Guaranteed reward on exit!
+    onAdCompleted();
   };
 
   const handleCloseAd = (e?: React.MouseEvent | React.TouchEvent) => {

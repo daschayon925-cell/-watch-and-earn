@@ -53,6 +53,8 @@ export interface User {
   referralCount: number;
   adClicksToday?: number;
   lastAdClickDate?: string;
+  rewardedAdsToday?: number;
+  lastRewardedAdDate?: string;
   spinsToday?: number;
   lastSpinDate?: string;
   isVerifiedMember?: boolean;

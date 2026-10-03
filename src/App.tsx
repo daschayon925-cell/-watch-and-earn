@@ -16,6 +16,7 @@ import { ToastContainer } from './components/UI/ToastContainer';
 import { InstallPrompt } from './components/PWA/InstallPrompt';
 import { AuthModal } from './components/Auth/AuthModal';
 import { AdsterraScriptInjector } from './components/Common/AdsterraScriptInjector';
+import { ContinuousSocialBar } from './components/Common/ContinuousSocialBar';
 
 const MainLayout: React.FC = () => {
   const { activeTab } = useApp();
@@ -59,6 +60,7 @@ const MainLayout: React.FC = () => {
       <ToastContainer />
       <InstallPrompt />
       <AdsterraScriptInjector />
+      <ContinuousSocialBar />
       {!user && <AuthModal />}
     </div>
   );

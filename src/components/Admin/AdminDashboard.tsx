@@ -813,8 +813,10 @@ export const AdminDashboard: React.FC = () => {
                     <span className="font-bold text-cyan-400 font-mono">{u.todayVideosCount || 0}টি</span>
                   </div>
                   <div>
-                    <span className="text-[9px] text-slate-400 block">আজকের অ্যাড</span>
-                    <span className="font-bold text-purple-400 font-mono">{u.adClicksToday || 0}/১০</span>
+                    <span className="text-[9px] text-slate-400 block">বিজ্ঞাপন দেখা</span>
+                    <span className="font-bold text-purple-400 font-mono text-[10px]">
+                      {u.adClicksToday || 0}/১০ | রিওয়ার্ড: {u.rewardedAdsToday || 0}
+                    </span>
                   </div>
                   <div>
                     <span className="text-[9px] text-slate-400 block">রেফার সংখ্যা</span>

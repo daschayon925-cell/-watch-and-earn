@@ -56,10 +56,10 @@
       "password": "7788",
       "phoneVerified": true,
       "photoURL": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-      "coins": 100,
+      "coins": 110,
       "pendingWithdrawalCoins": 0,
-      "lifetimeCoins": 100,
-      "todayCoins": 100,
+      "lifetimeCoins": 110,
+      "todayCoins": 110,
       "todayVideosCount": 0,
       "streakDays": 1,
       "lastCheckInDate": "2026-10-02",
@@ -69,7 +69,7 @@
       "referralCode": "CHAYON77",
       "referralCount": 0,
       "createdAt": "2026-09-30T11:16:00.487Z",
-      "updatedAt": "2026-10-02T08:00:29.255Z",
+      "updatedAt": "2026-10-03T12:19:49.285Z",
       "adClicksToday": 1,
       "lastAdClickDate": "2026-09-30",
       "spinsToday": 1,
@@ -456,6 +456,16 @@
     }
   ],
   "transactions": [
+    {
+      "transactionId": "trx_bonus_1791029989285_573",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপ-আন্ডার বিজ্ঞাপন",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T12:19:49.285Z"
+    },
     {
       "transactionId": "trx_ad_1790928029255",
       "userId": "usr_admin_owner",

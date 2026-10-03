@@ -104,19 +104,23 @@ export const HomeScreen: React.FC = () => {
   };
 
   const finishRewardedAd = async () => {
-    const earned = settings?.rewardedAdBonus || 30;
-    awardCoinsLocally(earned);
-    soundService.playCoinReward();
-    triggerConfetti();
-    showToast(
-      language === 'bn' ? `+${earned} স্পনসরড কয়েন বোনাস! 🎁` : `+${earned} Ad Reward Claimed!`,
-      language === 'bn' ? 'সফলভাবে স্পনসর বিজ্ঞাপন দেখার জন্য ধন্যবাদ।' : 'Thank you for watching the sponsored ad.',
-      'coin'
-    );
     try {
       const res = await api.claimRewardedAd('home_sponsor_ad');
-      if (res && res.success) {
+      if (res && res.success && res.earnedCoins) {
+        soundService.playCoinReward();
+        triggerConfetti();
+        showToast(
+          language === 'bn' ? `+${res.earnedCoins} স্পনসরড কয়েন বোনাস! 🎁` : `+${res.earnedCoins} Ad Reward Claimed!`,
+          language === 'bn' ? 'সফলভাবে স্পনসর বিজ্ঞাপন দেখার জন্য ধন্যবাদ।' : 'Thank you for watching the sponsored ad.',
+          'coin'
+        );
         await refreshUser();
+      } else {
+        showToast(
+          res?.message || (language === 'bn' ? 'আজকের বিজ্ঞাপন দেখার সীমা শেষ হয়েছে।' : 'Daily limit reached.'),
+          '',
+          'error'
+        );
       }
     } catch (err) {
       console.error(err);

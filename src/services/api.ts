@@ -9,9 +9,20 @@ export const setApiUserId = (uid: string) => {
 const headers = () => {
   const storedUid = typeof window !== 'undefined' ? localStorage.getItem('we_user_id') || '' : '';
   const effectiveUid = currentUserId || storedUid;
+  let cachedCoins = '0';
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('we_user_cached_profile');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.coins) cachedCoins = String(parsed.coins);
+      }
+    } catch {}
+  }
   return {
     'Content-Type': 'application/json',
-    'x-user-id': effectiveUid
+    'x-user-id': effectiveUid,
+    'x-user-coins': cachedCoins
   };
 };
 
@@ -98,6 +109,22 @@ export const api = {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ uid })
+    });
+  },
+
+  googleLogin: async (data: { uid: string; email: string; displayName: string; photoURL?: string; cachedCoins?: number }): Promise<{ success: boolean; user?: User; message?: string }> => {
+    return await safeJsonFetch('/api/auth/google-login', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify(data)
+    });
+  },
+
+  syncCoins: async (coins: number): Promise<{ success: boolean; coins?: number }> => {
+    return await safeJsonFetch('/api/user/sync-coins', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ coins })
     });
   },
 
@@ -193,6 +220,15 @@ export const api = {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ adToken: adToken || 'sponsor_bd_promo' })
+    });
+  },
+
+  // 💰 Universal 10-Coin Ad Bonus Claim
+  claimInstantAdBonus: async (source?: string, bonusCoins = 10): Promise<{ success: boolean; earnedCoins?: number; newBalance?: number }> => {
+    return await safeJsonFetch('/api/reward/instant-ad-bonus', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ source: source || 'বিজ্ঞাপন ভিউ বোনাস', bonusCoins })
     });
   },
 

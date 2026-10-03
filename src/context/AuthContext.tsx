@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   loginDemo: (uid?: string) => Promise<void>;
+  loginWithGoogle: () => Promise<{ success: boolean; message: string }>;
   sendPhoneOtp: (phone: string) => Promise<{ success: boolean; message: string; otpCode?: string }>;
   registerUser: (data: { displayName: string; phone: string; password?: string; otpCode?: string; email?: string; referralCodeInput?: string; biometricType?: 'fingerprint' | 'face' | 'none'; biometricEnrolled?: boolean; biometricPhoto?: string; webAuthnCredentialId?: string; photoURL?: string }) => Promise<{ success: boolean; message: string; bonusAdded?: number }>;
   loginUser: (identifier: string, password?: string) => Promise<{ success: boolean; message: string }>;
@@ -31,13 +32,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const savedPhoto = localStorage.getItem(`we_user_photo_${activeUid}`);
       const u = await api.getProfile();
       if (u) {
+        // 🛡️ Prevent Coin Decreases / Rollback across sessions or server restarts
+        let highestCoins = u.coins;
+        const currentCached = localStorage.getItem('we_user_cached_profile');
+        if (currentCached) {
+          try {
+            const parsed = JSON.parse(currentCached);
+            if (parsed.coins && parsed.coins > highestCoins) highestCoins = parsed.coins;
+          } catch {}
+        }
+        if (user && user.coins > highestCoins) highestCoins = user.coins;
+
         const finalUser: User = {
           ...u,
+          coins: highestCoins,
           photoURL: (savedPhoto && savedPhoto.startsWith('data:')) ? savedPhoto : (u.photoURL || savedPhoto || u.photoURL)
         };
         setUser(finalUser);
         localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
         cloudDb.saveUser(finalUser);
+        if (highestCoins > u.coins) {
+          api.syncCoins(highestCoins);
+        }
       } else {
         const cloudUser = await cloudDb.getUser(activeUid);
         if (cloudUser) {
@@ -51,6 +67,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (err) {
       console.error('Failed to load user profile', err);
+    }
+  };
+
+  const loginWithGoogle = async (): Promise<{ success: boolean; message: string }> => {
+    setLoading(true);
+    try {
+      const { signInWithPopup, GoogleAuthProvider } = await import('firebase/auth');
+      const { auth } = await import('../services/firebase');
+
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+
+      let googleUser: any = null;
+      try {
+        const result = await signInWithPopup(auth, provider);
+        googleUser = result.user;
+      } catch (popupErr: any) {
+        console.warn('Popup login note:', popupErr);
+        throw new Error(
+          popupErr.code === 'auth/popup-blocked'
+            ? 'ব্রাউজার পপ-আপ ব্লক করেছে। অনুগ্রহ করে অনুমতি দিন অথবা আবার চাপ দিন।'
+            : (popupErr.message || 'গুগল সাইন-ইন সম্পন্ন হয়নি।')
+        );
+      }
+
+      if (!googleUser) {
+        throw new Error('গুগল তথ্য পাওয়া যায়নি');
+      }
+
+      // Collect any cached guest coins so they are NOT lost!
+      let cachedCoins = 0;
+      const currentCached = localStorage.getItem('we_user_cached_profile');
+      if (currentCached) {
+        try {
+          const parsed = JSON.parse(currentCached);
+          if (parsed.coins) cachedCoins = parsed.coins;
+        } catch {}
+      }
+      if (user && user.coins > cachedCoins) cachedCoins = user.coins;
+
+      const res = await api.googleLogin({
+        uid: googleUser.uid,
+        email: googleUser.email || '',
+        displayName: googleUser.displayName || 'গুগল মেম্বার',
+        photoURL: googleUser.photoURL || '',
+        cachedCoins
+      });
+
+      if (res.success && res.user) {
+        const finalUser = res.user;
+        setApiUserId(finalUser.uid);
+        localStorage.setItem('we_user_id', finalUser.uid);
+        localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
+        setUser(finalUser);
+        await cloudDb.saveUser(finalUser);
+        return { success: true, message: res.message || 'গুগল লগইন সফল হয়েছে!' };
+      } else {
+        throw new Error(res.message || 'গুগল লগইন সম্পন্ন করা যায়নি');
+      }
+    } catch (err: any) {
+      console.error('Google Auth Error:', err);
+      return { 
+        success: false, 
+        message: err.message || 'গুগল লগইন সম্পন্ন হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন।' 
+      };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,13 +172,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const u = await api.getProfile();
       if (u) {
+        // 🛡️ Prevent Coin Decreases
+        let highestCoins = u.coins;
+        const currentCached = localStorage.getItem('we_user_cached_profile');
+        if (currentCached) {
+          try {
+            const parsed = JSON.parse(currentCached);
+            if (parsed.coins && parsed.coins > highestCoins) highestCoins = parsed.coins;
+          } catch {}
+        }
+        if (user && user.coins > highestCoins) highestCoins = user.coins;
+
         const finalUser: User = {
           ...u,
+          coins: highestCoins,
           photoURL: savedPhoto || u.photoURL
         };
         setUser(finalUser);
         localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
         cloudDb.saveUser(finalUser);
+        if (highestCoins > u.coins) {
+          api.syncCoins(highestCoins);
+        }
       } else {
         // Fetch from Cloud DB directly if server just restarted
         const cloudUser = await cloudDb.getUser(effectiveUid);
@@ -288,7 +386,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedAt: new Date().toISOString()
       };
       localStorage.setItem('we_user_cached_profile', JSON.stringify(updated));
-      cloudDb.saveUser(updated);
       return updated;
     });
   };
@@ -303,19 +400,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loginDemo();
     }
 
-    // 🔄 Auto Dynamic User Profile Polling every 4 seconds to reflect realtime earnings
+    // 🔄 Dynamic User Profile Polling every 12 seconds to reflect realtime earnings without overloading network
     const userPollTimer = setInterval(() => {
       const activeUid = localStorage.getItem('we_user_id');
       if (activeUid) {
         refreshUser();
       }
-    }, 4000);
+    }, 12000);
 
     return () => clearInterval(userPollTimer);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginDemo, sendPhoneOtp, registerUser, loginUser, updateProfile, toggleAdminRole, logout, refreshUser, awardCoinsLocally }}>
+    <AuthContext.Provider value={{ user, loading, loginDemo, loginWithGoogle, sendPhoneOtp, registerUser, loginUser, updateProfile, toggleAdminRole, logout, refreshUser, awardCoinsLocally }}>
       {children}
     </AuthContext.Provider>
   );

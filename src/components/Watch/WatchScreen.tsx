@@ -341,7 +341,7 @@ export const WatchScreen: React.FC = () => {
   };
 
   // ---------------------------------------------------------
-  // 🔓 WHEN 45s AD FINISHES -> UNLOCK VIDEO -> RESUME EXACTLY WHERE IT STOPPED
+  // 🔓 WHEN 25s AD FINISHES -> VERIFY ON SERVER -> RESUME EXACTLY WHERE IT STOPPED
   // ---------------------------------------------------------
   const handleAdFinished = async () => {
     soundService.stopPersistentAlarm();
@@ -350,25 +350,26 @@ export const WatchScreen: React.FC = () => {
     setWatchSeconds(0);
     startTimeRef.current = null;
 
-    const earned = currentRewardCoins || 50;
-    // 🪙 Immediate zero-latency local, cloud & UI credit!
-    awardCoinsLocally(earned);
-    setTotalEarnedSession(prev => prev + earned);
-    soundService.playCoinReward();
-    triggerConfetti();
-
-    showToast(
-      language === 'bn' 
-        ? `🎉 দারুণ! +${earned} কয়েন বিকাশ/নগদ ওয়ালেটে জমা হয়েছে!` 
-        : `🎉 Success! +${earned} coins added to your wallet!`,
-      language === 'bn' ? 'ভিডিও যেখানে থেমেছিল ঠিক সেখান থেকেই নিজে নিজে চালু হয়েছে।' : 'Video resumed from exact point.',
-      'coin'
-    );
-
     try {
       const res = await api.claimRewardedAd('reel_auto_loop');
-      if (res && res.earnedCoins) {
+      if (res && res.success && res.earnedCoins) {
+        setTotalEarnedSession(prev => prev + res.earnedCoins);
+        soundService.playCoinReward();
+        triggerConfetti();
+        showToast(
+          language === 'bn' 
+            ? `🎉 দারুণ! +${res.earnedCoins} কয়েন বিকাশ/নগদ ওয়ালেটে জমা হয়েছে!` 
+            : `🎉 Success! +${res.earnedCoins} coins added to your wallet!`,
+          language === 'bn' ? 'ভিডিও যেখানে থেমেছিল ঠিক সেখান থেকেই নিজে নিজে চালু হয়েছে।' : 'Video resumed from exact point.',
+          'coin'
+        );
         await refreshUser();
+      } else {
+        showToast(
+          res?.message || (language === 'bn' ? '⚠️ আজকের বিজ্ঞাপন দেখার দৈনিক সীমা পূর্ণ হয়েছে।' : 'Daily reward limit reached.'),
+          '',
+          'error'
+        );
       }
     } catch (e) {
       console.error('Ad reward sync error', e);
@@ -387,6 +388,24 @@ export const WatchScreen: React.FC = () => {
     if (viewMode === 'app_task') {
       setAppTaskRunning(false);
       setShowFloatingPip(false);
+    }
+  };
+
+  const handleAdSkipped = () => {
+    soundService.stopPersistentAlarm();
+    setShowAd(false);
+    setIsVideoLocked(false);
+    showToast(
+      language === 'bn' ? '⚠️ বিজ্ঞাপন স্কিপ করা হয়েছে, কোনো কয়েন যোগ করা হয়নি।' : 'Ad skipped. No coins earned.',
+      '',
+      'error'
+    );
+    setIsPlaying(true);
+    if (videoRef.current) {
+      if (pausedVideoTimeRef.current > 0) {
+        videoRef.current.currentTime = pausedVideoTimeRef.current;
+      }
+      videoRef.current.play().catch(() => {});
     }
   };
 
@@ -847,6 +866,10 @@ export const WatchScreen: React.FC = () => {
       <div className="px-3 pt-2">
         <button
           onClick={() => {
+            // 🪙 Award instant 10 coins right on tap!
+            awardCoinsLocally(10);
+            soundService.playCoinReward();
+            showToast('🎉 +১০ কয়েন ইনস্ট্যান্ট বোনাস!', 'অ্যাড শেষ হলে আরও ৫০ কয়েন যোগ হবে!', 'coin');
             try {
               const directLink = settings?.adsConfig?.adsterraDirectLink?.trim();
               if (directLink) {
@@ -901,7 +924,7 @@ export const WatchScreen: React.FC = () => {
               durationSeconds={25}
               rewardCoins={currentRewardCoins || 50}
               onAdCompleted={handleAdFinished}
-              onAdSkipped={handleAdFinished}
+              onAdSkipped={handleAdSkipped}
             />
           </div>
         </div>

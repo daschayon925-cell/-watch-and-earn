@@ -1,65 +1,61 @@
 import React, { useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
+import { triggerAdReward } from '../../services/adBonus';
 
 export const AdsterraScriptInjector: React.FC = () => {
-  const { settings } = useApp();
+  const { settings, showToast } = useApp();
+  const { awardCoinsLocally } = useAuth();
   const isExecutingRef = useRef(false);
 
   useEffect(() => {
     const adsConfig = settings?.adsConfig;
     const customSocialBar = adsConfig?.adsterraSocialBarCode?.trim();
+    const customPopunder = adsConfig?.adsterraPopunderCode?.trim();
 
-    // 🛡️ 1. PURGE UNWANTED OVERLAYS IF SOCIAL BAR IS EMPTY OR CHANGED
-    const removeLingeringOverlays = () => {
-      if (!customSocialBar) {
-        const badIds = [
-          'adsterra-social-bar-script',
-          'adsterra-popunder-direct-script',
-          'adsterra-social-bar-custom-tag',
-          'custom-clean-adsterra-script'
-        ];
-        badIds.forEach((id) => {
-          const el = document.getElementById(id);
-          if (el) el.remove();
-        });
-
-        const floatingElements = document.querySelectorAll(
-          '[class*="pl_"], [id*="pl_"], [class*="social-bar"], [id*="social-bar"], [data-adsterra]'
-        );
-        floatingElements.forEach((el) => el.remove());
-      }
-    };
-
-    removeLingeringOverlays();
-    const cleanupInterval = setInterval(removeLingeringOverlays, 2000);
-
-    // 💬 2. IF ADMIN ADDS A CLEAN NON-ADULT SOCIAL BAR IN THE FUTURE, INJECT IT CLEANLY
-    if (customSocialBar) {
+    // 💬 1. SOCIAL BAR SCRIPT INJECTOR & PERIODIC REFRESHER
+    // This ensures Adsterra's social bar ads refresh continuously one after another!
+    const injectSocialBar = () => {
+      if (!customSocialBar) return;
       const match = customSocialBar.match(/src=['"]([^'"]+)['"]/);
       const scriptSrc = match ? match[1] : null;
+      if (!scriptSrc) return;
 
-      if (scriptSrc && !document.getElementById('adsterra-clean-social-bar-script')) {
-        const script = document.createElement('script');
-        script.id = 'adsterra-clean-social-bar-script';
-        script.src = scriptSrc;
-        script.async = true;
-        document.body.appendChild(script);
+      const existing = document.getElementById('adsterra-dynamic-social-bar-script');
+      if (existing) existing.remove();
+
+      const script = document.createElement('script');
+      script.id = 'adsterra-dynamic-social-bar-script';
+      script.src = `${scriptSrc}${scriptSrc.includes('?') ? '&' : '?'}cb=${Date.now()}`;
+      script.async = true;
+      document.body.appendChild(script);
+    };
+
+    injectSocialBar();
+    // Re-trigger social bar script every 35 seconds to cycle ads
+    const socialInterval = setInterval(injectSocialBar, 35000);
+
+    // 🌐 2. OFFICIAL ADSTERRA POPUNDER CODE INJECTOR (IF PROVIDED)
+    if (customPopunder) {
+      const match = customPopunder.match(/src=['"]([^'"]+)['"]/);
+      const popScriptSrc = match ? match[1] : null;
+      if (popScriptSrc && !document.getElementById('adsterra-official-popunder-script')) {
+        const popScript = document.createElement('script');
+        popScript.id = 'adsterra-official-popunder-script';
+        popScript.src = popScriptSrc;
+        popScript.async = true;
+        document.head.appendChild(popScript);
       }
     }
 
-    // 🚀 3. PRO SMART POPUNDER ENGINE (3-MIN INTERVAL COOLDOWN)
-    const isPopunderActive = adsConfig?.popunderEnabled !== false; // Default ON
-    const intervalMinutes = adsConfig?.popunderIntervalMinutes || 3; // Default 3 minutes
-    const dailyCap = adsConfig?.popunderDailyCap || 8; // Default max 8 per day
-
-    if (!isPopunderActive) {
-      return () => clearInterval(cleanupInterval);
-    }
-
-    const COOLDOWN_MS = intervalMinutes * 60 * 1000;
+    // 🚀 3. HIGH-CPM SMART POPUNDER TRIGGER ENGINE (2-MINUTE COOLDOWN)
+    const isPopunderActive = adsConfig?.popunderEnabled !== false;
+    const intervalMinutes = adsConfig?.popunderIntervalMinutes || 2;
+    const COOLDOWN_MS = intervalMinutes * 60 * 1000; // ২ মিনিট (120 সেকেন্ড) কুলডাউন
     const STORAGE_KEY_LAST = 'watch_earn_smart_popunder_last_trigger';
     const STORAGE_KEY_COUNT = 'watch_earn_smart_popunder_daily_count';
     const STORAGE_KEY_DATE = 'watch_earn_smart_popunder_date';
+    const dailyCap = adsConfig?.popunderDailyCap || 25;
 
     const getDailyCount = () => {
       const today = new Date().toISOString().split('T')[0];
@@ -77,53 +73,39 @@ export const AdsterraScriptInjector: React.FC = () => {
       localStorage.setItem(STORAGE_KEY_COUNT, (current + 1).toString());
     };
 
-    const handleSmartPopunderClick = (e: MouseEvent) => {
-      if (isExecutingRef.current) return;
+    const triggerSmartPopunder = (e: MouseEvent | TouchEvent) => {
+      if (!isPopunderActive || isExecutingRef.current) return;
 
       const target = e.target as HTMLElement;
-      // Never interrupt essential interactions (Navigation, Form inputs, Player controls, Modals)
+      // Do not trigger on critical inputs
       if (
         !target ||
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
         target.closest('input') ||
         target.closest('textarea') ||
-        target.closest('select') ||
-        target.closest('nav') ||
-        target.closest('footer') ||
-        target.closest('[role="navigation"]') ||
         target.closest('[data-no-popunder]') ||
-        target.closest('.no-popunder') ||
-        target.closest('button[type="submit"]') ||
-        target.closest('.auth-modal') ||
-        target.closest('.video-player-controls')
+        target.closest('.no-popunder')
       ) {
         return;
       }
 
-      // Check daily quota limit
-      const currentDaily = getDailyCount();
-      if (currentDaily >= dailyCap) {
-        return; // Daily cap reached
-      }
+      if (getDailyCount() >= dailyCap) return;
 
-      // Check cooldown timer
       const lastTriggerStr = localStorage.getItem(STORAGE_KEY_LAST);
       const now = Date.now();
-
       if (lastTriggerStr) {
         const elapsed = now - parseInt(lastTriggerStr, 10);
-        if (elapsed < COOLDOWN_MS) {
-          return; // Still in 3-minute cooldown
-        }
+        if (elapsed < COOLDOWN_MS) return;
       }
 
-      // Lock cooldown immediately
+      // Record trigger
       localStorage.setItem(STORAGE_KEY_LAST, now.toString());
       incrementDailyCount();
-
       isExecutingRef.current = true;
       setTimeout(() => {
         isExecutingRef.current = false;
-      }, 1000);
+      }, 1500);
 
       const targetDirectLink =
         adsConfig?.adsterraDirectLink?.trim() ||
@@ -134,20 +116,20 @@ export const AdsterraScriptInjector: React.FC = () => {
         if (popWindow) {
           try {
             window.focus();
-          } catch {
-            // Ignore focus error
-          }
+          } catch {}
+          // 🪙 Reward 10 coins on popunder trigger!
+          triggerAdReward('পপ-আন্ডার বিজ্ঞাপন', awardCoinsLocally, showToast);
         }
       } catch (err) {
-        console.warn('Smart Popunder note:', err);
+        console.warn('Popunder trigger note:', err);
       }
     };
 
-    window.addEventListener('click', handleSmartPopunderClick, { capture: true, passive: true });
+    window.addEventListener('click', triggerSmartPopunder, { capture: true });
 
     return () => {
-      clearInterval(cleanupInterval);
-      window.removeEventListener('click', handleSmartPopunderClick, { capture: true });
+      clearInterval(socialInterval);
+      window.removeEventListener('click', triggerSmartPopunder, { capture: true });
     };
   }, [settings?.adsConfig]);
 
