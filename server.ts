@@ -138,6 +138,12 @@ function loadDbFromDisk() {
       if (loaded && loaded.users && Array.isArray(loaded.users)) {
         // Merge or copy
         db.settings = { ...db.settings, ...(loaded.settings || {}) };
+        db.settings.videoReward = 50;
+        db.settings.rewardedAdBonus = 50;
+        db.settings.dailyRewardLimit = 1200;
+        db.settings.dailyMaxVideos = 40;
+        db.settings.dailyRewardedAdLimit = 25;
+        db.settings.referralBonus = 50;
         db.users = loaded.users || db.users;
         db.videos = loaded.videos || db.videos;
         db.transactions = loaded.transactions || db.transactions;
@@ -331,20 +337,20 @@ const db: {
   comments: any[];
 } = {
   settings: {
-    coinToBDTRate: 0.015, // ১০০০ কয়েন = ১৫ টাকা (১ কয়েন = ০.০১৫ টাকা) - ইউজারের জন্য অত্যন্ত আকর্ষণীয়
+    coinToBDTRate: 0.015, // ১০০০ কয়েন = ১৫ টাকা (১ কয়েন = ০.০১৫ টাকা)
     minWithdrawalCoins: 2000, // ২০০০ কয়েন = ৩০ টাকা রিচার্জ
     minRechargeBDT: 30, // সর্বনিম্ন ৩০ টাকা মোবাইল রিচার্জ
     minBkashNagadBDT: 100, // সর্বনিম্ন ১০০ টাকা বিকাশ/নগদ (৬৬৬৭ কয়েন)
     userRevenueSharePercent: 35, // ৬৫% মালিকের নিট প্রফিট
     videoReward: 50, // ভিডিও ওয়াচ রিওয়ার্ড ৫০ কয়েন
     minWatchPercentage: 90,
-    minWatchSeconds: 12,
-    dailyRewardLimit: 1200, // দৈনিক সর্বোচ্চ রিওয়ার্ড ক্যাপ
-    dailyMaxVideos: 40,
-    rewardedAdBonus: 50, // ৫০ সেকেন্ড স্পনসর মাল্টি-অ্যাড দেখা (+৫০ কয়েন)
-    dailyRewardedAdLimit: 25,
-    sponsorAdIntervalMinutes: 150, // ২.৫ ঘণ্টা (২-৩ ঘণ্টা) পর পর একটি স্পনসর বিজ্ঞাপন
-    spinIntervalMinutes: 150, // ২.৫ ঘণ্টা (২-৩ ঘণ্টা) পর পর লাকি স্পিন
+    minWatchSeconds: 15,
+    dailyRewardLimit: 1200, // দৈনিক সর্বোচ্চ ১২০০ কয়েন রিওয়ার্ড ক্যাপ
+    dailyMaxVideos: 40, // দিনে সর্বোচ্চ ৪০টি ভিডিও
+    rewardedAdBonus: 50, // ২০-৩০ সেকেন্ড স্পনসর অ্যাড দেখা (+৫০ কয়েন)
+    dailyRewardedAdLimit: 25, // দিনে সর্বোচ্চ ২৫টি বিজ্ঞাপন
+    sponsorAdIntervalMinutes: 150, // ২.৫ ঘণ্টা পর পর একটি স্পনসর বিজ্ঞাপন
+    spinIntervalMinutes: 150, // ২.৫ ঘণ্টা পর পর লাকি স্পিন
     referralBonus: 50, // রেফারেল বোনাস ৫০ কয়েন
     isDemoMode: false,
     adsConfig: {
@@ -368,8 +374,8 @@ const db: {
     },
     activeNotice: {
       enabled: true,
-      title: '🚨 ব্যানার বিজ্ঞাপন ও কয়েন বোনাস নোটিশ 🇧🇩',
-      message: 'প্রতি ক্লিকে ১৫ কয়েন বোনাস পাবেন। অ্যাকাউন্ট সুরক্ষার জন্য দিনে সর্বোচ্চ ১০ বারের বেশি ব্যানার বিজ্ঞাপনে ক্লিক করা যাবে না।',
+      title: '🚨 ব্যানার ও পপআন্ডার বিজ্ঞাপন বোনাস নোটিশ 🇧🇩',
+      message: 'প্রতি ব্যানার ক্লিকে ১০ কয়েন এবং পপআন্ডার বিজ্ঞাপন দেখলে ১০ কয়েন বোনাস পাবেন। বার বার স্প্যাম ক্লিক করা যাবে না।',
       type: 'warning',
       updatedAt: new Date().toISOString()
     },
@@ -749,8 +755,9 @@ function getUser(req: express.Request) {
 
   let user = db.users.find(u => u.uid === uid);
   if (!user && (uid.startsWith('usr_') || uid.startsWith('user_'))) {
-    // 🛡️ Auto-restore / register this user in db.users so they NEVER lose coins or get 401 error!
-    const startingCoins = (!isNaN(clientCoins) && clientCoins > 0) ? clientCoins : 100;
+    // 🛡️ Auto-restore / register this user in db.users with standard starting balance (100 coins max)
+    // Never allow unverified client headers to forge arbitrary starting balance!
+    const startingCoins = 100;
     user = {
       uid,
       displayName: 'ইউজার ' + uid.slice(-4),
@@ -1174,23 +1181,16 @@ app.post('/api/auth/google-login', (req, res) => {
   });
 });
 
-// 🪙 Synchronize Coins between Client and Server to prevent lost points
+// 🪙 Synchronize Coins between Client and Server (Server Authoritative)
 app.post('/api/user/sync-coins', (req, res) => {
   const user = getUser(req);
   if (!user) {
     return res.status(401).json({ success: false, message: 'ব্যবহারকারী পাওয়া যায়নি' });
   }
 
-  const clientCoins = Number(req.body.coins || req.body.highestCoins);
-  if (!isNaN(clientCoins) && clientCoins > user.coins) {
-    const diff = clientCoins - user.coins;
-    user.coins = clientCoins;
-    user.lifetimeCoins = Math.max(user.lifetimeCoins || 0, clientCoins);
-    user.todayCoins = (user.todayCoins || 0) + diff;
-    user.updatedAt = new Date().toISOString();
-    saveDbToDisk();
-  }
-
+  // 🛡️ STRICT SECURITY: Coin balances are authoritative on server.
+  // Regular users CANNOT inject arbitrary coin increments through this endpoint.
+  // Returns current authentic balance from server database.
   res.json({
     success: true,
     coins: user.coins
@@ -1200,9 +1200,20 @@ app.post('/api/user/sync-coins', (req, res) => {
 // Switch role / profile for demo / testing
 app.post('/api/auth/switch-role', (req, res) => {
   const user = getUser(req);
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'অননুমোদিত' });
+  }
   const { role } = req.body;
+
+  // 🛡️ STRICT SECURITY: Only the actual Owner / Admin can toggle roles!
+  // Regular users are strictly forbidden from granting themselves admin access.
+  if (user.uid !== 'usr_admin_owner' && user.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'শুধুমাত্র অ্যাডমিন রোল পরিবর্তন করতে পারবেন।' });
+  }
+
   if (role === 'admin' || role === 'user') {
     user.role = role;
+    saveDbToDisk();
     res.json({ success: true, user });
   } else {
     res.status(400).json({ success: false, message: 'Invalid role' });
@@ -1573,6 +1584,30 @@ app.post('/api/reward/daily-checkin', (req, res) => {
 
 // 6. Rewarded Ad Simulation with Guaranteed Instant Coin Credit
 const lastAdClaimTimes: Map<string, number> = new Map();
+const activeAdSessions: Map<string, { userId: string; startedAt: number }> = new Map();
+
+// 🎬 Step 1: Start Rewarded Ad Watch Session (Strict Minimum 15-20 Seconds)
+app.post('/api/reward/ad-start', (req, res) => {
+  const user = getUser(req);
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'লগইন আবশ্যক' });
+  }
+
+  const adSessionId = 'ads_' + crypto.randomBytes(8).toString('hex');
+  activeAdSessions.set(adSessionId, {
+    userId: user.uid,
+    startedAt: Date.now()
+  });
+
+  // Expire after 10 mins
+  setTimeout(() => activeAdSessions.delete(adSessionId), 600000);
+
+  res.json({
+    success: true,
+    adSessionId,
+    minSeconds: 50
+  });
+});
 
 app.post('/api/reward/ad-reward', (req, res) => {
   const user = getUser(req);
@@ -1580,7 +1615,7 @@ app.post('/api/reward/ad-reward', (req, res) => {
     return res.status(401).json({ success: false, message: 'লগইন আবশ্যক' });
   }
 
-  const { adToken } = req.body || {};
+  const { adToken, adSessionId } = req.body || {};
   if (user.accountStatus === 'suspended') {
     return res.status(403).json({ success: false, message: 'অস্বাভাবিক কার্যক্রমের কারণে আপনার অ্যাকাউন্ট স্থগিত করা হয়েছে।' });
   }
@@ -1588,9 +1623,28 @@ app.post('/api/reward/ad-reward', (req, res) => {
   const now = Date.now();
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // 🛡️ Guard 1: Anti-Spam Cooldown (Minimum 20 seconds between rewarded video claims)
+  // 🛡️ Guard 0: Verify Ad Session Minimum Time (Must watch at least 15 seconds)
+  if (adSessionId) {
+    const session = activeAdSessions.get(adSessionId);
+    if (!session) {
+      return res.status(400).json({ success: false, message: 'বিজ্ঞাপন সেশন পাওয়া যায়নি বা মেয়াদোত্তীর্ণ।' });
+    }
+    if (session.userId !== user.uid) {
+      return res.status(403).json({ success: false, message: 'সেশন সিকিউরিটি অসংগতি।' });
+    }
+    const elapsedSec = (now - session.startedAt) / 1000;
+    if (elapsedSec < 48) {
+      return res.status(400).json({
+        success: false,
+        message: `বিজ্ঞাপনটি পুরো ৫০ সেকেন্ড দেখা হয়নি (আপনি দেখেছেন ${Math.floor(elapsedSec)} সেকেন্ড)। পুরো সময় না দেখলে কয়েন দেওয়া সম্ভব নয়।`
+      });
+    }
+    activeAdSessions.delete(adSessionId);
+  }
+
+  // 🛡️ Guard 1: Anti-Spam Cooldown (Minimum 15 seconds between rewarded video claims)
   const lastClaim = lastAdClaimTimes.get(user.uid) || 0;
-  const minIntervalMs = 20000;
+  const minIntervalMs = 15000;
   if (now - lastClaim < minIntervalMs) {
     const remainingSec = Math.ceil((minIntervalMs - (now - lastClaim)) / 1000);
     return res.status(429).json({
@@ -1843,7 +1897,7 @@ app.post('/api/reward/ad-click', (req, res) => {
     });
   }
 
-  const rewardAmount = 15; // ১৫ কয়েন প্রতি অ্যাড ক্লিক
+  const rewardAmount = 10; // ১০ কয়েন প্রতি ব্যানার অ্যাড ক্লিক
   user.adClicksToday += 1;
   user.coins += rewardAmount;
   user.lifetimeCoins += rewardAmount;
@@ -1886,7 +1940,7 @@ app.post('/api/reward/spin-claim', (req, res) => {
     user.lastSpinDate = todayStr;
   }
 
-  const maxDailySpins = 5;
+  const maxDailySpins = 2; // দিনে সর্বোচ্চ ২ বার স্পিন
   if (user.spinsToday >= maxDailySpins) {
     return res.json({
       success: false,
@@ -1916,7 +1970,7 @@ app.post('/api/reward/spin-claim', (req, res) => {
     }
   }
 
-  const rewardCoins = Math.min(100, Math.max(5, Number(req.body.rewardCoins) || 15));
+  const rewardCoins = Math.min(50, Math.max(5, Number(req.body.rewardCoins) || 15)); // সর্বোচ্চ ৫০ কয়েন (১০০ এর পরিবর্তে)
   user.spinsToday += 1;
   user.lastSpinTimestamp = new Date().toISOString();
   user.coins += rewardCoins;

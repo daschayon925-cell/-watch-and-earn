@@ -6,8 +6,8 @@
     "minBkashNagadBDT": 100,
     "userRevenueSharePercent": 35,
     "videoReward": 50,
-    "minWatchPercentage": 90,
-    "minWatchSeconds": 12,
+    "minWatchPercentage": 95,
+    "minWatchSeconds": 15,
     "dailyRewardLimit": 1200,
     "dailyMaxVideos": 40,
     "rewardedAdBonus": 50,
@@ -27,6 +27,7 @@
       "adSlotRewarded": "5647382910",
       "adsterraDirectLink": "https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4",
       "adsterraSocialBarCode": "<script src=\"https://pl31612557.profitableratecpmnetwork.com/4b/5b/f5/4b5bf560a60882eaf9fc46b3684fb3f4.js\"></script>",
+      "adsterraBannerCode": "<script type=\"text/javascript\">\n  atOptions = {\n    'key' : '026df0717402ab99e2cfeea66cbde373',\n    'format' : 'iframe',\n    'height' : 250,\n    'width' : 300,\n    'params' : {}\n  };\n</script>\n<script type=\"text/javascript\" src=\"https://www.highrevenueformat.com/026df0717402ab99e2cfeea66cbde373/invoke.js\"></script>",
       "rewardedVideoDurationSeconds": 20
     },
     "activeNotice": {
@@ -62,7 +63,7 @@
       "pendingWithdrawalCoins": 0,
       "lifetimeCoins": 180,
       "todayCoins": 180,
-      "todayVideosCount": 0,
+      "todayVideosCount": 1,
       "streakDays": 1,
       "lastCheckInDate": "2026-10-02",
       "role": "admin",
@@ -71,11 +72,14 @@
       "referralCode": "CHAYON77",
       "referralCount": 0,
       "createdAt": "2026-09-30T11:16:00.487Z",
-      "updatedAt": "2026-10-03T13:30:36.393Z",
+      "updatedAt": "2026-10-03T16:19:03.522Z",
       "adClicksToday": 1,
       "lastAdClickDate": "2026-09-30",
       "spinsToday": 1,
-      "lastSpinDate": "2026-10-02"
+      "lastSpinDate": "2026-10-02",
+      "rewardedAdsToday": 1,
+      "lastRewardedAdDate": "2026-10-03",
+      "lastSponsoredAdTimestamp": "2026-10-03T14:31:34.039Z"
     },
     {
       "uid": "usr_1790862737851",
@@ -98,7 +102,7 @@
       "referralCode": "BD9963",
       "referralCount": 0,
       "createdAt": "2026-10-03T13:03:39.788Z",
-      "updatedAt": "2026-10-03T13:36:26.218Z"
+      "updatedAt": "2026-10-03T16:19:19.321Z"
     },
     {
       "uid": "usr_1790827850530",
@@ -553,6 +557,156 @@
     }
   ],
   "transactions": [
+    {
+      "transactionId": "trx_bonus_1791044343522_211",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "ডিরেক্ট লিংক বিজ্ঞাপন",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T16:19:03.522Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791043722468_512",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T16:08:42.468Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791043155181_128",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T15:59:15.181Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791039913026_27",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "সোশ্যাল বার বিজ্ঞাপন",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T15:05:13.026Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791039892658_827",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T15:04:52.658Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791039431701_336",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "সোশ্যাল বার বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T14:57:11.701Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791039351855_491",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T14:55:51.855Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791038958352_390",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T14:49:18.352Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791038252470_811",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T14:37:32.470Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791037998104_747",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T14:33:18.104Z"
+    },
+    {
+      "transactionId": "trx_ad_1791037894039",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 50,
+      "bdtEquivalent": 0.75,
+      "source": "স্পনসর বিজ্ঞাপন রিওয়ার্ড (1/25)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T14:31:34.039Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791037828432_640",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T14:30:28.432Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791037145615_438",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T14:19:05.615Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791036877075_425",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T14:14:37.075Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791034718259_416",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপ-আন্ডার বিজ্ঞাপন",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-03T13:38:38.259Z"
+    },
     {
       "transactionId": "trx_adm_1791034230905",
       "userId": "usr_admin_owner",

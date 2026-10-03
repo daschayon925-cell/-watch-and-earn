@@ -33,6 +33,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { soundService } from '../../services/audio';
 import { AdInterstitial } from '../Feed/AdInterstitial';
+import { MiniBannerAd } from '../Common/MiniBannerAd';
 import { getDailyYouTubeShorts, YouTubeReelItem } from '../../services/youtubeReelsService';
 
 export const WatchScreen: React.FC = () => {
@@ -381,7 +382,7 @@ export const WatchScreen: React.FC = () => {
   // ---------------------------------------------------------
   // 🔓 WHEN 25s AD FINISHES -> VERIFY ON SERVER -> RESUME EXACTLY WHERE IT STOPPED
   // ---------------------------------------------------------
-  const handleAdFinished = async () => {
+  const handleAdFinished = async (adSessionId?: string) => {
     soundService.stopPersistentAlarm();
     setShowAd(false);
     setIsVideoLocked(false);
@@ -389,7 +390,7 @@ export const WatchScreen: React.FC = () => {
     startTimeRef.current = null;
 
     try {
-      const res = await api.claimRewardedAd('reel_auto_loop');
+      const res = await api.claimRewardedAd('reel_auto_loop', adSessionId);
       if (res && res.success && res.earnedCoins) {
         setTotalEarnedSession(prev => prev + res.earnedCoins);
         soundService.playCoinReward();
@@ -944,6 +945,11 @@ export const WatchScreen: React.FC = () => {
         </button>
       </div>
 
+      {/* 🌟 SPONSOR BANNER AD WITH DIRECT LINK (চাপ দিলে ১০ কয়েন) */}
+      <div className="px-3 pt-3">
+        <MiniBannerAd slotId="watch_screen_main_banner" category="finance" />
+      </div>
+
       {/* 🔴 FLOATING PiP LIVE BUBBLE (স্ক্রিনের কোণায় ভাসমান টাইমার) */}
       {showFloatingPip && !showAd && (
         <div className="fixed bottom-24 right-4 z-50 animate-bounce">
@@ -973,13 +979,13 @@ export const WatchScreen: React.FC = () => {
         </div>
       )}
 
-      {/* 📢 THE 25-SECOND SPONSOR AD OVERLAY WITH ANTI-CHEAT */}
+      {/* 📢 THE 50-SECOND 3-AD CHAIN SPONSOR OVERLAY WITH ANTI-CHEAT */}
       {showAd && (
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-3 animate-in fade-in">
           <div className="relative w-full max-w-md h-[90vh] bg-black rounded-3xl overflow-hidden border-2 border-amber-500/60 shadow-2xl flex flex-col justify-center">
             <AdInterstitial
               adNumber={adCycleCount}
-              durationSeconds={25}
+              durationSeconds={50}
               rewardCoins={currentRewardCoins || 50}
               onAdCompleted={handleAdFinished}
               onAdSkipped={handleAdSkipped}

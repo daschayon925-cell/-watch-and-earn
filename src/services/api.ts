@@ -217,11 +217,18 @@ export const api = {
     });
   },
 
-  claimRewardedAd: async (adToken?: string) => {
+  startRewardedAdSession: async () => {
+    return await safeJsonFetch<{ success: boolean; adSessionId?: string; minSeconds?: number }>('/api/reward/ad-start', {
+      method: 'POST',
+      headers: headers()
+    });
+  },
+
+  claimRewardedAd: async (adToken?: string, adSessionId?: string) => {
     return await safeJsonFetch('/api/reward/ad-reward', {
       method: 'POST',
       headers: headers(),
-      body: JSON.stringify({ adToken: adToken || 'sponsor_bd_promo' })
+      body: JSON.stringify({ adToken: adToken || 'sponsor_bd_promo', adSessionId })
     });
   },
 

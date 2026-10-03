@@ -28,6 +28,7 @@ import { DailyCheckInStreak } from './DailyCheckInStreak';
 import { LuckySpinModal } from './LuckySpinModal';
 import { WeeklyLeaderboardModal } from './WeeklyLeaderboardModal';
 import { MiniBannerAd } from '../Common/MiniBannerAd';
+import { AdsterraBannerUnit } from '../Common/AdsterraBannerUnit';
 import { AdInterstitial } from '../Feed/AdInterstitial';
 
 export const HomeScreen: React.FC = () => {
@@ -145,9 +146,9 @@ export const HomeScreen: React.FC = () => {
     setWatchingAd(true);
   };
 
-  const finishRewardedAd = async () => {
+  const finishRewardedAd = async (adSessionId?: string) => {
     try {
-      const res = await api.claimRewardedAd('home_sponsor_ad');
+      const res = await api.claimRewardedAd('home_sponsor_ad', adSessionId);
       if (res && res.success && res.earnedCoins) {
         soundService.playCoinReward();
         triggerConfetti();
@@ -171,6 +172,15 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
+  const handleSkipRewardedAd = () => {
+    setWatchingAd(false);
+    showToast(
+      language === 'bn' ? '⚠️ বিজ্ঞাপন পুরো না দেখায় কোনো কয়েন যোগ হয়নি।' : 'Ad skipped. No coins earned.',
+      '',
+      'error'
+    );
+  };
+
   const isCheckedInToday = user?.lastCheckInDate === new Date().toISOString().split('T')[0];
   const rate = settings?.coinToBDTRate || 0.015;
   const userBdt = ((user?.coins || 0) * rate).toFixed(2);
@@ -185,7 +195,7 @@ export const HomeScreen: React.FC = () => {
             durationSeconds={15}
             rewardCoins={settings?.rewardedAdBonus || 35}
             onAdCompleted={finishRewardedAd}
-            onAdSkipped={finishRewardedAd}
+            onAdSkipped={handleSkipRewardedAd}
           />
         </div>
       )}
@@ -353,7 +363,10 @@ export const HomeScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* ⭐ 1ST PROMINENT CLICKABLE ADSTERRA BANNER SPOT (+15 COINS PER CLICK) */}
+      {/* 🌟 1. OFFICIAL ADSTERRA BANNER UNIT (ভেরিফায়েড স্পন্সর বিজ্ঞাপন NON-ADULT) */}
+      <AdsterraBannerUnit slotId="home_adsterra_slot" />
+
+      {/* 🌟 2. INTERACTIVE SPONSORED CAMPAIGN CARD (+10 COINS) */}
       <MiniBannerAd slotId="home_top_hero_slot" category="finance" />
 
       {/* Pro-Level Live YouTube Entertainment Carousel & Watch Hub (স্লিক ও প্রিমিয়াম ডিজাইন) */}

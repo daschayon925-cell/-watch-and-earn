@@ -17,6 +17,7 @@ import { InstallPrompt } from './components/PWA/InstallPrompt';
 import { AuthModal } from './components/Auth/AuthModal';
 import { AdsterraScriptInjector } from './components/Common/AdsterraScriptInjector';
 import { ContinuousSocialBar } from './components/Common/ContinuousSocialBar';
+import { AdVisitTimerModal } from './components/Common/AdVisitTimerModal';
 
 const MainLayout: React.FC = () => {
   const { activeTab } = useApp();
@@ -61,6 +62,7 @@ const MainLayout: React.FC = () => {
       <InstallPrompt />
       <AdsterraScriptInjector />
       <ContinuousSocialBar />
+      <AdVisitTimerModal />
       {!user && <AuthModal />}
     </div>
   );

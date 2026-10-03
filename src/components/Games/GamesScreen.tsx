@@ -25,7 +25,7 @@ type GameId = 'ludo' | 'carrom' | 'spin' | 'tictactoe' | 'snake';
 
 export const GamesScreen: React.FC = () => {
   const { user, refreshUser, awardCoinsLocally } = useAuth();
-  const { language, showToast, triggerConfetti } = useApp();
+  const { language, showToast, triggerConfetti, settings } = useApp();
 
   const [selectedGame, setSelectedGame] = useState<GameId | null>(null);
   
@@ -105,9 +105,16 @@ export const GamesScreen: React.FC = () => {
     }
   ];
 
-  // Step 1: User clicks on a game -> SHOW PRE-GAME AD FIRST (Maximum revenue)
+  // Step 1: User clicks on a game -> Auto popunder + 20s pre-game ad
   const handleSelectGame = (gameId: GameId) => {
     setSelectedGame(gameId);
+    
+    // 🚀 Auto-trigger Adsterra Popunder / Direct link in background
+    try {
+      const directLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+      window.open(directLink, '_blank', 'noopener,noreferrer');
+    } catch {}
+
     setAdStage('PRE_GAME');
   };
 
@@ -152,6 +159,15 @@ export const GamesScreen: React.FC = () => {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handlePostAdSkipped = () => {
+    setAdStage('NONE');
+    showToast(
+      language === 'bn' ? '⚠️ বিজ্ঞাপন পুরো না দেখায় গেমের কোনো কয়েন যোগ হয়নি।' : 'Ad skipped. No game reward earned.',
+      '',
+      'error'
+    );
   };
 
   // ---------- TIC-TAC-TOE LOGIC ----------
@@ -525,7 +541,7 @@ export const GamesScreen: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-3 animate-in fade-in">
           <div className="relative w-full max-w-md h-[90vh] bg-black rounded-3xl overflow-hidden border-2 border-blue-500/60 shadow-2xl flex flex-col justify-center">
             <AdInterstitial
-              durationSeconds={15} // Quick 15s pre-game ad
+              durationSeconds={20} // Quick 20s pre-game ad
               rewardCoins={0}
               onAdCompleted={handlePreAdFinished}
               onAdSkipped={handlePreAdFinished}
@@ -541,7 +557,7 @@ export const GamesScreen: React.FC = () => {
               durationSeconds={20} // 20s post-game ad
               rewardCoins={gameResultCoins}
               onAdCompleted={handlePostAdFinished}
-              onAdSkipped={handlePostAdFinished}
+              onAdSkipped={handlePostAdSkipped}
             />
           </div>
         </div>

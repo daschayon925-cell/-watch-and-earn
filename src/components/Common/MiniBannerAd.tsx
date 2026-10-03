@@ -1,183 +1,150 @@
 import React, { useState } from 'react';
-import { Sparkles, Zap, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Zap, ExternalLink, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
-import { soundService } from '../../services/audio';
-import { api } from '../../services/api';
-import { AdsterraBannerUnit } from './AdsterraBannerUnit';
+import { openAdWithStrictTimer } from './AdVisitTimerModal';
 
 interface MiniBannerProps {
   slotId?: string;
   category?: 'finance' | 'gaming' | 'shopping' | 'travel';
+  className?: string;
 }
 
-export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', category = 'finance' }) => {
-  const { showToast, triggerConfetti, settings } = useApp();
-  const { user, refreshUser } = useAuth();
-  const [claiming, setClaiming] = useState(false);
+export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', className = '' }) => {
+  const { showToast, settings } = useApp();
+  const { user } = useAuth();
+  const [isDismissed, setIsDismissed] = useState(false);
 
   const todayStr = new Date().toISOString().split('T')[0];
   const clicksToday = user?.lastAdClickDate === todayStr ? (user?.adClicksToday || 0) : 0;
   const maxClicks = 10;
   const isLimitReached = clicksToday >= maxClicks;
 
-  // High-fidelity full-bleed responsive banner graphics
-  const ads = [
+  const directLink =
+    settings?.adsConfig?.adsterraDirectLink?.trim() ||
+    'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+
+  // Rich Authentic Bangladesh Sponsor Campaigns (Matches Image 2 exactly)
+  const ADS = [
     {
-      title: 'নগদ মেগা বোনাস! ৫০ টাকা নিশ্চিত ক্যাশব্যাক',
-      desc: 'বিজ্ঞাপনে এক ক্লিকেই অফার পেজ দেখুন এবং জিতে নিন বিশেষ ছাড়!',
-      sponsor: 'Nagad Official Promo 🇧🇩',
-      tag: 'AD • SPONSOR OFFER',
-      cta: 'অফার দেখুন (+১৫ কয়েন)',
-      link: 'https://nagad.com.bd',
-      bannerBg: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=80',
-      badgeGradient: 'from-amber-500 to-orange-500 text-slate-950',
-      highlightBadge: 'স্পেশাল বোনাস অফার'
-    },
-    {
+      tag: 'SPONSORED CAMPAIGN',
+      sponsor: 'Daraz Bangladesh 🛍️',
       title: 'দারাজ গ্র্যান্ড বৈশাখী মেলা! ৮০% পর্যন্ত ক্যাশ ছাড়',
       desc: 'ফ্রি হোম ডেলিভারিতে সেরা স্মার্টফোন ও গ্যাজেট কিনুন ঘরে বসেই।',
-      sponsor: 'Daraz Bangladesh 🛍️',
-      tag: 'SPONSORED CAMPAIGN',
-      cta: 'শপ করুন (+১৫ কয়েন)',
-      link: 'https://daraz.com.bd',
-      bannerBg: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&auto=format&fit=crop&q=80',
-      badgeGradient: 'from-orange-500 to-red-500 text-white',
-      highlightBadge: 'লিমিটেড টাইম মেগা সেল'
+      cta: 'শপ করুন (+১০ কয়েন)',
+      bgImg: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&auto=format&fit=crop&q=80'
     },
     {
-      title: 'বিকাশ সেন্ড মানি সম্পূর্ণ ফ্রি ও ক্যাশআউট বোনাস!',
-      desc: 'প্রিয় ৫টি নাম্বারে ০% খরচে টাকা পাঠান ও আকর্ষণীয় ভাউচার পান।',
-      sponsor: 'bKash Payments 📲',
       tag: 'PREMIUM PARTNER',
-      cta: 'বিস্তারিত দেখুন (+১৫ কয়েন)',
-      link: 'https://bkash.com',
-      bannerBg: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop&q=80',
-      badgeGradient: 'from-pink-500 to-rose-600 text-white',
-      highlightBadge: '১০০% ফ্রি অফার'
+      sponsor: 'Nagad Official Promo 🇧🇩',
+      title: 'নগদ মেগা রিওয়ার্ড বোনাস! নিশ্চিত ক্যাশব্যাক অফার',
+      desc: 'বিজ্ঞাপনে ক্লিক করে অফার দেখুন এবং জিতে নিন বিশেষ ক্যাশ রিওয়ার্ড।',
+      cta: 'অফার দেখুন (+১০ কয়েন)',
+      bgImg: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=80'
     },
     {
-      title: 'চালডাল তাজা গ্রোসারি! ঘরে বসেই ১ ঘণ্টায় ডেলিভারি',
-      desc: 'প্রথম অর্ডারে বিশেষ ডিসকাউন্ট এবং ফ্রি এক্সপ্রেস হোম ডেলিভারি!',
-      sponsor: 'Chaldal BD Groceries 🛒',
-      tag: 'SPONSORED PARTNER',
-      cta: 'অর্ডার করুন (+১৫ কয়েন)',
-      link: 'https://chaldal.com',
-      bannerBg: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&auto=format&fit=crop&q=80',
-      badgeGradient: 'from-emerald-500 to-teal-500 text-slate-950',
-      highlightBadge: 'দ্রুত হোম ডেলিভারি'
+      tag: 'VERIFIED SPONSOR',
+      sponsor: 'bKash Payments 📲',
+      title: 'বিকাশ সেন্ড মানি সম্পূর্ণ ফ্রি ও পেমেন্ট বোনাস!',
+      desc: 'প্রিয় নাম্বারে ফ্রিতে টাকা পাঠান ও জিতে নিন আকর্ষণীয় ভাউচার।',
+      cta: 'বিস্তারিত দেখুন (+১০ কয়েন)',
+      bgImg: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop&q=80'
     }
   ];
 
-  const adIndex = Math.abs((slotId.charCodeAt(0) || 0) + slotId.length) % ads.length;
-  const currentAd = ads[adIndex];
+  const adIndex = Math.abs((slotId.charCodeAt(0) || 0) + slotId.length) % ADS.length;
+  const currentAd = ADS[adIndex];
 
-  // ⚡ 1-Click Direct Action: Opens ad in new tab & instantly awards coins directly
-  const handleAdClick = async (e?: React.MouseEvent) => {
+  const handleAdClick = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
 
     if (isLimitReached) {
-      showToast('🔒 আজকের সীমা শেষ!', 'আপনি আজকে সর্বোচ্চ ১০টি বিজ্ঞাপনে ক্লিক করেছেন। অ্যাকাউন্ট সুরক্ষার জন্য আগামীকাল আবার চালু হবে।', 'info');
+      showToast(
+        '🔒 আজকের সীমা পূর্ণ!',
+        'আপনি আজকে সর্বোচ্চ ১০টি বিজ্ঞাপনে ক্লিক করেছেন। অ্যাকাউন্ট সুরক্ষার জন্য আগামীকাল আবার চালু হবে।',
+        'info'
+      );
       return;
     }
 
-    if (claiming) return;
-    setClaiming(true);
-
-    const targetUrl = settings?.adsConfig?.adsterraDirectLink?.trim() || currentAd.link;
-
-    // Open ad safely in a separate tab
-    try {
-      if (typeof window !== 'undefined') {
-        window.open(targetUrl, '_blank', 'noopener,noreferrer');
-      }
-    } catch {
-      // Ignore popup blocker if any
-    }
-
-    // Immediately claim reward and notify user
-    try {
-      const res = await api.claimAdClick();
-      if (res?.success) {
-        soundService.playCoinReward();
-        triggerConfetti();
-        await refreshUser();
-        showToast(
-          `🎉 +${res.earnedCoins || 15} কয়েন আপনার অ্যাকাউন্টে যোগ হয়েছে!`,
-          `আজকের বাকি বিজ্ঞাপন: ${res.remainingClicks ?? (maxClicks - clicksToday - 1)}টি`,
-          'coin'
-        );
-      } else if (res?.limitReached) {
-        showToast('🔒 আজকের সীমা সম্পন্ন হয়েছে!', res.message || '১০টি ক্লিক পূর্ণ হয়েছে। আগামীকাল আবার নতুন ক্লিক চালু হবে।', 'info');
-        await refreshUser();
-      }
-    } catch (err) {
-      console.error('Ad claim error:', err);
-    } finally {
-      setTimeout(() => setClaiming(false), 1500);
-    }
+    // Launch 20s strict countdown verification modal
+    openAdWithStrictTimer(directLink, `স্পন্সর ব্যানার (${currentAd.sponsor})`, 10, 20);
   };
 
+  if (isDismissed) {
+    return null;
+  }
+
   return (
-    <div className="space-y-3 w-full">
-      {/* 🌟 1. Real Official Adsterra 300x250 Banner */}
-      {settings?.adsConfig?.bannerEnabled !== false && (
-        <AdsterraBannerUnit />
-      )}
-
-      {/* 🌟 2. Interactive Rewarded Sponsor Offer Banner */}
-      <div 
+    <div className={`w-full my-2 ${className}`}>
+      {/* 🌟 2-Picture Exact Style: Compact, High-converting Rich Sponsor Banner */}
+      <div
         onClick={handleAdClick}
-        className="w-full relative overflow-hidden rounded-2xl border-2 border-amber-500/50 shadow-xl group transition-all duration-300 hover:border-amber-400 cursor-pointer active:scale-[0.99]"
+        className="w-full relative overflow-hidden rounded-2xl border-2 border-amber-500/70 bg-[#0d1322] shadow-xl group transition-all duration-300 hover:border-amber-400 cursor-pointer active:scale-[0.99]"
       >
-        {/* Full-bleed background */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-          style={{ backgroundImage: `url(${currentAd.bannerBg})` }}
+        {/* Full-bleed background image with dark overlay */}
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105 opacity-25"
+          style={{ backgroundImage: `url(${currentAd.bgImg})` }}
         />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-[#0b101c]/90 to-black/80" />
 
-        {/* Dark Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-slate-950/85 to-black/70 backdrop-blur-[1px]" />
-
-        {/* Banner Content */}
-        <div className="relative z-10 p-3.5 sm:p-4 flex flex-col justify-between min-h-[110px] space-y-2">
+        {/* Banner Content Container */}
+        <div className="relative z-10 p-3 sm:p-3.5 flex flex-col justify-between space-y-2">
+          {/* Top Row: Sponsor Badges & Completed Count */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[9px] tracking-wider uppercase flex items-center gap-1 shadow-md">
-                <Sparkles className="w-2.5 h-2.5 fill-slate-950" />
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-[9px] tracking-wider uppercase flex items-center gap-1 shadow">
+                <Sparkles className="w-2.5 h-2.5 fill-slate-950 text-slate-950" />
                 {currentAd.tag}
               </span>
-              <span className="text-[10px] font-bold text-slate-300">
+              <span className="text-[11px] font-bold text-slate-200">
                 {currentAd.sponsor}
               </span>
             </div>
 
-            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold border border-emerald-500/40">
-              +{clicksToday}/{maxClicks} সম্পন্ন
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/40">
+                +{clicksToday}/{maxClicks} সম্পন্ন
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDismissed(true);
+                }}
+                className="p-1 rounded-full text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 transition"
+                title="বিজ্ঞাপন বন্ধ করুন"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
           </div>
 
+          {/* Title & Description */}
           <div>
-            <h4 className="text-xs sm:text-sm font-black text-white leading-tight drop-shadow-md">
+            <h4 className="text-xs sm:text-sm font-black text-white leading-tight">
               {currentAd.title}
             </h4>
-            <p className="text-[11px] text-slate-300 line-clamp-1 mt-0.5">
+            <p className="text-[10px] sm:text-[11px] text-slate-300 line-clamp-1 mt-0.5">
               {currentAd.desc}
             </p>
           </div>
 
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-[10px] text-amber-300 font-medium flex items-center gap-1">
-              <Zap className="w-3 h-3 text-amber-400 fill-amber-400" />
-              <span>১ ক্লিকে অফার দেখুন ও কয়েন নিন</span>
-            </span>
+          {/* Bottom Action Row */}
+          <div className="flex items-center justify-between pt-1.5 border-t border-white/10">
+            <div className="flex items-center gap-1 text-xs font-black text-amber-300 animate-pulse">
+              <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+              <span>👉 ক্লিক করে অফার দেখুন ও ১০ কয়েন নিন</span>
+            </div>
 
             <button
               type="button"
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-black text-xs shadow-lg flex items-center gap-1.5 active:scale-95 transition"
+              onClick={handleAdClick}
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition border border-white shrink-0 cursor-pointer"
             >
               <span>{currentAd.cta}</span>
-              <ExternalLink className="w-3 h-3 text-slate-950" />
+              <ExternalLink className="w-3.5 h-3.5 text-slate-950" />
             </button>
           </div>
         </div>
@@ -185,3 +152,5 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', ca
     </div>
   );
 };
+
+export const AdsterraBannerUnit = MiniBannerAd;

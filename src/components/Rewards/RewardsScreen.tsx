@@ -89,23 +89,11 @@ export const RewardsScreen: React.FC = () => {
   const handleStartRewardedAd = () => {
     if (watchingAd) return;
     setWatchingAd(true);
-    setCountdown(10);
-
-    const interval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          finishAdReward();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
-  const finishAdReward = async () => {
+  const finishAdReward = async (adSessionId?: string) => {
     try {
-      const res = await api.claimRewardedAd('reward_center_sponsor');
+      const res = await api.claimRewardedAd('reward_center_sponsor', adSessionId);
       if (res.success) {
         soundService.playCoinReward();
         triggerConfetti();
@@ -121,6 +109,15 @@ export const RewardsScreen: React.FC = () => {
     } finally {
       setWatchingAd(false);
     }
+  };
+
+  const handleSkipAdReward = () => {
+    setWatchingAd(false);
+    showToast(
+      language === 'bn' ? '⚠️ বিজ্ঞাপন পুরো না দেখায় কোনো কয়েন যোগ হয়নি।' : 'Ad skipped. No coins earned.',
+      '',
+      'error'
+    );
   };
 
   const handleCopyReferral = () => {
@@ -173,6 +170,7 @@ export const RewardsScreen: React.FC = () => {
             durationSeconds={15}
             rewardCoins={settings?.rewardedAdBonus || 35}
             onAdCompleted={finishAdReward}
+            onAdSkipped={handleSkipAdReward}
           />
         </div>
       )}

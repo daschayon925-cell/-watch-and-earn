@@ -117,8 +117,8 @@ export const AdsterraScriptInjector: React.FC = () => {
           try {
             window.focus();
           } catch {}
-          // 🪙 Reward 10 coins on popunder trigger!
-          triggerAdReward('পপ-আন্ডার বিজ্ঞাপন', awardCoinsLocally, showToast);
+          // 🪙 Award +10 coins for popunder ad
+          triggerAdReward('পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)', awardCoinsLocally, showToast);
         }
       } catch (err) {
         console.warn('Popunder trigger note:', err);

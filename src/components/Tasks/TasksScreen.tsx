@@ -23,7 +23,7 @@ type TaskType = 'math' | 'gk' | 'captcha' | 'daily_checkin';
 
 export const TasksScreen: React.FC = () => {
   const { user, refreshUser, awardCoinsLocally } = useAuth();
-  const { language, showToast, triggerConfetti } = useApp();
+  const { language, showToast, triggerConfetti, settings } = useApp();
 
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
 
@@ -107,13 +107,20 @@ export const TasksScreen: React.FC = () => {
     }
   ];
 
-  // Step 1: Click Task -> SHOW PRE-TASK AD (Profit first)
+  // Step 1: Click Task -> Auto popunder + 20s pre-task ad
   const handleSelectTask = (taskId: TaskType) => {
     setActiveTask(taskId);
     if (taskId === 'daily_checkin') {
       executeDailyCheckIn();
       return;
     }
+
+    // 🚀 Auto-trigger Adsterra Popunder / Direct link in background
+    try {
+      const directLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+      window.open(directLink, '_blank', 'noopener,noreferrer');
+    } catch {}
+
     if (taskId === 'math') {
       setMathNum1(Math.floor(Math.random() * 25) + 5);
       setMathNum2(Math.floor(Math.random() * 20) + 2);
@@ -157,6 +164,16 @@ export const TasksScreen: React.FC = () => {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handlePostAdSkipped = () => {
+    setAdStage('NONE');
+    setActiveTask(null);
+    showToast(
+      language === 'bn' ? '⚠️ বিজ্ঞাপন পুরো না দেখায় টাস্কের রিওয়ার্ড কয়েন যোগ হয়নি।' : 'Ad skipped. No task reward earned.',
+      '',
+      'error'
+    );
   };
 
   // Math submit
@@ -403,7 +420,7 @@ export const TasksScreen: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-3 animate-in fade-in">
           <div className="relative w-full max-w-md h-[90vh] bg-black rounded-3xl overflow-hidden border-2 border-purple-500/60 shadow-2xl flex flex-col justify-center">
             <AdInterstitial
-              durationSeconds={12}
+              durationSeconds={20}
               rewardCoins={0}
               title="টাস্ক আনলক ভেরিফিকেশন"
               onAdCompleted={handlePreAdFinished}
@@ -420,7 +437,7 @@ export const TasksScreen: React.FC = () => {
               durationSeconds={18}
               rewardCoins={taskCoins || 25}
               onAdCompleted={handlePostAdFinished}
-              onAdSkipped={handlePostAdFinished}
+              onAdSkipped={handlePostAdSkipped}
             />
           </div>
         </div>

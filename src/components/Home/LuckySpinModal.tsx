@@ -24,7 +24,7 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
 
   const todayStr = new Date().toISOString().split('T')[0];
   const spinsToday = user?.lastSpinDate === todayStr ? (user?.spinsToday || 0) : 0;
-  const maxSpins = 5;
+  const maxSpins = 2;
   const isLimitReached = spinsToday >= maxSpins;
 
   // ⏱️ 2.5 Hour Cooldown logic between spins
@@ -61,22 +61,22 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
 
   const isCooldownActive = cooldownSeconds > 0 && !isLimitReached;
 
-  // 8 segments with attractive coin amounts
+  // 8 segments with attractive coin amounts (Highest is 50 coins)
   const segments = [
+    { coins: 50, color: '#EF4444', label: '৫০ জ্যাকপট 👑' },
     { coins: 15, color: '#F59E0B', label: '১৫ কয়েন' },
     { coins: 25, color: '#10B981', label: '২৫ কয়েন' },
     { coins: 10, color: '#3B82F6', label: '১০ কয়েন' },
-    { coins: 50, color: '#EC4899', label: '৫০ মেগা 🎁' },
+    { coins: 35, color: '#EC4899', label: '৩৫ মেগা 🎁' },
     { coins: 20, color: '#8B5CF6', label: '২০ কয়েন' },
     { coins: 30, color: '#06B6D4', label: '৩০ কয়েন' },
-    { coins: 12, color: '#F97316', label: '১২ কয়েন' },
-    { coins: 100, color: '#EF4444', label: '১০০ জ্যাকপট 👑' }
+    { coins: 12, color: '#F97316', label: '১২ কয়েন' }
   ];
 
   const handleStartSpin = () => {
     if (spinning) return;
     if (isLimitReached) {
-      showToast('🔒 আজকের স্পিন সীমা শেষ!', 'প্রতিদিন সর্বোচ্চ ৫টি স্পিন করতে পারবেন। আগামীকাল আবার নতুন স্পিন পাবেন।', 'info');
+      showToast('🔒 আজকের স্পিন সীমা শেষ!', 'প্রতিদিন সর্বোচ্চ ২টি স্পিন করতে পারবেন। আগামীকাল আবার নতুন স্পিন পাবেন।', 'info');
       return;
     }
     if (isCooldownActive) {
@@ -87,8 +87,27 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
     setSpinning(true);
     setWinningReward(null);
 
-    // Pick random segment
-    const selectedIdx = Math.floor(Math.random() * segments.length);
+    // 🎲 Weighted Probabilities:
+    // segments: 0: 50, 1: 15, 2: 25, 3: 10, 4: 35, 5: 20, 6: 30, 7: 12
+    const rand = Math.random() * 100;
+    let selectedIdx = 3; // default 10 coins
+    if (rand < 30) {
+      selectedIdx = 3; // 10 coins
+    } else if (rand < 55) {
+      selectedIdx = 7; // 12 coins
+    } else if (rand < 75) {
+      selectedIdx = 1; // 15 coins
+    } else if (rand < 88) {
+      selectedIdx = 5; // 20 coins
+    } else if (rand < 95) {
+      selectedIdx = 2; // 25 coins
+    } else if (rand < 98) {
+      selectedIdx = 6; // 30 coins
+    } else if (rand < 99.5) {
+      selectedIdx = 4; // 35 coins
+    } else {
+      selectedIdx = 0; // 50 jackpot
+    }
     const selected = segments[selectedIdx];
 
     // Calculate rotation: 5-8 full spins (360 * 6) + slice offset
@@ -140,7 +159,7 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
       {showAd && (
         <div className="fixed inset-0 z-50 bg-black">
           <AdInterstitial
-            durationSeconds={10}
+            durationSeconds={15}
             rewardCoins={pendingClaim || 25}
             onAdCompleted={() => {
               setShowAd(false);
@@ -202,8 +221,8 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
             </div>
             <p className="text-[11px] text-slate-300 leading-relaxed">
               ১. প্রতি <b>২.৫ ঘণ্টা পর পর</b> ১টি করে স্পিন আনলক হবে।<br />
-              ২. দিনে সর্বোচ্চ <b>৫টি স্পিন</b> করা যাবে।<br />
-              ৩. প্রতিটি স্পিনে <b>১০ থেকে ১০০ পর্যন্ত কয়েন</b> নিশ্চিত!
+              ২. দিনে সর্বোচ্চ <b>২টি স্পিন</b> করা যাবে।<br />
+              ৩. প্রতিটি স্পিনে <b>১০ থেকে ৫০ পর্যন্ত কয়েন</b> নিশ্চিত!
             </p>
           </div>
         )}
@@ -293,7 +312,7 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
                   <span>পরবর্তী স্পিন: {formatCountdown(cooldownSeconds)}</span>
                 </>
               ) : isLimitReached ? (
-                <span>🔒 আজকের ৫টি স্পিন শেষ</span>
+                <span>🔒 আজকের ২টি স্পিন শেষ</span>
               ) : spinning ? (
                 <>
                   <RotateCw className="w-4 h-4 animate-spin" />
