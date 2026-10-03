@@ -139,6 +139,7 @@ export const HomeScreen: React.FC = () => {
             durationSeconds={15}
             rewardCoins={settings?.rewardedAdBonus || 35}
             onAdCompleted={finishRewardedAd}
+            onAdSkipped={finishRewardedAd}
           />
         </div>
       )}

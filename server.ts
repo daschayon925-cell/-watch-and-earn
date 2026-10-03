@@ -1726,8 +1726,8 @@ app.post('/api/wallet/withdraw', (req, res) => {
   const { method, accountType, mobileNumber, coins, password } = req.body;
 
   // Security Check 2: Account Password Verification to prevent unauthorized cashouts
-  if (user.password && password) {
-    if (user.password !== password.trim()) {
+  if (user.password && user.password.trim() !== '') {
+    if (!password || user.password !== password.trim()) {
       return res.status(400).json({ success: false, message: 'নিরাপত্তা সতর্কতা: ভুল অ্যাকাউন্ট পাসওয়ার্ড! আপনার সঠিক পাসওয়ার্ড দিন।' });
     }
   }

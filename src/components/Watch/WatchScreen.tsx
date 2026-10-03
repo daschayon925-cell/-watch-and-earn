@@ -901,15 +901,7 @@ export const WatchScreen: React.FC = () => {
               durationSeconds={25}
               rewardCoins={currentRewardCoins || 50}
               onAdCompleted={handleAdFinished}
-              onAdSkipped={() => {
-                setShowAd(false);
-                soundService.stopPersistentAlarm();
-                showToast(
-                  language === 'bn' ? '⚠️ বিজ্ঞাপন দেখা হয়নি!' : '⚠️ Ad skipped!',
-                  language === 'bn' ? 'কয়েন পেতে বিজ্ঞাপনটি সম্পূর্ণ দেখুন বা অফারে চাপ দিন।' : 'Complete the ad to claim coins.',
-                  'error'
-                );
-              }}
+              onAdSkipped={handleAdFinished}
             />
           </div>
         </div>

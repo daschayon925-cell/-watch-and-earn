@@ -111,7 +111,7 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
             }}
             onAdSkipped={() => {
               setShowAd(false);
-              showToast('বিজ্ঞাপন বাতিল হয়েছে', 'স্পিন রিওয়ার্ড নিতে বিজ্ঞাপনটি সম্পূর্ণ দেখুন।', 'info');
+              handleClaimReward();
             }}
           />
         </div>

@@ -716,21 +716,30 @@ export const WalletScreen: React.FC = () => {
                   </span>
                 </div>
                 
-                <p className="text-[11px] text-slate-300">
-                  টাকা উত্তোলন সুরক্ষিত রাখতে আপনার অ্যাকাউন্টের পাসওয়ার্ড দিন:
-                </p>
+                {user?.password ? (
+                  <>
+                    <p className="text-[11px] text-slate-300">
+                      টাকা উত্তোলন সুরক্ষিত রাখতে আপনার অ্যাকাউন্টের পাসওয়ার্ড দিন:
+                    </p>
 
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={withdrawPassword}
-                    onChange={(e) => setWithdrawPassword(e.target.value)}
-                    placeholder="অ্যাকাউন্টের ৪ ডিজিটের গোপন পাসওয়ার্ড লিখুন"
-                    className="w-full px-3.5 py-2.5 bg-[#090D16] border border-slate-700 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
-                    required
-                  />
-                  <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3.5 top-3" />
-                </div>
+                    <div className="relative">
+                      <input
+                        type="password"
+                        value={withdrawPassword}
+                        onChange={(e) => setWithdrawPassword(e.target.value)}
+                        placeholder="অ্যাকাউন্টের ৪ ডিজিটের গোপন পাসওয়ার্ড লিখুন"
+                        className="w-full px-3.5 py-2.5 bg-[#090D16] border border-slate-700 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                        required
+                      />
+                      <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3.5 top-3" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-[11px] flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>💡 <strong>গেস্ট মোড:</strong> ক্যাশআউটের জন্য কোনো পাসওয়ার্ড প্রয়োজন নেই। শুধু আপনার সঠিক মোবাইল নম্বর দিন।</span>
+                  </div>
+                )}
 
                 <div className="pt-1 flex items-start gap-1.5 text-[10px] text-slate-400">
                   <ShieldCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />

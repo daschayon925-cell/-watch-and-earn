@@ -407,15 +407,7 @@ export const TasksScreen: React.FC = () => {
               rewardCoins={0}
               title="টাস্ক আনলক ভেরিফিকেশন"
               onAdCompleted={handlePreAdFinished}
-              onAdSkipped={() => {
-                setAdStage('NONE');
-                setActiveTask(null);
-                showToast(
-                  language === 'bn' ? 'টাস্ক বাতিল করা হয়েছে' : 'Task cancelled',
-                  language === 'bn' ? 'টাস্ক করতে স্পন্সর বিজ্ঞাপনটি সম্পন্ন করুন।' : 'Complete sponsor ad to unlock task.',
-                  'info'
-                );
-              }}
+              onAdSkipped={handlePreAdFinished}
             />
           </div>
         </div>
@@ -428,14 +420,7 @@ export const TasksScreen: React.FC = () => {
               durationSeconds={18}
               rewardCoins={taskCoins || 25}
               onAdCompleted={handlePostAdFinished}
-              onAdSkipped={() => {
-                setAdStage('NONE');
-                showToast(
-                  language === 'bn' ? '⚠️ কয়েন বাতিল হয়েছে!' : '⚠️ Reward cancelled!',
-                  language === 'bn' ? 'বিজ্ঞাপন সম্পূর্ণ না দেখলে রিওয়ার্ড ওয়ালেটে যোগ হবে না।' : 'Watch full ad to claim reward.',
-                  'error'
-                );
-              }}
+              onAdSkipped={handlePostAdFinished}
             />
           </div>
         </div>
