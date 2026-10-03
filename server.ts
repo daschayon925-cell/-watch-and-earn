@@ -205,6 +205,8 @@ const db: {
       adsterraBannerCode: '<script async="async" data-cfasync="false" src="https://pl31616461.profitableratecpmnetwork.com/ba831837bc8426c844a5c5f130f56557/invoke.js"></script><div id="container-ba831837bc8426c844a5c5f130f56557"></div>',
       adsterraPopunderCode: '',
       adsterraSocialBarCode: '<script src="https://pl31612557.profitableratecpmnetwork.com/4b/5b/f5/4b5bf560a60882eaf9fc46b3684fb3f4.js"></script>',
+      adsterraRewardedVideoCode: '',
+      rewardedVideoDurationSeconds: 20,
       popunderEnabled: true,
       popunderIntervalMinutes: 3,
       popunderDailyCap: 8

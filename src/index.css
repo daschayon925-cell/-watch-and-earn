@@ -34,3 +34,14 @@ body {
 .animate-scale-in {
   animation: scaleIn 0.25s ease-out forwards;
 }
+
+/* 🛡️ When fullscreen rewarded video is active, temporarily hide floating social bar overlays so they don't block top buttons */
+body.rewarded-ad-active [id*="social-bar"],
+body.rewarded-ad-active [class*="social-bar"],
+body.rewarded-ad-active [id*="pl_"],
+body.rewarded-ad-active [class*="pl_"],
+body.rewarded-ad-active [data-adsterra] {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}

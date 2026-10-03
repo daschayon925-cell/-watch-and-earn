@@ -1151,6 +1151,34 @@ export const AdminDashboard: React.FC = () => {
                       </span>
                     </div>
 
+                    {/* 🎬 REWARDED VIDEO DURATION SELECTOR */}
+                    <div className="p-3 rounded-xl bg-slate-950 border border-amber-500/40 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-amber-400" />
+                          <span className="text-xs font-black text-amber-300">
+                            🎬 রিওয়ার্ডেড ভিডিও বিজ্ঞাপন সময়সীমা:
+                          </span>
+                        </div>
+                        <select
+                          value={editSettings.adsConfig?.rewardedVideoDurationSeconds || 20}
+                          onChange={(e) => setEditSettings({
+                            ...editSettings,
+                            adsConfig: { ...editSettings.adsConfig, rewardedVideoDurationSeconds: Number(e.target.value) } as any
+                          })}
+                          className="bg-slate-900 border border-amber-500/60 text-amber-300 text-xs font-black rounded-lg px-2.5 py-1 focus:outline-none"
+                        >
+                          <option value={15}>১৫ সেকেন্ড (দ্রুত)</option>
+                          <option value={20}>২০ সেকেন্ড (প্রস্তাবিত/স্ট্যান্ডার্ড)</option>
+                          <option value={25}>২৫ সেকেন্ড (সর্বোচ্চ CPM)</option>
+                          <option value={30}>৩০ সেকেন্ড (প্রিমিয়াম)</option>
+                        </select>
+                      </div>
+                      <span className="text-[9px] text-slate-400 block">
+                        💡 ইউজারকে পুরো এই সময় ভিডিও দেখতে হবে। সময় শেষ হলেই কেবল [ ✕ বন্ধ করুন ] বাটন আসবে এবং কয়েন পাবে।
+                      </span>
+                    </div>
+
                     {/* 🚀 SMART POPUNDER FREQUENCY CAP CONTROLLER */}
                     <div className="p-3 rounded-xl bg-slate-950 border border-emerald-500/40 space-y-2.5">
                       <div className="flex items-center justify-between">
@@ -1234,7 +1262,7 @@ export const AdminDashboard: React.FC = () => {
 
                     <div>
                       <label className="block text-[10px] font-bold text-slate-300 mb-1">
-                        💬 Adsterra সোশ্যাল বার কোড (ভবিষ্যতে ফ্রেশ কোড পেলে এখানে পেস্ট করবেন):
+                        💬 Adsterra সোশ্যাল বার কোড:
                       </label>
                       <textarea
                         rows={2}
@@ -1243,11 +1271,28 @@ export const AdminDashboard: React.FC = () => {
                           ...editSettings,
                           adsConfig: { ...editSettings.adsConfig, adsterraSocialBarCode: e.target.value } as any
                         })}
-                        placeholder="ভবিষ্যতে ফ্রেশ নন-এডাল্ট সোশ্যাল বার কোড পেলে এখানে দিন (এখন খালি রাখা হয়েছে)"
+                        placeholder="Adsterra সোশ্যাল বার স্ক্রিপ্ট কোড"
                         className="w-full p-2 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-cyan-300"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-amber-300 mb-1 flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-amber-400" />
+                        <span>🎬 Adsterra অরিজিনাল Rewarded Video / VAST কোড:</span>
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={editSettings.adsConfig?.adsterraRewardedVideoCode ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          adsConfig: { ...editSettings.adsConfig, adsterraRewardedVideoCode: e.target.value } as any
+                        })}
+                        placeholder="Adsterra থেকে প্রাপ্ত VAST URL বা Rewarded Video স্ক্রিপ্ট কোড এখানে পেস্ট করুন"
+                        className="w-full p-2 bg-slate-950 border border-amber-500/50 rounded-xl text-xs font-mono text-amber-300 focus:outline-none focus:border-amber-400"
+                      />
                       <span className="text-[9px] text-slate-400 block mt-0.5">
-                        💡 এটি এখন বন্ধ আছে। ভবিষ্যতে Adsterra থেকে নতুন ফ্রেশ কোড পেলে এখানে দিলে সাথে সাথে সক্রিয় হবে।
+                        💡 Adsterra ড্যাশবোর্ডের "Add Unit" &gt; "VAST" থেকে পাওয়া কোডটি এখানে দিলে ১০০% আসল অ্যাডস্টেরা ভিডিও বিজ্ঞাপন চলবে।
                       </span>
                     </div>
                   </div>

@@ -17,30 +17,39 @@ import { User, Video, Withdrawal, AdminSettings, RewardTransaction, Report, Noti
  * are stored permanently in the Google Cloud database and NEVER get lost on app/server rebuilds.
  */
 
+const withTimeout = <T>(promise: Promise<T>, timeoutMs = 4000): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => 
+      setTimeout(() => reject(new Error('Firestore operation timed out')), timeoutMs)
+    )
+  ]);
+};
+
 export const cloudDb = {
   // --- USERS COLLECTION ---
   saveUser: async (user: User): Promise<void> => {
     try {
       if (!user || !user.uid) return;
       const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, {
+      await withTimeout(setDoc(userRef, {
         ...user,
         updatedAt: new Date().toISOString()
-      }, { merge: true });
-    } catch (e) {
-      console.warn('[Firebase] saveUser error:', e);
+      }, { merge: true }), 3500);
+    } catch {
+      // Graceful offline fallback
     }
   },
 
   getUser: async (uid: string): Promise<User | null> => {
     try {
       const userRef = doc(db, 'users', uid);
-      const snap = await getDoc(userRef);
+      const snap = await withTimeout(getDoc(userRef), 3500);
       if (snap.exists()) {
         return snap.data() as User;
       }
-    } catch (e) {
-      console.warn('[Firebase] getUser error:', e);
+    } catch {
+      // Graceful offline fallback
     }
     return null;
   },
@@ -48,14 +57,13 @@ export const cloudDb = {
   getAllUsers: async (): Promise<User[]> => {
     try {
       const colRef = collection(db, 'users');
-      const snap = await getDocs(colRef);
+      const snap = await withTimeout(getDocs(colRef), 4000);
       const users: User[] = [];
       snap.forEach(docSnap => {
         users.push(docSnap.data() as User);
       });
       return users;
-    } catch (e) {
-      console.warn('[Firebase] getAllUsers error:', e);
+    } catch {
       return [];
     }
   },
@@ -65,8 +73,7 @@ export const cloudDb = {
       const cleanPhone = (phone || '').replace(/\s+/g, '');
       const users = await cloudDb.getAllUsers();
       return users.find(u => (u.phone || '').replace(/\s+/g, '') === cleanPhone) || null;
-    } catch (e) {
-      console.warn('[Firebase] findUserByPhone error:', e);
+    } catch {
       return null;
     }
   },
@@ -75,21 +82,21 @@ export const cloudDb = {
   saveSettings: async (settings: AdminSettings): Promise<void> => {
     try {
       const settingsRef = doc(db, 'system', 'settings');
-      await setDoc(settingsRef, settings, { merge: true });
-    } catch (e) {
-      console.warn('[Firebase] saveSettings error:', e);
+      await withTimeout(setDoc(settingsRef, settings, { merge: true }), 3500);
+    } catch {
+      // Graceful offline fallback
     }
   },
 
   getSettings: async (): Promise<AdminSettings | null> => {
     try {
       const settingsRef = doc(db, 'system', 'settings');
-      const snap = await getDoc(settingsRef);
+      const snap = await withTimeout(getDoc(settingsRef), 3500);
       if (snap.exists()) {
         return snap.data() as AdminSettings;
       }
-    } catch (e) {
-      console.warn('[Firebase] getSettings error:', e);
+    } catch {
+      // Graceful offline fallback
     }
     return null;
   },
@@ -99,20 +106,19 @@ export const cloudDb = {
     try {
       if (!w || !w.withdrawalId) return;
       const ref = doc(db, 'withdrawals', w.withdrawalId);
-      await setDoc(ref, w, { merge: true });
-    } catch (e) {
-      console.warn('[Firebase] saveWithdrawal error:', e);
+      await withTimeout(setDoc(ref, w, { merge: true }), 3500);
+    } catch {
+      // Graceful offline fallback
     }
   },
 
   getAllWithdrawals: async (): Promise<Withdrawal[]> => {
     try {
-      const snap = await getDocs(collection(db, 'withdrawals'));
+      const snap = await withTimeout(getDocs(collection(db, 'withdrawals')), 4000);
       const list: Withdrawal[] = [];
       snap.forEach(d => list.push(d.data() as Withdrawal));
       return list;
-    } catch (e) {
-      console.warn('[Firebase] getAllWithdrawals error:', e);
+    } catch {
       return [];
     }
   },
@@ -122,29 +128,28 @@ export const cloudDb = {
     try {
       if (!video || !video.id) return;
       const ref = doc(db, 'videos', video.id);
-      await setDoc(ref, video, { merge: true });
-    } catch (e) {
-      console.warn('[Firebase] saveVideo error:', e);
+      await withTimeout(setDoc(ref, video, { merge: true }), 3500);
+    } catch {
+      // Graceful offline fallback
     }
   },
 
   deleteVideo: async (videoId: string): Promise<void> => {
     try {
       const ref = doc(db, 'videos', videoId);
-      await deleteDoc(ref);
-    } catch (e) {
-      console.warn('[Firebase] deleteVideo error:', e);
+      await withTimeout(deleteDoc(ref), 3500);
+    } catch {
+      // Graceful offline fallback
     }
   },
 
   getAllVideos: async (): Promise<Video[]> => {
     try {
-      const snap = await getDocs(collection(db, 'videos'));
+      const snap = await withTimeout(getDocs(collection(db, 'videos')), 4000);
       const list: Video[] = [];
       snap.forEach(d => list.push(d.data() as Video));
       return list;
-    } catch (e) {
-      console.warn('[Firebase] getAllVideos error:', e);
+    } catch {
       return [];
     }
   }

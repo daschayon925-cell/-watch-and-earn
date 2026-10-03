@@ -138,6 +138,8 @@ export interface AdminSettings {
     adsterraBannerCode?: string; // Adsterra Banner Script / iFrame code
     adsterraPopunderCode?: string; // Adsterra Popunder Script
     adsterraSocialBarCode?: string; // Adsterra Social Bar Script (High CPM)
+    adsterraRewardedVideoCode?: string; // Official Adsterra VAST Video URL or Rewarded Video Script
+    rewardedVideoDurationSeconds?: number; // Rewarded video duration in seconds (e.g. 20 or 25)
     popunderEnabled?: boolean; // Smart Popunder Engine On/Off
     popunderIntervalMinutes?: number; // Smart Popunder Cooldown in minutes (e.g. 3)
     popunderDailyCap?: number; // Max popunders per user daily (e.g. 8)

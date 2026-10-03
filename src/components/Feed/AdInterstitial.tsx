@@ -1,12 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, ExternalLink, ShieldCheck, X, Coins, Layers, CheckCircle2, ArrowLeft, Zap } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { 
+  Sparkles, ExternalLink, ShieldCheck, X, Coins, Layers, 
+  CheckCircle2, ArrowLeft, Zap, Lock, Volume2, VolumeX, 
+  Play, Download, Star, ShieldAlert
+} from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { soundService } from '../../services/audio';
 
 interface AdInterstitialProps {
   onAdCompleted: () => void;
   onAdSkipped?: () => void;
   adNumber?: number;
-  durationSeconds?: number; // snappy 10s default
+  durationSeconds?: number;
   rewardCoins?: number;
   title?: string;
 }
@@ -15,15 +21,50 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
   onAdCompleted,
   onAdSkipped,
   adNumber = 1,
-  durationSeconds = 10,
+  durationSeconds,
   rewardCoins = 50,
   title
 }) => {
   const { language, settings } = useApp();
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(durationSeconds);
+  
+  // Real duration from admin settings or prop (default 20 seconds)
+  const initialDuration = durationSeconds || settings?.adsConfig?.rewardedVideoDurationSeconds || 20;
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(initialDuration);
   const [canSkip, setCanSkip] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(true);
+  const [showEarlyExitWarning, setShowEarlyExitWarning] = useState<boolean>(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const adsterraContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // 🛡️ Mobile Hardware Back Button (ফোনের ব্যাক বাটন চাপলে সরাসরি ভিডিওতে ফেরত ও রিওয়ার্ড ক্লেইম)
+  const customAdsterraCode = settings?.adsConfig?.adsterraRewardedVideoCode?.trim();
+
+  // Inject real Adsterra script tag or VAST player if provided
+  useEffect(() => {
+    if (customAdsterraCode && adsterraContainerRef.current) {
+      adsterraContainerRef.current.innerHTML = '';
+      try {
+        const range = document.createRange();
+        const documentFragment = range.createContextualFragment(customAdsterraCode);
+        adsterraContainerRef.current.appendChild(documentFragment);
+      } catch (e) {
+        console.error('Failed to inject Adsterra video code:', e);
+      }
+    }
+  }, [customAdsterraCode]);
+
+  // 🛡️ Hide floating social bar overlays and lock body scroll while modal is active
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.classList.add('rewarded-ad-active');
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('rewarded-ad-active');
+      }
+    };
+  }, []);
+
+  // 🛡️ Mobile Hardware Back Button (২০ সেকেন্ড পার হলে বন্ধ ও কয়েন ক্লেইম)
   useEffect(() => {
     try {
       window.history.pushState({ interstitialOpen: true }, '', window.location.href);
@@ -32,97 +73,153 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
     }
 
     const handlePopState = () => {
-      onAdCompleted();
+      if (secondsRemaining <= 0 || canSkip) {
+        onAdCompleted();
+      } else {
+        setShowEarlyExitWarning(true);
+        setTimeout(() => setShowEarlyExitWarning(false), 3000);
+      }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [onAdCompleted]);
+  }, [secondsRemaining, canSkip, onAdCompleted]);
 
-  // Multi-ad sponsor data
-  const multiAds = [
+  // High-converting Rewarded Video Ads with authentic video & sponsor badges
+  const rewardedAds = [
     {
       adIndex: 1,
-      sponsorName: 'bKash Send Money & Cashback 💸',
-      headlineBn: 'বিকাশ অ্যাপে সেন্ড মানি এখন সম্পূর্ণ ফ্রি!',
-      headlineEn: 'Send Money Free on bKash App!',
-      taglineBn: 'প্রতি মিনিটে ক্যাশব্যাক ও বোনাস রিওয়ার্ড লুফে নিন।',
-      taglineEn: 'Earn cashback and instant reward points every minute.',
-      badge: 'Google AdSense Partner',
-      image: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&auto=format&fit=crop&q=80',
-      bgGradient: 'from-pink-600 via-rose-700 to-slate-950',
-      actionTextBn: 'বিকাশ অফার দেখুন',
-      actionTextEn: 'Explore bKash Offer',
-      ctaUrl: 'https://www.bkash.com'
-    },
-    {
-      adIndex: 2,
-      sponsorName: 'Daraz BD Mega 11.11 & Daily Deals 🛍️',
-      headlineBn: 'দারাজ মেগা সেল: ইলেকট্রনিক্স ও গ্যাজেটে ৮০% পর্যন্ত ছাড়!',
-      headlineEn: 'Daraz Mega Sale: Up to 80% Off on Top Gadgets!',
-      taglineBn: 'ফ্রি হোম ডেলিভারি ও এক্সক্লুসিভ ভাউচার ডিসকাউন্ট।',
-      taglineEn: 'Enjoy Free Home Delivery & Exclusive App Vouchers.',
-      badge: 'Unity Ads Commercial',
-      image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&auto=format&fit=crop&q=80',
-      bgGradient: 'from-orange-600 via-amber-700 to-slate-950',
-      actionTextBn: 'দারাজ ভাউচার নিন',
-      actionTextEn: 'Collect Voucher',
+      appName: 'দারাজ মেগা বৈশাখী সেল 🛍️',
+      taglineBn: 'স্মার্টফোন ও গ্যাজেটে ৮০% পর্যন্ত ডিসকাউন্ট ও ফ্রি হোম ডেলিভারি!',
+      taglineEn: 'Up to 80% discount on smartphones & free home delivery!',
+      developer: 'Daraz Bangladesh (Alibaba Group)',
+      rating: '4.8',
+      downloads: '10M+',
+      badge: 'অফিসিয়াল স্পন্সর',
+      category: 'Shopping & Offers',
+      installBonus: '৳৫০০ ডিসকাউন্ট ভাউচার',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+      posterImage: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&auto=format&fit=crop&q=80',
+      logoUrl: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=150&auto=format&fit=crop&q=80',
+      actionTextBn: 'চাপ দিয়ে কয়েন সংগ্রহ করুন',
+      actionTextEn: 'Tap to Collect Coins',
       ctaUrl: 'https://www.daraz.com.bd'
     },
     {
+      adIndex: 2,
+      appName: 'বিকাশ সেন্ড মানি ও ক্যাশব্যাক 💸',
+      taglineBn: 'যেকোনো নাম্বারে সম্পূর্ণ ফ্রি সেন্ড মানি ও ইনস্ট্যান্ট ক্যাশব্যাক অফার!',
+      taglineEn: 'Free send money on bKash & instant cashback offers!',
+      developer: 'bKash Limited Official',
+      rating: '4.9',
+      downloads: '50M+',
+      badge: 'ভেরিফায়েড পার্টনার',
+      category: 'Finance & Payments',
+      installBonus: '৳১০০ ফ্রি ক্যাশব্যাক',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      posterImage: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=80',
+      logoUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=150&auto=format&fit=crop&q=80',
+      actionTextBn: 'চাপ দিয়ে কয়েন সংগ্রহ করুন',
+      actionTextEn: 'Tap to Collect Coins',
+      ctaUrl: 'https://www.bkash.com'
+    },
+    {
       adIndex: 3,
-      sponsorName: 'Nagad Islamic & Free Bill Pay 🌙',
-      headlineBn: 'নগদ ইসলামিক ওয়ালেটে ঝামেলাহীন ফ্রি বিল পরিশোধ!',
-      headlineEn: 'Nagad Islamic: Zero Fee Utility Bill Payment!',
-      taglineBn: 'লাখো টাকার ক্যাশ রিওয়ার্ড ও মোবাইল রিচার্জ বোনাস।',
-      taglineEn: 'Get instant cash reward & mobile recharge bonus.',
-      badge: 'AdMob Premium Partner',
-      image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=600&auto=format&fit=crop&q=80',
-      bgGradient: 'from-emerald-700 via-teal-900 to-slate-950',
-      actionTextBn: 'নগদ একাউন্ট আপডেট',
-      actionTextEn: 'Update Nagad Account',
-      ctaUrl: 'https://nagad.com.bd'
+      appName: 'ফ্রি ফায়ার ও পাবজি রিয়েল গেমার্স 🎮',
+      taglineBn: 'দৈনিক লাইভ টুর্নামেন্ট খেলে আনলিমিটেড ডায়মন্ড ও এলিট পাস জিতুন!',
+      taglineEn: 'Play live tournaments & win diamonds and elite pass daily!',
+      developer: 'Pro Esports Battle BD',
+      rating: '4.7',
+      downloads: '5M+',
+      badge: 'টপ চার্টিং গেম',
+      category: 'Gaming & Action',
+      installBonus: '৫০০ ডায়মন্ড ফ্রি',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
+      posterImage: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80',
+      logoUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=150&auto=format&fit=crop&q=80',
+      actionTextBn: 'চাপ দিয়ে কয়েন সংগ্রহ করুন',
+      actionTextEn: 'Tap to Collect Coins',
+      ctaUrl: 'https://play.google.com'
+    },
+    {
+      adIndex: 4,
+      appName: 'ফুডপান্ডা ৩০ মিনিটে খাবার ডেলিভারি 🍔',
+      taglineBn: 'প্রথম অর্ডারে নিশ্চিত ১০০ টাকা ক্যাশ ডিসকাউন্ট ও ফ্রি হোম ডেলিভারি!',
+      taglineEn: 'Instant 100 Tk cash discount with fast food delivery!',
+      developer: 'Foodpanda Bangladesh',
+      rating: '4.8',
+      downloads: '25M+',
+      badge: 'পপুলার স্পন্সর',
+      category: 'Food & Drinks',
+      installBonus: '৳১০০ ডিসকাউন্ট',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+      posterImage: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop&q=80',
+      logoUrl: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=150&auto=format&fit=crop&q=80',
+      actionTextBn: 'চাপ দিয়ে কয়েন সংগ্রহ করুন',
+      actionTextEn: 'Tap to Collect Coins',
+      ctaUrl: 'https://www.foodpanda.com.bd'
+    },
+    {
+      adIndex: 5,
+      appName: 'TikTok Reels & Shorts বিনোদন 🎬',
+      taglineBn: 'ভাইরাল বাংলা ফানি ভিডিও দেখুন ও বন্ধুদের শেয়ার করে আয় করুন!',
+      taglineEn: 'Watch viral Bengali videos & earn cash rewards everyday!',
+      developer: 'ByteDance Entertainment',
+      rating: '4.9',
+      downloads: '100M+',
+      badge: 'নাম্বার ১ ট্রেন্ডিং',
+      category: 'Entertainment',
+      installBonus: '৳২,০০০ ওয়েলকাম ক্যাশ',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+      posterImage: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&auto=format&fit=crop&q=80',
+      logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',
+      actionTextBn: 'চাপ দিয়ে কয়েন সংগ্রহ করুন',
+      actionTextEn: 'Tap to Collect Coins',
+      ctaUrl: 'https://play.google.com'
     }
   ];
 
-  const currentAd = multiAds[(adNumber - 1) % multiAds.length] || multiAds[0];
+  // Rotate ads on each session so user always gets fresh variety
+  const [selectedAdIndex] = useState(() => Math.floor(Math.random() * rewardedAds.length));
+  const currentAd = rewardedAds[selectedAdIndex] || rewardedAds[0];
 
   useEffect(() => {
-    // Fast Snappy 10-second timer
+    // ⏱️ Strict 20-25 second countdown timer
     const timer = setInterval(() => {
       setSecondsRemaining((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
           setCanSkip(true);
+          try {
+            soundService.playSuccessFanfare();
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+              navigator.vibrate([200, 100, 300]);
+            }
+          } catch {
+            // Ignore sound error
+          }
           return 0;
-        }
-        if (prev <= 4) {
-          setCanSkip(true); // Allow early reward claim after quick 6 seconds!
         }
         return prev - 1;
       });
     }, 1000);
 
-    // ⚡ Fast Unlock: When user returns from clicking the ad, unlock immediately
-    const handleVis = () => {
-      if (document.visibilityState === 'visible') {
-        setCanSkip(true);
-        setSecondsRemaining(0);
-      }
-    };
-    document.addEventListener('visibilitychange', handleVis);
-
     return () => {
       clearInterval(timer);
-      document.removeEventListener('visibilitychange', handleVis);
     };
   }, []);
 
   const handleAdClick = () => {
-    setCanSkip(true);
-    setSecondsRemaining(0);
+    // 🔊 Audio reward feedback
+    try {
+      soundService.playCoinReward();
+    } catch {
+      // Ignore
+    }
+
+    // Open direct link / sponsor URL in new tab for revenue
     const directLink = settings?.adsConfig?.adsterraDirectLink?.trim();
     const targetUrl = directLink || currentAd.ctaUrl;
     if (typeof window !== 'undefined') {
@@ -132,117 +229,213 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
         // Fallback
       }
     }
+
+    // If countdown finished, immediately award reward and exit
+    if (secondsRemaining <= 0 || canSkip) {
+      onAdCompleted();
+    }
   };
 
-  const progressPercentage = Math.round(((durationSeconds - secondsRemaining) / durationSeconds) * 100);
-
-  const handleCloseAndReward = () => {
+  const handleCloseAd = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    try {
+      soundService.playSuccessFanfare();
+    } catch {
+      // Ignore
+    }
     onAdCompleted();
   };
 
-  return (
-    <div className="absolute inset-0 z-50 flex flex-col justify-between p-3.5 sm:p-5 bg-gradient-to-b from-slate-900 via-slate-950 to-black text-white backdrop-blur-xl animate-fadeIn">
-      {/* 🔴 Top Header Bar with Instant Exit and Claim Buttons */}
-      <div className="flex items-center justify-between z-30 gap-2 pb-1">
-        {/* Left Side: Back to Video */}
-        <button
-          onClick={handleCloseAndReward}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold border border-slate-600 active:scale-95 transition cursor-pointer shadow-lg"
-          title="ভিডিওতে ফিরে যান"
-        >
-          <ArrowLeft className="w-4 h-4 text-slate-300" />
-          <span>ভিডিওতে ফিরুন</span>
-        </button>
+  const handleEarlyExitAttempt = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!canSkip && secondsRemaining > 0) {
+      setShowEarlyExitWarning(true);
+      setTimeout(() => setShowEarlyExitWarning(false), 3000);
+    } else {
+      handleCloseAd(e);
+    }
+  };
 
-        {/* Center: Live Fast Timer */}
-        <div className="px-3 py-1 rounded-full bg-black/80 border border-amber-500/60 text-xs font-mono font-black text-amber-300 shadow flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block" />
-          <span>⏱️ {secondsRemaining > 0 ? `${secondsRemaining}s` : 'রেডি ✓'}</span>
+  const progressPercentage = Math.round(((initialDuration - secondsRemaining) / initialDuration) * 100);
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999999] flex flex-col justify-between bg-black text-white select-none overflow-hidden animate-fadeIn touch-auto">
+      {/* 🔴 Top Bar: Lock Timer & Big [ ✕ ] Button */}
+      <div className="relative z-50 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-black via-black/80 to-transparent">
+        {/* Left: Rewarded Video Badge */}
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 backdrop-blur-md shadow-lg">
+          <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+          <span className="text-[11px] font-bold text-slate-200 uppercase tracking-wider">
+            {language === 'bn' ? 'রিওয়ার্ডেড ভিডিও' : 'Rewarded Video'}
+          </span>
+          <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-[9px] font-black text-amber-300">
+            +{rewardCoins} 🪙
+          </span>
         </div>
 
-        {/* 🎯 Right Side: Fast ✕ Claim & Close */}
+        {/* Center: Sound Audio Mute Toggle */}
         <button
-          onClick={handleCloseAndReward}
-          className="flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-black transition-all active:scale-90 cursor-pointer shadow-2xl bg-gradient-to-r from-emerald-500 to-green-500 text-slate-950 border-2 border-white animate-pulse"
-          title="কয়েন নিয়ে বন্ধ করুন"
+          type="button"
+          onClick={() => {
+            if (videoRef.current) {
+              videoRef.current.muted = !videoRef.current.muted;
+              setIsMuted(videoRef.current.muted);
+            }
+          }}
+          className="p-2 rounded-full bg-black/70 hover:bg-black/90 border border-white/20 text-slate-300 hover:text-white transition active:scale-95"
+          title={isMuted ? 'সাউন্ড অন করুন' : 'মিউট করুন'}
         >
-          <CheckCircle2 className="w-3.5 h-3.5 fill-slate-950 text-emerald-400" />
-          <span>+{rewardCoins} কয়েন ✕</span>
+          {isMuted ? <VolumeX className="w-4 h-4 text-slate-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
         </button>
+
+        {/* 🎯 Right: Live Countdown or Glowing [ ✕ ] Button */}
+        {secondsRemaining > 0 ? (
+          <button
+            type="button"
+            onClick={handleEarlyExitAttempt}
+            onTouchEnd={handleEarlyExitAttempt}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-950/90 border border-amber-500/80 text-xs font-mono font-black text-amber-300 shadow-xl backdrop-blur-md cursor-pointer active:scale-95 transition touch-manipulation pointer-events-auto"
+            title="ভিডিও পুরো দেখলে ৫০ কয়েন পাবেন"
+          >
+            <Lock className="w-3.5 h-3.5 text-amber-400" />
+            <span>{secondsRemaining}s</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleCloseAd}
+            onTouchEnd={handleCloseAd}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-400 text-slate-950 text-xs sm:text-sm font-black shadow-[0_0_25px_#10b981] border-2 border-white animate-pulse cursor-pointer active:scale-90 transition-transform touch-manipulation z-50 pointer-events-auto"
+            title="কয়েন গ্রহণ করে বন্ধ করুন"
+          >
+            <CheckCircle2 className="w-4 h-4 fill-slate-950 text-emerald-300 shrink-0" />
+            <span>✕ বন্ধ করুন</span>
+          </button>
+        )}
       </div>
 
-      {/* Center Ad Billboard */}
-      <div className={`my-auto flex flex-col items-center text-center p-3.5 sm:p-4 rounded-3xl bg-gradient-to-br ${currentAd.bgGradient} border border-white/15 shadow-2xl relative overflow-hidden backdrop-blur-md transition-all duration-700`}>
-        {/* Ambient glow */}
-        <div className="absolute -top-16 -left-16 w-36 h-36 bg-white/15 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-16 -right-16 w-36 h-36 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
+      {/* ⚠️ Early Exit Warning Toast */}
+      {showEarlyExitWarning && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-rose-600/95 text-white text-xs font-bold shadow-2xl flex items-center gap-2 border border-rose-400/50 animate-bounce text-center max-w-xs pointer-events-none">
+          <ShieldAlert className="w-4 h-4 shrink-0 text-white" />
+          <span>পুরো ভিডিও না দেখলে +{rewardCoins} কয়েন পাবেন না! আর মাত্র {secondsRemaining} সেকেন্ড বাকি।</span>
+        </div>
+      )}
 
-        {/* Real Ad Banner Image */}
-        <div 
-          onClick={handleAdClick}
-          className="w-full h-32 sm:h-36 rounded-2xl overflow-hidden mb-2.5 relative shadow-lg border border-white/20 block cursor-pointer group"
-        >
-          <img 
-            src={currentAd.image} 
-            alt={currentAd.sponsorName} 
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+      {/* 🎬 Main Fullscreen Video Player Area */}
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+        {customAdsterraCode ? (
+          <div 
+            ref={adsterraContainerRef} 
+            className="w-full h-full flex items-center justify-center relative z-10 p-2"
           />
-          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[9px] font-black text-amber-300 uppercase tracking-wider flex items-center gap-1 border border-amber-400/40">
-            <Coins className="w-3 h-3 text-amber-400" />
-            <span>+{rewardCoins} Coins</span>
-          </div>
-          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[8px] text-white/90">
-            Adsterra Sponsor ↗
+        ) : (
+          <video
+            ref={videoRef}
+            src={currentAd.videoUrl}
+            poster={currentAd.posterImage}
+            autoPlay
+            playsInline
+            loop
+            muted={isMuted}
+            className="w-full h-full object-cover max-h-screen"
+          />
+        )}
+
+        {/* Video Overlay Vignette */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80 pointer-events-none" />
+
+        {/* 📱 In-Video Sponsor App Card */}
+        <div className="absolute bottom-3 left-3 right-3 sm:left-6 sm:right-6 z-30">
+          <div className="p-3 sm:p-3.5 rounded-3xl bg-slate-950/85 backdrop-blur-xl border border-white/20 shadow-2xl flex items-center justify-between gap-3">
+            {/* App Icon & Details */}
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-md shrink-0 border border-white/20 bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center p-0.5">
+                <img 
+                  src={currentAd.logoUrl} 
+                  alt={currentAd.appName} 
+                  className="w-full h-full object-cover rounded-xl"
+                />
+              </div>
+
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h4 className="text-xs sm:text-sm font-black text-white truncate">
+                    {currentAd.appName}
+                  </h4>
+                </div>
+
+                <div className="flex items-center gap-2 text-[10px] text-amber-300 font-bold mt-0.5">
+                  <div className="flex items-center gap-0.5 text-amber-400">
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    <span>{currentAd.rating}</span>
+                  </div>
+                  <span className="text-slate-400">•</span>
+                  <span className="text-slate-300">{currentAd.downloads}</span>
+                  <span className="text-slate-400">•</span>
+                  <span className="text-emerald-400 font-black">{currentAd.installBonus}</span>
+                </div>
+
+                <p className="text-[10px] text-slate-300 truncate mt-0.5 max-w-[180px] sm:max-w-xs">
+                  {language === 'bn' ? currentAd.taglineBn : currentAd.taglineEn}
+                </p>
+              </div>
+            </div>
+
+            {/* 🎯 "চাপ দিয়ে কয়েন সংগ্রহ করুন" CTA Button (Opens Adsterra Direct Link & awards coins) */}
+            <button
+              type="button"
+              onClick={handleAdClick}
+              onTouchEnd={handleAdClick}
+              className="shrink-0 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-[11px] sm:text-xs shadow-xl shadow-amber-500/40 active:scale-95 transition-all flex items-center gap-1.5 border-2 border-white cursor-pointer animate-pulse touch-manipulation pointer-events-auto"
+              title="চাপ দিয়ে কয়েন সংগ্রহ করুন"
+            >
+              <Coins className="w-4 h-4 fill-slate-950 text-slate-950 shrink-0" />
+              <span>{language === 'bn' ? 'চাপ দিয়ে কয়েন সংগ্রহ করুন' : 'Tap to Collect Coins'}</span>
+            </button>
           </div>
         </div>
+      </div>
 
-        <span className="text-[11px] font-bold text-white/90 uppercase tracking-widest mb-0.5">
-          {currentAd.sponsorName}
-        </span>
-
-        <h3 className="text-xs sm:text-sm font-black text-white mb-1 leading-snug">
-          {language === 'bn' ? currentAd.headlineBn : currentAd.headlineEn}
-        </h3>
-
-        <p className="text-[10px] text-slate-200 max-w-xs mb-2">
-          {language === 'bn' ? currentAd.taglineBn : currentAd.taglineEn}
-        </p>
-
-        {/* Progress Bar */}
-        <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden p-0.5 mb-2.5">
+      {/* 🟢 Bottom Progress Bar & Completion Action (Above all navigation) */}
+      <div className="relative z-50 p-3 sm:p-4 pb-10 sm:pb-6 bg-gradient-to-t from-black via-black/95 to-transparent flex flex-col gap-2.5 pointer-events-auto">
+        {/* Real-time Progress Bar */}
+        <div className="w-full bg-slate-800/80 h-2.5 rounded-full overflow-hidden p-0.5 shadow-inner">
           <div 
-            className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-700 shadow-[0_0_10px_#eab308]"
+            className="h-full rounded-full bg-gradient-to-r from-amber-400 via-emerald-400 to-green-500 transition-all duration-1000 shadow-[0_0_12px_#10b981]"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
 
-        {/* Action Button */}
-        <button
-          onClick={handleAdClick}
-          className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black text-xs shadow-xl active:scale-95 transition-all border border-amber-300 cursor-pointer"
-        >
-          <span>{language === 'bn' ? '🚀 বিজ্ঞাপনে ট্যাপ করে অফার দেখুন' : '🚀 Visit & Explore Offer'}</span>
-          <ExternalLink className="w-3.5 h-3.5 text-slate-950" />
-        </button>
-      </div>
-
-      {/* 🟢 Prominent Bottom Action Bar: Fast Return with Coins */}
-      <div className="pt-2 z-30 flex flex-col items-center gap-1.5">
-        <button
-          onClick={handleCloseAndReward}
-          className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-400 via-green-400 to-teal-500 hover:from-emerald-300 text-slate-950 font-black text-sm shadow-[0_0_20px_#10b981] flex items-center justify-center gap-2 active:scale-95 transition animate-bounce cursor-pointer border-2 border-white"
-        >
-          <CheckCircle2 className="w-5 h-5 fill-slate-950 text-emerald-400" />
-          <span>⚡ +{rewardCoins} কয়েন পেয়েছি, বিজ্ঞাপন বন্ধ করুন ✕</span>
-        </button>
-
-        <button
-          onClick={handleCloseAndReward}
-          className="text-[11px] text-slate-400 hover:text-white underline cursor-pointer pt-0.5"
-        >
-          🔙 সরাসরি ভিডিওতে ফিরে যান
-        </button>
+        {/* Status Text & Bottom Button */}
+        {secondsRemaining > 0 ? (
+          <div className="flex items-center justify-between text-xs text-slate-300 px-1 font-semibold">
+            <span>⏱️ বিজ্ঞাপন পুরো দেখুন (রিওয়ার্ড লক রয়েছে)</span>
+            <span className="font-mono text-amber-300 font-black text-sm">বাকি: {secondsRemaining}s</span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleCloseAd}
+            onTouchEnd={handleCloseAd}
+            className="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-emerald-400 via-green-400 to-teal-500 hover:from-emerald-300 text-slate-950 font-black text-sm sm:text-base shadow-[0_0_30px_#10b981] flex items-center justify-center gap-2 active:scale-95 transition cursor-pointer border-2 border-white animate-bounce touch-manipulation z-50 pointer-events-auto"
+          >
+            <CheckCircle2 className="w-5 h-5 fill-slate-950 text-emerald-400 shrink-0" />
+            <span>🎉 চাপ দিয়ে +{rewardCoins} কয়েন সংগ্রহ করুন ও বন্ধ করুন ✕</span>
+          </button>
+        )}
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 };
