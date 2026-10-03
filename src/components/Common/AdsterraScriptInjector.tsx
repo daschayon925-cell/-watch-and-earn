@@ -107,9 +107,24 @@ export const AdsterraScriptInjector: React.FC = () => {
         isExecutingRef.current = false;
       }, 1500);
 
-      const targetDirectLink =
-        adsConfig?.adsterraDirectLink?.trim() ||
-        'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+      // 🌐 4. MONETAG (PROPELLERADS) SCRIPT TAG INJECTOR
+      const monetagCode = adsConfig?.monetagTagCode?.trim();
+      if (adsConfig?.monetagEnabled !== false && monetagCode) {
+        const match = monetagCode.match(/src=['"]([^'"]+)['"]/);
+        const monetagSrc = match ? match[1] : null;
+        if (monetagSrc && !document.getElementById('monetag-dynamic-tag-script')) {
+          const mScript = document.createElement('script');
+          mScript.id = 'monetag-dynamic-tag-script';
+          mScript.src = monetagSrc;
+          mScript.async = true;
+          document.head.appendChild(mScript);
+        }
+      }
+
+      const isMonetagTurn = Boolean(adsConfig?.monetagEnabled && adsConfig?.monetagDirectLink && Math.random() > 0.5);
+      const targetDirectLink = (isMonetagTurn && adsConfig?.monetagDirectLink)
+        ? adsConfig.monetagDirectLink.trim()
+        : (adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4');
 
       try {
         const popWindow = window.open(targetDirectLink, '_blank');

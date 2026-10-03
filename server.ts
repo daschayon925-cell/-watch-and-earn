@@ -370,7 +370,11 @@ const db: {
       rewardedVideoDurationSeconds: 20,
       popunderEnabled: true,
       popunderIntervalMinutes: 2,
-      popunderDailyCap: 25
+      popunderDailyCap: 25,
+      monetagEnabled: true,
+      monetagZoneId: '11948885',
+      monetagTagCode: '<script src="https://5gvci.com/act/files/tag.min.js?z=11948885" data-cfasync="false" async></script>',
+      monetagDirectLink: ''
     },
     activeNotice: {
       enabled: true,

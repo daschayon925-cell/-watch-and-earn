@@ -210,8 +210,16 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       return;
     }
 
-    const directLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
-    const targetUrl = directLink || currentAd.ctaUrl;
+    const adsterraLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+    const monetagLink = settings?.adsConfig?.monetagDirectLink?.trim();
+    // High-CPM smart rotation: alternate between Adsterra & Monetag without collision
+    let targetUrl = adsterraLink;
+    if (monetagLink && Math.random() > 0.5) {
+      targetUrl = monetagLink;
+    }
+    if (!targetUrl) {
+      targetUrl = currentAd.ctaUrl;
+    }
     if (typeof window !== 'undefined') {
       try {
         window.open(targetUrl, '_blank', 'noopener,noreferrer');

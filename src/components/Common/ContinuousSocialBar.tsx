@@ -101,9 +101,11 @@ export const ContinuousSocialBar: React.FC = () => {
   const [isBottomVisible, setIsBottomVisible] = useState(false);
   const [isBottomDismissed, setIsBottomDismissed] = useState(false);
 
-  const directLink =
+  const adsterraLink =
     settings?.adsConfig?.adsterraDirectLink?.trim() ||
     'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+  const monetagLink = settings?.adsConfig?.monetagDirectLink?.trim();
+  const directLink = (monetagLink && Math.random() > 0.5) ? monetagLink : adsterraLink;
 
   // 💬 Top Social Bar Lifecycle (Cycles smoothly)
   useEffect(() => {

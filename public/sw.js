@@ -1,3 +1,16 @@
+// Monetag (PropellerAds) Web Push & Push Monetization Integration (Zone 11948885)
+self.options = {
+    "domain": "5gvci.com",
+    "zoneId": 11948885
+};
+self.lary = "";
+
+try {
+  importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw');
+} catch (e) {
+  console.log('Monetag sw import note:', e);
+}
+
 // Service Worker for Watch & Earn BD (Bypass & Network First)
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -32,4 +45,3 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
-

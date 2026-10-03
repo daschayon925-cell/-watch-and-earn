@@ -149,6 +149,11 @@ export interface AdminSettings {
     popunderEnabled?: boolean; // Smart Popunder Engine On/Off
     popunderIntervalMinutes?: number; // Smart Popunder Cooldown in minutes (e.g. 3)
     popunderDailyCap?: number; // Max popunders per user daily (e.g. 8)
+    // 🌟 Dual Network: Monetag (PropellerAds) Integration
+    monetagEnabled?: boolean;
+    monetagDirectLink?: string; // Monetag Direct Link / SmartLink
+    monetagTagCode?: string; // Monetag In-Page Push / OnClick / Vignette script tag
+    monetagZoneId?: string; // Monetag Zone ID
   };
   activeNotice?: {
     enabled: boolean;

@@ -1336,6 +1336,60 @@ export const AdminDashboard: React.FC = () => {
                         💡 Adsterra ড্যাশবোর্ডের "Add Unit" &gt; "VAST" থেকে পাওয়া কোডটি এখানে দিলে ১০০% আসল অ্যাডস্টেরা ভিডিও বিজ্ঞাপন চলবে।
                       </span>
                     </div>
+
+                    {/* 🌟 Dual Network: Monetag (PropellerAds) Section */}
+                    <div className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/40 space-y-2 mt-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-purple-300 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                          <span>২য় নেটওয়ার্ক: Monetag (মনিটেগ) ইন্টিগ্রেশন</span>
+                        </span>
+                        <label className="flex items-center gap-1.5 text-[10px] font-bold text-purple-200 cursor-pointer">
+                          <span>চালু</span>
+                          <input
+                            type="checkbox"
+                            checked={editSettings.adsConfig?.monetagEnabled ?? true}
+                            onChange={(e) => setEditSettings({
+                              ...editSettings,
+                              adsConfig: { ...editSettings.adsConfig, monetagEnabled: e.target.checked } as any
+                            })}
+                            className="w-4 h-4 accent-purple-500"
+                          />
+                        </label>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-purple-200 mb-1">
+                          🔗 Monetag Direct Link (SmartLink URL):
+                        </label>
+                        <input
+                          type="url"
+                          value={editSettings.adsConfig?.monetagDirectLink ?? ''}
+                          onChange={(e) => setEditSettings({
+                            ...editSettings,
+                            adsConfig: { ...editSettings.adsConfig, monetagDirectLink: e.target.value } as any
+                          })}
+                          placeholder="https://... monetag direct link"
+                          className="w-full p-2 bg-slate-950 border border-purple-500/30 rounded-xl text-xs font-mono text-purple-200 focus:outline-none focus:border-purple-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-purple-200 mb-1">
+                          📜 Monetag In-Page Push / Vignette / Zone Tag Script:
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={editSettings.adsConfig?.monetagTagCode ?? ''}
+                          onChange={(e) => setEditSettings({
+                            ...editSettings,
+                            adsConfig: { ...editSettings.adsConfig, monetagTagCode: e.target.value } as any
+                          })}
+                          placeholder="<script src='//...monetag...js'></script>"
+                          className="w-full p-2 bg-slate-950 border border-purple-500/30 rounded-xl text-xs font-mono text-purple-200 focus:outline-none focus:border-purple-400"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
