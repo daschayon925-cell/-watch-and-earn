@@ -1267,14 +1267,14 @@ app.post('/api/reward/ad-reward', (req, res) => {
     return res.status(403).json({ success: false, message: 'অস্বাভাবিক কার্যক্রমের কারণে আপনার অ্যাকাউন্ট স্থগিত করা হয়েছে।' });
   }
 
-  // 🛡️ Anti-Bot Check 2: Minimum 20 seconds cooldown between rewarded ad claims
+  // 🛡️ Anti-Bot Check 2: Minimum 8 seconds cooldown between rewarded ad claims
   const now = Date.now();
   const lastClaim = lastAdClaimTimes.get(user.uid) || 0;
-  if (now - lastClaim < 20000) {
-    const waitSeconds = Math.ceil((20000 - (now - lastClaim)) / 1000);
+  if (now - lastClaim < 8000) {
+    const waitSeconds = Math.ceil((8000 - (now - lastClaim)) / 1000);
     return res.status(429).json({
       success: false,
-      message: `বট প্রতিরোধ নিরাপত্তা: পরবর্তী বিজ্ঞাপন দেখার পূর্বে অনুগ্রহ করে ${waitSeconds} সেকেন্ড অপেক্ষা করুন।`
+      message: `অনুগ্রহ করে ${waitSeconds} সেকেন্ড অপেক্ষা করুন।`
     });
   }
 
