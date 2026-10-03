@@ -50,7 +50,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(finalUser);
         localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
-        cloudDb.saveUser(finalUser);
         if (highestCoins > u.coins) {
           api.syncCoins(highestCoins);
         }
@@ -121,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('we_user_id', finalUser.uid);
         localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
         setUser(finalUser);
-        await cloudDb.saveUser(finalUser);
+        cloudDb.saveUser(finalUser).catch(() => {});
         return { success: true, message: res.message || 'গুগল লগইন সফল হয়েছে!' };
       } else {
         throw new Error(res.message || 'গুগল লগইন সম্পন্ন করা যায়নি');
@@ -151,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem('we_user_id', effectiveUid);
           setUser(guestRes.user);
           localStorage.setItem('we_user_cached_profile', JSON.stringify(guestRes.user));
-          await cloudDb.saveUser(guestRes.user);
+          cloudDb.saveUser(guestRes.user).catch(() => {});
           setLoading(false);
           return;
         }
@@ -190,7 +189,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(finalUser);
         localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
-        cloudDb.saveUser(finalUser);
         if (highestCoins > u.coins) {
           api.syncCoins(highestCoins);
         }
@@ -210,7 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (guestRes.success && guestRes.user) {
             setUser(guestRes.user);
             localStorage.setItem('we_user_cached_profile', JSON.stringify(guestRes.user));
-            await cloudDb.saveUser(guestRes.user);
+            cloudDb.saveUser(guestRes.user).catch(() => {});
           } else {
             setUser(null);
           }
@@ -252,7 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('we_user_id', res.user.uid);
         setUser(res.user);
         // Save permanently in Firestore cloud database
-        await cloudDb.saveUser(res.user);
+        cloudDb.saveUser(res.user).catch(() => {});
         return { success: true, message: res.message, bonusAdded: res.bonusAdded };
       }
       return { success: false, message: res.message || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে।' };
@@ -269,7 +267,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('we_user_id', res.user.uid);
         setUser(res.user);
         // Save permanently in Cloud DB
-        await cloudDb.saveUser(res.user);
+        cloudDb.saveUser(res.user).catch(() => {});
         return { success: true, message: res.message };
       }
 
@@ -326,7 +324,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (data.photoURL) {
           localStorage.setItem(`we_user_photo_${user.uid}`, data.photoURL);
         }
-        await cloudDb.saveUser(mergedUser);
+        cloudDb.saveUser(mergedUser).catch(() => {});
       }
 
       const updated = await api.updateProfile(data);
@@ -337,7 +335,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(finalUser);
         localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
-        await cloudDb.saveUser(finalUser);
+        cloudDb.saveUser(finalUser).catch(() => {});
       }
     } catch (err) {
       console.error('Update profile error', err);
@@ -353,7 +351,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (data.photoURL) {
           localStorage.setItem(`we_user_photo_${user.uid}`, data.photoURL);
         }
-        await cloudDb.saveUser(fallbackUser);
+        cloudDb.saveUser(fallbackUser).catch(() => {});
       }
     }
   };
@@ -378,14 +376,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const awardCoinsLocally = (coins: number) => {
     setUser((prev) => {
       if (!prev) return null;
+      const updatedCoins = (prev.coins || 0) + coins;
       const updated: User = {
         ...prev,
-        coins: (prev.coins || 0) + coins,
+        coins: updatedCoins,
         lifetimeCoins: ((prev.lifetimeCoins || prev.coins || 0) + coins),
         todayCoins: ((prev.todayCoins || 0) + coins),
         updatedAt: new Date().toISOString()
       };
       localStorage.setItem('we_user_cached_profile', JSON.stringify(updated));
+      api.syncCoins(updatedCoins);
       return updated;
     });
   };

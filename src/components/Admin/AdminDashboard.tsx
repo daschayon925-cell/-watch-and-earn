@@ -84,6 +84,11 @@ export const AdminDashboard: React.FC = () => {
   const [inputPin, setInputPin] = useState('');
   const [pinError, setPinError] = useState('');
 
+  // 🪙 Coin Adjustment Modal
+  const [coinAdjustUser, setCoinAdjustUser] = useState<User | null>(null);
+  const [coinAdjustAmount, setCoinAdjustAmount] = useState<string>('2000');
+  const [coinAdjustReason, setCoinAdjustReason] = useState<string>('লয়ালটি রিওয়ার্ড বোনাস');
+
   const currentConfiguredPin = settings?.adminSecurity?.adminPin || '7788';
 
   const handleUnlockAdmin = (e: React.FormEvent) => {
@@ -125,8 +130,12 @@ export const AdminDashboard: React.FC = () => {
       const cloudUsers = await cloudDb.getAllUsers();
       const mergedUsers = [...(usrs || [])];
       cloudUsers.forEach(cu => {
-        if (!mergedUsers.some(u => u.uid === cu.uid || (u.phone && cu.phone && u.phone === cu.phone))) {
+        const existing = mergedUsers.find(u => u.uid === cu.uid || (u.phone && cu.phone && u.phone === cu.phone));
+        if (!existing) {
           mergedUsers.push(cu);
+        } else {
+          existing.coins = Math.max(existing.coins || 0, cu.coins || 0);
+          existing.lifetimeCoins = Math.max(existing.lifetimeCoins || 0, cu.lifetimeCoins || 0);
         }
       });
 
@@ -208,10 +217,12 @@ export const AdminDashboard: React.FC = () => {
 
   const handleUserAction = async (uid: string, action: string, delta?: number) => {
     try {
-      const res = await api.adminUserAction(uid, action, delta, 'Admin Console Action');
-      if (res.success) {
+      const target = usersList.find(u => u.uid === uid);
+      const res = await api.adminUserAction(uid, action, delta, coinAdjustReason || 'Admin Console Action', target?.displayName, target?.phone);
+      if (res.success && res.user) {
         setUsersList(prev => prev.map(u => u.uid === uid ? res.user : u));
-        showToast('ইউজার অ্যাকশন সম্পন্ন হয়েছে', '', 'success');
+        showToast('ইউজার অ্যাকশন সম্পন্ন হয়েছে 🎉', `${res.user.displayName || 'ইউজার'} এর নতুন ব্যালেন্স: ${res.user.coins} কয়েন`, 'success');
+        setCoinAdjustUser(null);
       }
     } catch {
       showToast('অ্যাকশন ব্যর্থ', '', 'error');
@@ -844,12 +855,12 @@ export const AdminDashboard: React.FC = () => {
 
                   <button
                     onClick={() => {
-                      const amount = prompt('কয়েন অ্যাডজাস্টমেন্ট পরিমাণ লিখুন (+/-):', '100');
-                      if (amount) handleUserAction(u.uid, 'adjust_coins', parseInt(amount, 10));
+                      setCoinAdjustUser(u);
+                      setCoinAdjustAmount('2000');
                     }}
-                    className="px-3 py-1 bg-slate-800 text-slate-300 font-bold text-xs rounded-xl"
+                    className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs rounded-xl hover:bg-amber-500/30 transition-all flex items-center gap-1 active:scale-95"
                   >
-                    কয়েন সমন্বয়
+                    <span>🪙</span> কয়েন সমন্বয়
                   </button>
                 </div>
               </div>
@@ -1059,6 +1070,34 @@ export const AdminDashboard: React.FC = () => {
                 onChange={(e) => setEditSettings({ ...editSettings, rewardedAdBonus: parseInt(e.target.value, 10) || 0 })}
                 className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+              <div>
+                <label className="block text-[11px] font-bold text-amber-300 mb-1">
+                  ⏱️ স্পনসর অ্যাড বিরতি (মিনিট):
+                </label>
+                <input
+                  type="number"
+                  value={isNaN(Number(editSettings.sponsorAdIntervalMinutes)) ? '' : (editSettings.sponsorAdIntervalMinutes ?? 150)}
+                  onChange={(e) => setEditSettings({ ...editSettings, sponsorAdIntervalMinutes: parseInt(e.target.value, 10) || 150 })}
+                  className="w-full p-2 bg-slate-950 border border-amber-500/40 rounded-xl text-xs text-amber-300 font-mono font-bold"
+                />
+                <p className="text-[9px] text-slate-400 mt-1">১৫০ মিনিট = ২.৫ ঘণ্টা (২-৩ ঘণ্টা)</p>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-amber-300 mb-1">
+                  🎡 লাকি স্পিন বিরতি (মিনিট):
+                </label>
+                <input
+                  type="number"
+                  value={isNaN(Number(editSettings.spinIntervalMinutes)) ? '' : (editSettings.spinIntervalMinutes ?? 150)}
+                  onChange={(e) => setEditSettings({ ...editSettings, spinIntervalMinutes: parseInt(e.target.value, 10) || 150 })}
+                  className="w-full p-2 bg-slate-950 border border-amber-500/40 rounded-xl text-xs text-amber-300 font-mono font-bold"
+                />
+                <p className="text-[9px] text-slate-400 mt-1">১৫০ মিনিট = ২.৫ ঘণ্টা (২-৩ ঘণ্টা)</p>
+              </div>
             </div>
 
             {/* 📺 Google AdSense & Ad Network Integration Unit Controller */}
@@ -1841,6 +1880,93 @@ export const AdminDashboard: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* 🪙 COIN ADJUSTMENT MODAL */}
+      {coinAdjustUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-sm bg-slate-900 border border-amber-500/40 rounded-3xl p-5 shadow-2xl text-left space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🪙</span>
+                <div>
+                  <h3 className="font-bold text-sm text-white">{coinAdjustUser.displayName || 'ইউজার'}</h3>
+                  <p className="text-[11px] text-slate-400 font-mono">UID: {coinAdjustUser.uid.slice(0, 16)}...</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCoinAdjustUser(null)}
+                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 flex justify-between items-center">
+              <span className="text-xs text-slate-400">বর্তমান ব্যালেন্স:</span>
+              <span className="text-base font-extrabold text-amber-400 flex items-center gap-1">
+                <span>🪙</span> {coinAdjustUser.coins.toLocaleString()} কয়েন
+              </span>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-300 block mb-1 font-bold">কয়েন পরিমাণ (+ যোগ / - কর্তন):</label>
+              <input
+                type="number"
+                value={coinAdjustAmount}
+                onChange={(e) => setCoinAdjustAmount(e.target.value)}
+                className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-amber-400 font-bold text-base focus:outline-none focus:border-amber-400"
+                placeholder="যেমন: 2000"
+              />
+              <div className="grid grid-cols-4 gap-1.5 mt-2">
+                {['+50', '+100', '+500', '+2000'].map(preset => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setCoinAdjustAmount(preset.replace('+', ''))}
+                    className="py-1 bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 border border-slate-700 rounded-lg text-xs font-bold transition-all"
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-300 block mb-1">সমন্বয়ের কারণ:</label>
+              <input
+                type="text"
+                value={coinAdjustReason}
+                onChange={(e) => setCoinAdjustReason(e.target.value)}
+                className="w-full p-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs"
+                placeholder="যেমন: লয়ালটি বোনাস / রিওয়ার্ড অ্যাডজাস্টমেন্ট"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const val = parseInt(coinAdjustAmount, 10);
+                  if (isNaN(val) || val === 0) {
+                    showToast('সঠিক পরিমাণ লিখুন', '', 'error');
+                    return;
+                  }
+                  handleUserAction(coinAdjustUser.uid, 'adjust_coins', val);
+                }}
+                className="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-sm shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+              >
+                নিশ্চিত করুন ({coinAdjustAmount > '0' ? `+${coinAdjustAmount}` : coinAdjustAmount} কয়েন)
+              </button>
+              <button
+                type="button"
+                onClick={() => setCoinAdjustUser(null)}
+                className="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold"
+              >
+                বাতিল
+              </button>
+            </div>
           </div>
         </div>
       )}

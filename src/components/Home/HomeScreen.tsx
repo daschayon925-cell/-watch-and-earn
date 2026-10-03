@@ -14,7 +14,8 @@ import {
   Award,
   Wallet,
   Youtube,
-  Megaphone
+  Megaphone,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -97,9 +98,50 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
+  // ⏱️ 2-3 Hour Interval between Sponsored Ads
+  const sponsorIntervalMinutes = settings?.sponsorAdIntervalMinutes || 150;
+  const sponsorIntervalMs = sponsorIntervalMinutes * 60 * 1000;
+  const [sponsorCooldownSeconds, setSponsorCooldownSeconds] = useState<number>(0);
+
+  useEffect(() => {
+    const checkCooldown = () => {
+      if (!user?.lastSponsoredAdTimestamp) {
+        setSponsorCooldownSeconds(0);
+        return;
+      }
+      const lastTime = new Date(user.lastSponsoredAdTimestamp).getTime();
+      const elapsed = Date.now() - lastTime;
+      if (elapsed < sponsorIntervalMs) {
+        setSponsorCooldownSeconds(Math.ceil((sponsorIntervalMs - elapsed) / 1000));
+      } else {
+        setSponsorCooldownSeconds(0);
+      }
+    };
+    checkCooldown();
+    const interval = setInterval(checkCooldown, 1000);
+    return () => clearInterval(interval);
+  }, [user?.lastSponsoredAdTimestamp, sponsorIntervalMs]);
+
+  const formatCountdown = (totalSec: number) => {
+    const hours = Math.floor(totalSec / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   // Rewarded Ad Simulation
   const handleWatchRewardedAd = () => {
     if (watchingAd) return;
+    if (sponsorCooldownSeconds > 0) {
+      showToast(
+        language === 'bn' 
+          ? `⏳ পরবর্তী স্পনসর বিজ্ঞাপন দেখতে পারবেন ${formatCountdown(sponsorCooldownSeconds)} পর।`
+          : `Next sponsored ad available in ${formatCountdown(sponsorCooldownSeconds)}.`,
+        language === 'bn' ? 'নিয়ম অনুযায়ী প্রতি ২.৫ ঘণ্টা পর পর ১টি স্পনসর বিজ্ঞাপন পাওয়া যায়।' : '1 ad per 2.5 hours.',
+        'info'
+      );
+      return;
+    }
     setWatchingAd(true);
   };
 
@@ -412,14 +454,24 @@ export const HomeScreen: React.FC = () => {
         {/* Sponsored Bonus Card */}
         <div 
           onClick={handleWatchRewardedAd}
-          className="p-3.5 rounded-2xl bg-gradient-to-br from-cyan-500/15 to-slate-900 border border-cyan-500/40 hover:border-cyan-400 transition cursor-pointer flex flex-col justify-between"
+          className={`p-3.5 rounded-2xl bg-gradient-to-br transition cursor-pointer flex flex-col justify-between ${
+            sponsorCooldownSeconds > 0
+              ? 'from-slate-800/80 to-slate-900 border border-slate-700/60 opacity-80'
+              : 'from-cyan-500/15 to-slate-900 border border-cyan-500/40 hover:border-cyan-400'
+          }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400">
-              <Tv className="w-4 h-4" />
+            <span className={`p-2 rounded-xl ${sponsorCooldownSeconds > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-cyan-500/20 text-cyan-400'}`}>
+              {sponsorCooldownSeconds > 0 ? <Clock className="w-4 h-4 animate-pulse" /> : <Tv className="w-4 h-4" />}
             </span>
-            <span className="text-[10px] font-bold text-cyan-300 px-2 py-0.5 rounded bg-cyan-400/10">
-              {language === 'bn' ? `+${settings?.rewardedAdBonus || 30} কয়েন` : `+${settings?.rewardedAdBonus || 30} Coins`}
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded font-mono ${
+              sponsorCooldownSeconds > 0
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                : 'bg-cyan-400/10 text-cyan-300'
+            }`}>
+              {sponsorCooldownSeconds > 0 
+                ? formatCountdown(sponsorCooldownSeconds) 
+                : (language === 'bn' ? `+${settings?.rewardedAdBonus || 30} কয়েন` : `+${settings?.rewardedAdBonus || 30} Coins`)}
             </span>
           </div>
           <div>
@@ -427,7 +479,9 @@ export const HomeScreen: React.FC = () => {
               {language === 'bn' ? 'স্পনসর বোনাস' : 'Watch Ad Bonus'}
             </h4>
             <p className="text-[10px] text-slate-400 mt-0.5">
-              {language === 'bn' ? '১৫ সে. বিজ্ঞাপন দেখে বোনাস নিন' : 'Watch short sponsor ad'}
+              {sponsorCooldownSeconds > 0
+                ? (language === 'bn' ? `পরবর্তী বিজ্ঞাপন ${formatCountdown(sponsorCooldownSeconds)} পর` : `Next ad in ${formatCountdown(sponsorCooldownSeconds)}`)
+                : (language === 'bn' ? 'বিজ্ঞাপন দেখে বোনাস নিন' : 'Watch short sponsor ad')}
             </p>
           </div>
         </div>

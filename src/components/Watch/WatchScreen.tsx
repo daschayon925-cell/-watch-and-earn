@@ -113,6 +113,37 @@ export const WatchScreen: React.FC = () => {
   const [adCycleCount, setAdCycleCount] = useState<number>(1);
   const [totalEarnedSession, setTotalEarnedSession] = useState<number>(0);
 
+  // ⏱️ 2-3 Hour Interval between Sponsored Ads
+  const sponsorIntervalMinutes = settings?.sponsorAdIntervalMinutes || 150;
+  const sponsorIntervalMs = sponsorIntervalMinutes * 60 * 1000;
+  const [sponsorCooldownSeconds, setSponsorCooldownSeconds] = useState<number>(0);
+
+  useEffect(() => {
+    const checkCooldown = () => {
+      if (!user?.lastSponsoredAdTimestamp) {
+        setSponsorCooldownSeconds(0);
+        return;
+      }
+      const lastTime = new Date(user.lastSponsoredAdTimestamp).getTime();
+      const elapsed = Date.now() - lastTime;
+      if (elapsed < sponsorIntervalMs) {
+        setSponsorCooldownSeconds(Math.ceil((sponsorIntervalMs - elapsed) / 1000));
+      } else {
+        setSponsorCooldownSeconds(0);
+      }
+    };
+    checkCooldown();
+    const interval = setInterval(checkCooldown, 1000);
+    return () => clearInterval(interval);
+  }, [user?.lastSponsoredAdTimestamp, sponsorIntervalMs]);
+
+  const formatCountdown = (totalSec: number) => {
+    const hours = Math.floor(totalSec / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const currentReel = dailyReels[currentReelIndex] || dailyReels[0];
 
@@ -193,6 +224,13 @@ export const WatchScreen: React.FC = () => {
 
   // 🔒 Lock the video & stop playback until Ad is viewed
   const triggerVideoLockdown = () => {
+    // If sponsor ad is still on 2-3 hour cooldown, do not lock user out of video reels
+    if (sponsorCooldownSeconds > 0) {
+      setWatchSeconds(0);
+      startTimeRef.current = Date.now();
+      return;
+    }
+
     setIsVideoLocked(true);
     setIsPlaying(false);
     setShowAd(true);
@@ -862,14 +900,20 @@ export const WatchScreen: React.FC = () => {
         </div>
       )}
 
-      {/* ⚡ INSTANT BONUS ACTION BUTTON (Opens Adsterra Direct Link & Triggers Reward) */}
+      {/* ⚡ SPONSOR REWARDED AD BUTTON WITH 2.5 HOUR COOLDOWN */}
       <div className="px-3 pt-2">
         <button
           onClick={() => {
-            // 🪙 Award instant 10 coins right on tap!
-            awardCoinsLocally(10);
-            soundService.playCoinReward();
-            showToast('🎉 +১০ কয়েন ইনস্ট্যান্ট বোনাস!', 'অ্যাড শেষ হলে আরও ৫০ কয়েন যোগ হবে!', 'coin');
+            if (sponsorCooldownSeconds > 0) {
+              showToast(
+                language === 'bn' 
+                  ? `⏳ পরবর্তী স্পনসর বিজ্ঞাপন দেখতে পারবেন ${formatCountdown(sponsorCooldownSeconds)} পর।`
+                  : `Next sponsored ad in ${formatCountdown(sponsorCooldownSeconds)}.`,
+                language === 'bn' ? 'নিয়ম অনুযায়ী প্রতি ২.৫ ঘণ্টা পর পর ১টি স্পনসর বিজ্ঞাপন পাওয়া যায়।' : '1 ad available every 2.5 hours.',
+                'info'
+              );
+              return;
+            }
             try {
               const directLink = settings?.adsConfig?.adsterraDirectLink?.trim();
               if (directLink) {
@@ -878,11 +922,25 @@ export const WatchScreen: React.FC = () => {
             } catch (e) {}
             setShowAd(true);
           }}
-          className="w-full py-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs rounded-2xl shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2 active:scale-98 transition cursor-pointer"
+          disabled={sponsorCooldownSeconds > 0}
+          className={`w-full py-3 rounded-2xl shadow-xl flex items-center justify-center gap-2 active:scale-98 transition ${
+            sponsorCooldownSeconds > 0
+              ? 'bg-slate-800/90 border border-amber-500/30 text-amber-300 font-bold text-xs cursor-not-allowed'
+              : 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs shadow-amber-500/25 animate-pulse cursor-pointer'
+          }`}
         >
-          <Zap className="w-4 h-4 fill-slate-950" />
-          <span>{language === 'bn' ? '🎁 বিজ্ঞাপন দেখুন ও এখনই +৫০ কয়েন নিন' : '🎁 Watch Ad & Earn +50 Coins Now'}</span>
-          <ArrowRight className="w-3.5 h-3.5" />
+          {sponsorCooldownSeconds > 0 ? (
+            <>
+              <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
+              <span>পরবর্তী স্পনসর বিজ্ঞাপন: {formatCountdown(sponsorCooldownSeconds)} পর</span>
+            </>
+          ) : (
+            <>
+              <Zap className="w-4 h-4 fill-slate-950" />
+              <span>{language === 'bn' ? '🎁 বিজ্ঞাপন দেখুন ও এখনই +৫০ কয়েন নিন' : '🎁 Watch Ad & Earn +50 Coins Now'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </>
+          )}
         </button>
       </div>
 

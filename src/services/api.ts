@@ -62,6 +62,8 @@ export const api = {
       dailyMaxVideos: 40,
       rewardedAdBonus: 50,
       dailyRewardedAdLimit: 25,
+      sponsorAdIntervalMinutes: 150,
+      spinIntervalMinutes: 150,
       referralBonus: 50,
       isDemoMode: false,
       adsConfig: {
@@ -321,11 +323,11 @@ export const api = {
     return data?.users || [];
   },
 
-  adminUserAction: async (uid: string, action: string, coinAdjustment?: number, reason?: string) => {
-    return await safeJsonFetch(`/api/admin/users/${uid}/action`, {
+  adminUserAction: async (uid: string, action: string, coinAdjustment?: number, reason?: string, displayName?: string, phone?: string) => {
+    return await safeJsonFetch<{ success: boolean; user: User }>(`/api/admin/users/${uid}/action`, {
       method: 'POST',
       headers: headers(),
-      body: JSON.stringify({ action, coinAdjustment, reason })
+      body: JSON.stringify({ action, coinAdjustment, reason, displayName, phone })
     });
   },
 

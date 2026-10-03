@@ -55,8 +55,10 @@ export interface User {
   lastAdClickDate?: string;
   rewardedAdsToday?: number;
   lastRewardedAdDate?: string;
+  lastSponsoredAdTimestamp?: string;
   spinsToday?: number;
   lastSpinDate?: string;
+  lastSpinTimestamp?: string;
   isVerifiedMember?: boolean;
   biometricType?: 'fingerprint' | 'face' | 'none';
   biometricEnrolled?: boolean;
@@ -125,6 +127,8 @@ export interface AdminSettings {
   dailyMaxVideos: number; // e.g. 50
   rewardedAdBonus: number; // e.g. 30
   dailyRewardedAdLimit: number; // e.g. 10
+  sponsorAdIntervalMinutes?: number; // e.g. 150 (2.5 hours) cooldown between sponsor ads
+  spinIntervalMinutes?: number; // e.g. 150 (2.5 hours) cooldown between lucky spins
   referralBonus: number; // e.g. 50
   isDemoMode: boolean;
   adsConfig: {

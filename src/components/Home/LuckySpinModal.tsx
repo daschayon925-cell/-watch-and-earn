@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Sparkles, RotateCw, Gift, X, Flame, ShieldAlert, CheckCircle2, Coins } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sparkles, RotateCw, X, Clock, HelpCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
@@ -12,7 +12,7 @@ interface LuckySpinProps {
 }
 
 export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) => {
-  const { user, refreshUser, awardCoinsLocally } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { showToast, triggerConfetti, settings } = useApp();
 
   const [spinning, setSpinning] = useState(false);
@@ -20,11 +20,46 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
   const [winningReward, setWinningReward] = useState<number | null>(null);
   const [showAd, setShowAd] = useState(false);
   const [pendingClaim, setPendingClaim] = useState<number | null>(null);
+  const [showRules, setShowRules] = useState(false);
 
   const todayStr = new Date().toISOString().split('T')[0];
   const spinsToday = user?.lastSpinDate === todayStr ? (user?.spinsToday || 0) : 0;
   const maxSpins = 5;
   const isLimitReached = spinsToday >= maxSpins;
+
+  // ⏱️ 2.5 Hour Cooldown logic between spins
+  const intervalMinutes = settings?.spinIntervalMinutes || 150;
+  const intervalMs = intervalMinutes * 60 * 1000;
+  const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
+
+  useEffect(() => {
+    const calculateRemaining = () => {
+      if (!user?.lastSpinTimestamp) {
+        setCooldownSeconds(0);
+        return;
+      }
+      const lastTime = new Date(user.lastSpinTimestamp).getTime();
+      const elapsed = Date.now() - lastTime;
+      if (elapsed < intervalMs) {
+        setCooldownSeconds(Math.ceil((intervalMs - elapsed) / 1000));
+      } else {
+        setCooldownSeconds(0);
+      }
+    };
+
+    calculateRemaining();
+    const timer = setInterval(calculateRemaining, 1000);
+    return () => clearInterval(timer);
+  }, [user?.lastSpinTimestamp, intervalMs]);
+
+  const formatCountdown = (totalSec: number) => {
+    const hours = Math.floor(totalSec / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const isCooldownActive = cooldownSeconds > 0 && !isLimitReached;
 
   // 8 segments with attractive coin amounts
   const segments = [
@@ -42,6 +77,10 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
     if (spinning) return;
     if (isLimitReached) {
       showToast('🔒 আজকের স্পিন সীমা শেষ!', 'প্রতিদিন সর্বোচ্চ ৫টি স্পিন করতে পারবেন। আগামীকাল আবার নতুন স্পিন পাবেন।', 'info');
+      return;
+    }
+    if (isCooldownActive) {
+      showToast('⏳ স্পিন প্রস্তুত হয়নি!', `প্রতি ২.৫ ঘণ্টা পর পর ১টি স্পিন করা যায়। আরও ${formatCountdown(cooldownSeconds)} অপেক্ষা করুন।`, 'info');
       return;
     }
 
@@ -71,21 +110,19 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
   const handleClaimReward = async () => {
     if (!pendingClaim) return;
 
-    awardCoinsLocally(pendingClaim);
-    soundService.playCoinReward();
-    triggerConfetti();
-    showToast(
-      `🎉 +${pendingClaim} কয়েন জিতেছেন!`,
-      `আপনার ব্যালেন্সে কয়েন জমা হয়েছে।`,
-      'coin'
-    );
-
     try {
       const res = await api.claimSpinWheel(pendingClaim);
       if (res?.success) {
+        soundService.playCoinReward();
+        triggerConfetti();
+        showToast(
+          `🎉 +${pendingClaim} কয়েন জিতেছেন!`,
+          `আপনার ব্যালেন্সে কয়েন সফলভাবে জমা হয়েছে।`,
+          'coin'
+        );
         await refreshUser();
-      } else if (res?.limitReached) {
-        showToast('আজকের স্পিনের কোটা শেষ!', res.message || 'আগামীকাল আবার আসুন।', 'info');
+      } else {
+        showToast(res?.message || 'স্পিন বোনাস ক্লেইম করা যায়নি', '', 'error');
       }
     } catch (e) {
       console.error(e);
@@ -111,7 +148,9 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
             }}
             onAdSkipped={() => {
               setShowAd(false);
-              handleClaimReward();
+              showToast('⚠️ বিজ্ঞাপন স্কিপ করা হয়েছে, বোনাস কয়েন দেওয়া হয়নি।', '', 'error');
+              setWinningReward(null);
+              setPendingClaim(null);
             }}
           />
         </div>
@@ -121,16 +160,25 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
         {/* Ambient Top Glow */}
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-800/80 text-slate-400 hover:text-white transition z-10"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        {/* Close Button & Rules Toggle */}
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 z-10">
+          <button
+            onClick={() => setShowRules(prev => !prev)}
+            className="p-1.5 rounded-full bg-slate-800/80 text-amber-400 hover:text-white transition cursor-pointer"
+            title="নিয়মাবলী"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-full bg-slate-800/80 text-slate-400 hover:text-white transition cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* Header */}
-        <div className="flex flex-col items-center mb-4">
+        <div className="flex flex-col items-center mb-3">
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] font-black mb-1">
             <Sparkles className="w-3 h-3 fill-amber-300" />
             <span>লাকি স্পিন হুইল</span>
@@ -138,13 +186,30 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
           <h3 className="text-base font-black text-white">
             চাকা ঘুরিয়ে নিশ্চিত কয়েন জিতুন
           </h3>
-          <p className="text-[11px] text-slate-400 mt-0.5">
-            আজকের স্পিন বাকি: <span className="text-amber-400 font-black">{maxSpins - spinsToday}/{maxSpins}</span>
-          </p>
+          <div className="flex items-center justify-center gap-3 text-[11px] text-slate-400 mt-1">
+            <span>আজকের বাকি: <b className="text-amber-400 font-mono">{maxSpins - spinsToday}/{maxSpins}</b></span>
+            <span>•</span>
+            <span>বিরতি: <b className="text-cyan-400 font-mono">{Math.round(intervalMinutes / 60 * 10) / 10} ঘণ্টা</b></span>
+          </div>
         </div>
 
+        {/* Rules Card Popup if toggled */}
+        {showRules && (
+          <div className="mb-3 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-left text-xs space-y-1.5 animate-in slide-in-from-top duration-200">
+            <div className="font-bold text-amber-300 flex items-center gap-1 text-[11px]">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>স্পিনের নিয়মাবলী:</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              ১. প্রতি <b>২.৫ ঘণ্টা পর পর</b> ১টি করে স্পিন আনলক হবে।<br />
+              ২. দিনে সর্বোচ্চ <b>৫টি স্পিন</b> করা যাবে।<br />
+              ৩. প্রতিটি স্পিনে <b>১০ থেকে ১০০ পর্যন্ত কয়েন</b> নিশ্চিত!
+            </p>
+          </div>
+        )}
+
         {/* The Wheel */}
-        <div className="relative w-64 h-64 mx-auto my-3 flex items-center justify-center">
+        <div className="relative w-64 h-64 mx-auto my-2 flex items-center justify-center">
           {/* Top Indicator Arrow Needle */}
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
             <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[20px] border-t-amber-400 drop-shadow-[0_2px_8px_rgba(245,158,11,0.8)]" />
@@ -195,7 +260,6 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
             </p>
             <button
               onClick={() => {
-                // If reward is high, show 8s sponsor ad for huge developer profit
                 if (winningReward >= 30 && settings?.adsConfig?.rewardedAdsEnabled) {
                   setShowAd(true);
                 } else {
@@ -209,20 +273,46 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
           </div>
         )}
 
-        {/* Spin CTA Button */}
+        {/* Spin CTA Button with Dynamic Cooldown Countdown */}
         {winningReward === null && (
-          <button
-            onClick={handleStartSpin}
-            disabled={spinning || isLimitReached}
-            className={`w-full py-3.5 mt-2 rounded-2xl font-black text-sm transition flex items-center justify-center gap-2 cursor-pointer shadow-xl ${
-              isLimitReached
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                : 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 shadow-amber-500/25 active:scale-98'
-            }`}
-          >
-            <RotateCw className={`w-4 h-4 ${spinning ? 'animate-spin' : ''}`} />
-            <span>{isLimitReached ? '🔒 আজকের ৫টি স্পিন শেষ' : spinning ? 'চাকা ঘুরছে...' : 'স্পিন করুন ▶'}</span>
-          </button>
+          <div className="space-y-1.5 mt-2">
+            <button
+              onClick={handleStartSpin}
+              disabled={spinning || isLimitReached || isCooldownActive}
+              className={`w-full py-3.5 rounded-2xl font-black text-sm transition flex items-center justify-center gap-2 cursor-pointer shadow-xl ${
+                isLimitReached
+                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                  : isCooldownActive
+                  ? 'bg-slate-800/90 border border-amber-500/30 text-amber-300 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 shadow-amber-500/25 active:scale-98'
+              }`}
+            >
+              {isCooldownActive ? (
+                <>
+                  <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
+                  <span>পরবর্তী স্পিন: {formatCountdown(cooldownSeconds)}</span>
+                </>
+              ) : isLimitReached ? (
+                <span>🔒 আজকের ৫টি স্পিন শেষ</span>
+              ) : spinning ? (
+                <>
+                  <RotateCw className="w-4 h-4 animate-spin" />
+                  <span>চাকা ঘুরছে...</span>
+                </>
+              ) : (
+                <>
+                  <RotateCw className="w-4 h-4" />
+                  <span>স্পিন করুন ▶</span>
+                </>
+              )}
+            </button>
+
+            {isCooldownActive && (
+              <p className="text-[10px] text-slate-400">
+                ⏳ নিয়ম অনুযায়ী প্রতি ২.৫ ঘণ্টা পর পর নতুন স্পিন দেওয়া হয়।
+              </p>
+            )}
+          </div>
         )}
       </div>
     </div>
