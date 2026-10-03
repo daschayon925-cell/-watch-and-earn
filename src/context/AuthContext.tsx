@@ -14,6 +14,7 @@ interface AuthContextType {
   toggleAdminRole: () => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  awardCoinsLocally: (coins: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,15 +55,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginDemo = async (uid?: string) => {
-    if (!uid) {
+    setLoading(true);
+    let effectiveUid = uid || (typeof window !== 'undefined' ? localStorage.getItem('we_user_id') : null);
+    
+    // If no existing UID (e.g. 1-click Guest login on another phone), initialize guest user!
+    if (!effectiveUid) {
+      try {
+        const guestRes = await api.guestLogin();
+        if (guestRes.success && guestRes.user) {
+          effectiveUid = guestRes.user.uid;
+          setApiUserId(effectiveUid);
+          localStorage.setItem('we_user_id', effectiveUid);
+          setUser(guestRes.user);
+          localStorage.setItem('we_user_cached_profile', JSON.stringify(guestRes.user));
+          await cloudDb.saveUser(guestRes.user);
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        effectiveUid = 'usr_guest_' + Date.now();
+      }
+    }
+
+    if (!effectiveUid) {
       setUser(null);
       setLoading(false);
       return;
     }
-    setLoading(true);
-    setApiUserId(uid);
-    localStorage.setItem('we_user_id', uid);
-    const savedPhoto = localStorage.getItem(`we_user_photo_${uid}`);
+
+    setApiUserId(effectiveUid);
+    localStorage.setItem('we_user_id', effectiveUid);
+    const savedPhoto = localStorage.getItem(`we_user_photo_${effectiveUid}`);
     try {
       const u = await api.getProfile();
       if (u) {
@@ -75,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cloudDb.saveUser(finalUser);
       } else {
         // Fetch from Cloud DB directly if server just restarted
-        const cloudUser = await cloudDb.getUser(uid);
+        const cloudUser = await cloudDb.getUser(effectiveUid);
         if (cloudUser) {
           const finalUser: User = {
             ...cloudUser,
@@ -84,13 +107,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(finalUser);
           localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
         } else {
-          setUser(null);
+          // If neither server nor cloud has it, create guest profile
+          const guestRes = await api.guestLogin(effectiveUid);
+          if (guestRes.success && guestRes.user) {
+            setUser(guestRes.user);
+            localStorage.setItem('we_user_cached_profile', JSON.stringify(guestRes.user));
+            await cloudDb.saveUser(guestRes.user);
+          } else {
+            setUser(null);
+          }
         }
       }
     } catch (err) {
       console.error('Login error', err);
       // Fallback to cloud db
-      const cloudUser = await cloudDb.getUser(uid);
+      const cloudUser = await cloudDb.getUser(effectiveUid);
       if (cloudUser) {
         const finalUser: User = {
           ...cloudUser,
@@ -246,13 +277,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
+  const awardCoinsLocally = (coins: number) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated: User = {
+        ...prev,
+        coins: (prev.coins || 0) + coins,
+        lifetimeCoins: ((prev.lifetimeCoins || prev.coins || 0) + coins),
+        todayCoins: ((prev.todayCoins || 0) + coins),
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem('we_user_cached_profile', JSON.stringify(updated));
+      cloudDb.saveUser(updated);
+      return updated;
+    });
+  };
+
   useEffect(() => {
     const savedUid = localStorage.getItem('we_user_id');
     if (savedUid) {
       loginDemo(savedUid);
     } else {
-      setLoading(false);
-      setUser(null);
+      // 🌟 Frictionless Auto-Onboarding for new devices / other mobiles!
+      // Instantly gives them an active account with 100 welcome coins so they can earn immediately!
+      loginDemo();
     }
 
     // 🔄 Auto Dynamic User Profile Polling every 4 seconds to reflect realtime earnings
@@ -267,7 +315,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginDemo, sendPhoneOtp, registerUser, loginUser, updateProfile, toggleAdminRole, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, loginDemo, sendPhoneOtp, registerUser, loginUser, updateProfile, toggleAdminRole, logout, refreshUser, awardCoinsLocally }}>
       {children}
     </AuthContext.Provider>
   );

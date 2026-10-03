@@ -30,7 +30,7 @@ import { MiniBannerAd } from '../Common/MiniBannerAd';
 import { AdInterstitial } from '../Feed/AdInterstitial';
 
 export const HomeScreen: React.FC = () => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, awardCoinsLocally } = useAuth();
   const { 
     setActiveTab, 
     settings, 
@@ -104,17 +104,19 @@ export const HomeScreen: React.FC = () => {
   };
 
   const finishRewardedAd = async () => {
+    const earned = settings?.rewardedAdBonus || 30;
+    awardCoinsLocally(earned);
+    soundService.playCoinReward();
+    triggerConfetti();
+    showToast(
+      language === 'bn' ? `+${earned} স্পনসরড কয়েন বোনাস! 🎁` : `+${earned} Ad Reward Claimed!`,
+      language === 'bn' ? 'সফলভাবে স্পনসর বিজ্ঞাপন দেখার জন্য ধন্যবাদ।' : 'Thank you for watching the sponsored ad.',
+      'coin'
+    );
     try {
       const res = await api.claimRewardedAd('home_sponsor_ad');
-      if (res.success) {
-        soundService.playCoinReward();
-        triggerConfetti();
+      if (res && res.success) {
         await refreshUser();
-        showToast(
-          language === 'bn' ? `+${res.earnedCoins} স্পনসরড কয়েন বোনাস! 🎁` : `+${res.earnedCoins} Ad Reward Claimed!`,
-          language === 'bn' ? 'সফলভাবে স্পনসর বিজ্ঞাপন দেখার জন্য ধন্যবাদ।' : 'Thank you for watching the sponsored ad.',
-          'coin'
-        );
       }
     } catch (err) {
       console.error(err);

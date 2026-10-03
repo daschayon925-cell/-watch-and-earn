@@ -236,6 +236,21 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
     }
   };
 
+  const watchedSeconds = initialDuration - secondsRemaining;
+  const isSkipAllowed = watchedSeconds >= 5 || canSkip;
+
+  const handleEmergencyExit = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (onAdSkipped) {
+      onAdSkipped();
+    } else {
+      onAdCompleted();
+    }
+  };
+
   const handleCloseAd = (e?: React.MouseEvent | React.TouchEvent) => {
     if (e) {
       e.preventDefault();
@@ -254,11 +269,11 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       e.preventDefault();
       e.stopPropagation();
     }
-    if (!canSkip && secondsRemaining > 0) {
+    if (!isSkipAllowed && secondsRemaining > 0) {
       setShowEarlyExitWarning(true);
       setTimeout(() => setShowEarlyExitWarning(false), 3000);
     } else {
-      handleCloseAd(e);
+      handleEmergencyExit(e);
     }
   };
 
@@ -266,17 +281,34 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
 
   const modalContent = (
     <div className="fixed inset-0 z-[9999999] flex flex-col justify-between bg-black text-white select-none overflow-hidden animate-fadeIn touch-auto">
-      {/* 🔴 Top Bar: Lock Timer & Big [ ✕ ] Button */}
-      <div className="relative z-50 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-black via-black/80 to-transparent">
-        {/* Left: Rewarded Video Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 backdrop-blur-md shadow-lg">
-          <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-          <span className="text-[11px] font-bold text-slate-200 uppercase tracking-wider">
-            {language === 'bn' ? 'রিওয়ার্ডেড ভিডিও' : 'Rewarded Video'}
-          </span>
-          <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-[9px] font-black text-amber-300">
-            +{rewardCoins} 🪙
-          </span>
+      {/* 🔴 Top Bar: Lock Timer & Big [ ✕ ] Button (Max z-index 2147483647) */}
+      <div 
+        className="relative flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-black via-black/85 to-transparent pointer-events-auto"
+        style={{ zIndex: 2147483647 }}
+      >
+        {/* Left: Instant Emergency Exit [ ← বের হন ] */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleEmergencyExit}
+            onTouchEnd={handleEmergencyExit}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-rose-950/80 border border-slate-700/80 hover:border-rose-500/50 text-slate-300 hover:text-white text-xs font-bold shadow-md cursor-pointer active:scale-95 transition touch-manipulation pointer-events-auto"
+            title="বিজ্ঞাপন বন্ধ করে বের হন"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-rose-400" />
+            <span>বের হন</span>
+          </button>
+
+          {/* Rewarded Video Badge */}
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 backdrop-blur-md shadow-lg">
+            <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+            <span className="text-[11px] font-bold text-slate-200 uppercase tracking-wider">
+              {language === 'bn' ? 'রিওয়ার্ডেড ভিডিও' : 'Rewarded Video'}
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-[9px] font-black text-amber-300">
+              +{rewardCoins} 🪙
+            </span>
+          </div>
         </div>
 
         {/* Center: Sound Audio Mute Toggle */}
@@ -288,30 +320,43 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
               setIsMuted(videoRef.current.muted);
             }
           }}
-          className="p-2 rounded-full bg-black/70 hover:bg-black/90 border border-white/20 text-slate-300 hover:text-white transition active:scale-95"
+          className="p-2 rounded-full bg-black/70 hover:bg-black/90 border border-white/20 text-slate-300 hover:text-white transition active:scale-95 cursor-pointer touch-manipulation pointer-events-auto"
           title={isMuted ? 'সাউন্ড অন করুন' : 'মিউট করুন'}
         >
           {isMuted ? <VolumeX className="w-4 h-4 text-slate-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
         </button>
 
-        {/* 🎯 Right: Live Countdown or Glowing [ ✕ ] Button */}
+        {/* 🎯 Right: Live Countdown, 5-Second Skip, or Glowing [ ✕ ] Button */}
         {secondsRemaining > 0 ? (
-          <button
-            type="button"
-            onClick={handleEarlyExitAttempt}
-            onTouchEnd={handleEarlyExitAttempt}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-950/90 border border-amber-500/80 text-xs font-mono font-black text-amber-300 shadow-xl backdrop-blur-md cursor-pointer active:scale-95 transition touch-manipulation pointer-events-auto"
-            title="ভিডিও পুরো দেখলে ৫০ কয়েন পাবেন"
-          >
-            <Lock className="w-3.5 h-3.5 text-amber-400" />
-            <span>{secondsRemaining}s</span>
-          </button>
+          isSkipAllowed ? (
+            <button
+              type="button"
+              onClick={handleEmergencyExit}
+              onTouchEnd={handleEmergencyExit}
+              className="flex items-center gap-1 px-3.5 py-2 rounded-full bg-slate-900/95 border border-amber-400 text-xs font-bold text-amber-300 hover:text-white shadow-xl backdrop-blur-md cursor-pointer active:scale-95 transition touch-manipulation pointer-events-auto"
+              title="বিজ্ঞাপন স্কিপ করে বের হন"
+            >
+              <span>স্কিপ করুন ✕</span>
+              <span className="font-mono text-[10px]">({secondsRemaining}s)</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleEarlyExitAttempt}
+              onTouchEnd={handleEarlyExitAttempt}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-950/90 border border-amber-500/80 text-xs font-mono font-black text-amber-300 shadow-xl backdrop-blur-md cursor-pointer active:scale-95 transition touch-manipulation pointer-events-auto"
+              title="ভিডিও পুরো দেখলে ৫০ কয়েন পাবেন"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              <span>{secondsRemaining}s</span>
+            </button>
+          )
         ) : (
           <button
             type="button"
             onClick={handleCloseAd}
             onTouchEnd={handleCloseAd}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-400 text-slate-950 text-xs sm:text-sm font-black shadow-[0_0_25px_#10b981] border-2 border-white animate-pulse cursor-pointer active:scale-90 transition-transform touch-manipulation z-50 pointer-events-auto"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-400 text-slate-950 text-xs sm:text-sm font-black shadow-[0_0_25px_#10b981] border-2 border-white animate-pulse cursor-pointer active:scale-90 transition-transform touch-manipulation pointer-events-auto"
             title="কয়েন গ্রহণ করে বন্ধ করুন"
           >
             <CheckCircle2 className="w-4 h-4 fill-slate-950 text-emerald-300 shrink-0" />
@@ -324,7 +369,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       {showEarlyExitWarning && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-rose-600/95 text-white text-xs font-bold shadow-2xl flex items-center gap-2 border border-rose-400/50 animate-bounce text-center max-w-xs pointer-events-none">
           <ShieldAlert className="w-4 h-4 shrink-0 text-white" />
-          <span>পুরো ভিডিও না দেখলে +{rewardCoins} কয়েন পাবেন না! আর মাত্র {secondsRemaining} সেকেন্ড বাকি।</span>
+          <span>৫ সেকেন্ড পর স্কিপ বাটন চালু হবে। আর মাত্র {Math.max(1, 5 - watchedSeconds)} সেকেন্ড।</span>
         </div>
       )}
 
@@ -404,7 +449,10 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       </div>
 
       {/* 🟢 Bottom Progress Bar & Completion Action (Above all navigation) */}
-      <div className="relative z-50 p-3 sm:p-4 pb-10 sm:pb-6 bg-gradient-to-t from-black via-black/95 to-transparent flex flex-col gap-2.5 pointer-events-auto">
+      <div 
+        className="relative p-3 sm:p-4 pb-10 sm:pb-6 bg-gradient-to-t from-black via-black/95 to-transparent flex flex-col gap-2.5 pointer-events-auto"
+        style={{ zIndex: 2147483647 }}
+      >
         {/* Real-time Progress Bar */}
         <div className="w-full bg-slate-800/80 h-2.5 rounded-full overflow-hidden p-0.5 shadow-inner">
           <div 
@@ -416,8 +464,22 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
         {/* Status Text & Bottom Button */}
         {secondsRemaining > 0 ? (
           <div className="flex items-center justify-between text-xs text-slate-300 px-1 font-semibold">
-            <span>⏱️ বিজ্ঞাপন পুরো দেখুন (রিওয়ার্ড লক রয়েছে)</span>
-            <span className="font-mono text-amber-300 font-black text-sm">বাকি: {secondsRemaining}s</span>
+            <div className="flex items-center gap-1.5">
+              <span>⏱️ বাকি: <span className="font-mono text-amber-300 font-black">{secondsRemaining}s</span></span>
+              {isSkipAllowed && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+                  স্কিপ চালু হয়েছে
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleEmergencyExit}
+              onTouchEnd={handleEmergencyExit}
+              className="text-xs text-rose-400 hover:text-rose-300 font-bold underline cursor-pointer p-1 touch-manipulation pointer-events-auto"
+            >
+              এখনই বন্ধ করুন ✕
+            </button>
           </div>
         ) : (
           <button

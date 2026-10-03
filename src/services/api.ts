@@ -6,10 +6,14 @@ export const setApiUserId = (uid: string) => {
   currentUserId = uid;
 };
 
-const headers = () => ({
-  'Content-Type': 'application/json',
-  'x-user-id': currentUserId
-});
+const headers = () => {
+  const storedUid = typeof window !== 'undefined' ? localStorage.getItem('we_user_id') || '' : '';
+  const effectiveUid = currentUserId || storedUid;
+  return {
+    'Content-Type': 'application/json',
+    'x-user-id': effectiveUid
+  };
+};
 
 // Helper to safely parse JSON and prevent Unexpected token '<' HTML crashes
 async function safeJsonFetch<T = any>(url: string, options?: RequestInit): Promise<T> {
@@ -86,6 +90,14 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier, password })
+    });
+  },
+
+  guestLogin: async (uid?: string): Promise<{ success: boolean; user?: User; message?: string }> => {
+    return await safeJsonFetch('/api/auth/guest-login', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ uid })
     });
   },
 

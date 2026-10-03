@@ -29,6 +29,12 @@
     <meta name="theme-color" content="#05070B" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <!-- 🚀 Instant Cache Buster: Ensures mobile users always get latest updates without changing link -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
     <link rel="manifest" href="/manifest.json" />
 
     <!-- Google Structured Data (JSON-LD) for Search Ranking & Rich Snippets -->
@@ -89,6 +95,16 @@
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js').then(function(reg) {
             reg.update();
+            reg.onupdatefound = function() {
+              const installingWorker = reg.installing;
+              if (installingWorker) {
+                installingWorker.onstatechange = function() {
+                  if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    window.location.reload();
+                  }
+                };
+              }
+            };
           }).catch(function(err) {
             console.log('SW registration note:', err);
           });

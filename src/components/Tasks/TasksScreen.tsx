@@ -22,7 +22,7 @@ import { MiniBannerAd } from '../Common/MiniBannerAd';
 type TaskType = 'math' | 'gk' | 'captcha' | 'daily_checkin';
 
 export const TasksScreen: React.FC = () => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, awardCoinsLocally } = useAuth();
   const { language, showToast, triggerConfetti } = useApp();
 
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
@@ -139,18 +139,20 @@ export const TasksScreen: React.FC = () => {
   // Step 4: Post-task ad finished -> Credit in database
   const handlePostAdFinished = async () => {
     setAdStage('NONE');
+    awardCoinsLocally(taskCoins);
+    soundService.playSuccessFanfare();
+    triggerConfetti();
+    showToast(
+      language === 'bn' ? `+${taskCoins} টাস্ক রিওয়ার্ড ওয়ালেটে যোগ হয়েছে! ✅` : `+${taskCoins} Task Reward Credited!`,
+      '',
+      'coin'
+    );
+    setActiveTask(null);
+
     try {
       const res = await api.claimTaskReward(activeTask || 'task', activeTask || 'task', taskCoins);
-      if (res.success) {
-        soundService.playSuccessFanfare();
-        triggerConfetti();
+      if (res && res.success) {
         await refreshUser();
-        showToast(
-          language === 'bn' ? `+${res.earnedCoins} টাস্ক রিওয়ার্ড ওয়ালেটে যোগ হয়েছে! ✅` : `+${res.earnedCoins} Task Reward Credited!`,
-          '',
-          'coin'
-        );
-        setActiveTask(null);
       }
     } catch (e) {
       console.error(e);

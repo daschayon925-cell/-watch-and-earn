@@ -12,7 +12,7 @@ interface LuckySpinProps {
 }
 
 export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, awardCoinsLocally } = useAuth();
   const { showToast, triggerConfetti, settings } = useApp();
 
   const [spinning, setSpinning] = useState(false);
@@ -71,17 +71,19 @@ export const LuckySpinModal: React.FC<LuckySpinProps> = ({ isOpen, onClose }) =>
   const handleClaimReward = async () => {
     if (!pendingClaim) return;
 
+    awardCoinsLocally(pendingClaim);
+    soundService.playCoinReward();
+    triggerConfetti();
+    showToast(
+      `🎉 +${pendingClaim} কয়েন জিতেছেন!`,
+      `আপনার ব্যালেন্সে কয়েন জমা হয়েছে।`,
+      'coin'
+    );
+
     try {
       const res = await api.claimSpinWheel(pendingClaim);
       if (res?.success) {
-        soundService.playCoinReward();
-        triggerConfetti();
         await refreshUser();
-        showToast(
-          `🎉 +${res.earnedCoins} কয়েন জিতেছেন!`,
-          `আজ আর ${res.remainingSpins || 0} টি স্পিন করতে পারবেন।`,
-          'coin'
-        );
       } else if (res?.limitReached) {
         showToast('আজকের স্পিনের কোটা শেষ!', res.message || 'আগামীকাল আবার আসুন।', 'info');
       }

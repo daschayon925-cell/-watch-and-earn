@@ -36,7 +36,7 @@ import { AdInterstitial } from '../Feed/AdInterstitial';
 import { getDailyYouTubeShorts, YouTubeReelItem } from '../../services/youtubeReelsService';
 
 export const WatchScreen: React.FC = () => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, awardCoinsLocally } = useAuth();
   const { setActiveTab, language, showToast, triggerConfetti, settings } = useApp();
 
   // Dynamic reward coins based on admin settings (syncs with videoReward and rewardedAdBonus)
@@ -350,23 +350,28 @@ export const WatchScreen: React.FC = () => {
     setWatchSeconds(0);
     startTimeRef.current = null;
 
+    const earned = currentRewardCoins || 50;
+    // 🪙 Immediate zero-latency local, cloud & UI credit!
+    awardCoinsLocally(earned);
+    setTotalEarnedSession(prev => prev + earned);
+    soundService.playCoinReward();
+    triggerConfetti();
+
+    showToast(
+      language === 'bn' 
+        ? `🎉 দারুণ! +${earned} কয়েন বিকাশ/নগদ ওয়ালেটে জমা হয়েছে!` 
+        : `🎉 Success! +${earned} coins added to your wallet!`,
+      language === 'bn' ? 'ভিডিও যেখানে থেমেছিল ঠিক সেখান থেকেই নিজে নিজে চালু হয়েছে।' : 'Video resumed from exact point.',
+      'coin'
+    );
+
     try {
       const res = await api.claimRewardedAd('reel_auto_loop');
-      const earned = res.earnedCoins || 50;
-      setTotalEarnedSession(prev => prev + earned);
-      soundService.playCoinReward();
-      triggerConfetti();
-      await refreshUser();
-
-      showToast(
-        language === 'bn' 
-          ? `🎉 দারুণ! +${earned} কয়েন বিকাশ/নগদ ওয়ালেটে জমা হয়েছে!` 
-          : `🎉 Success! +${earned} coins added to your wallet!`,
-        language === 'bn' ? 'ভিডিও যেখানে থেমেছিল ঠিক সেখান থেকেই নিজে নিজে চালু হয়েছে।' : 'Video resumed from exact point.',
-        'coin'
-      );
+      if (res && res.earnedCoins) {
+        await refreshUser();
+      }
     } catch (e) {
-      console.error('Ad reward error', e);
+      console.error('Ad reward sync error', e);
     }
 
     // Resume video playback EXACTLY at the timestamp where it paused!

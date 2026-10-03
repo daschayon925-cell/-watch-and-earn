@@ -24,7 +24,7 @@ import { MiniBannerAd } from '../Common/MiniBannerAd';
 type GameId = 'ludo' | 'carrom' | 'spin' | 'tictactoe' | 'snake';
 
 export const GamesScreen: React.FC = () => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, awardCoinsLocally } = useAuth();
   const { language, showToast, triggerConfetti } = useApp();
 
   const [selectedGame, setSelectedGame] = useState<GameId | null>(null);
@@ -135,17 +135,19 @@ export const GamesScreen: React.FC = () => {
   // Step 4: Post-game ad finished -> CLAIM REWARD IN BACKEND
   const handlePostAdFinished = async () => {
     setAdStage('NONE');
+    awardCoinsLocally(gameResultCoins);
+    soundService.playSuccessFanfare();
+    triggerConfetti();
+    showToast(
+      language === 'bn' ? `+${gameResultCoins} গেম রিওয়ার্ড যোগ হয়েছে! 🎮` : `+${gameResultCoins} Game Reward Added!`,
+      language === 'bn' ? 'ওয়ালেটে সরাসরি কয়েন জমা হয়েছে।' : 'Added to your wallet.',
+      'coin'
+    );
+
     try {
       const res = await api.claimGameReward(selectedGame || 'game', gameResultCoins);
-      if (res.success) {
-        soundService.playSuccessFanfare();
-        triggerConfetti();
+      if (res && res.success) {
         await refreshUser();
-        showToast(
-          language === 'bn' ? `+${res.earnedCoins} গেম রিওয়ার্ড যোগ হয়েছে! 🎮` : `+${res.earnedCoins} Game Reward Added!`,
-          language === 'bn' ? 'ওয়ালেটে সরাসরি কয়েন জমা হয়েছে।' : 'Added to your wallet.',
-          'coin'
-        );
       }
     } catch (e) {
       console.error(e);

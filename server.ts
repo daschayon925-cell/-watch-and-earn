@@ -584,11 +584,39 @@ const activeSessions: Map<string, WatchSessionData> = new Map();
 // In-Memory Phone OTP verification store: phone -> { code: string, expiresAt: number }
 const phoneOtps: Map<string, { code: string; expiresAt: number }> = new Map();
 
-// Helper to get current active user
+// Helper to get current active user (with auto-recovery for persistent multi-device sessions)
 function getUser(req: express.Request) {
-  const uid = req.headers['x-user-id'] as string;
+  const uid = ((req.headers['x-user-id'] as string) || '').trim();
   if (!uid) return null;
-  const user = db.users.find(u => u.uid === uid);
+  let user = db.users.find(u => u.uid === uid);
+  if (!user && (uid.startsWith('usr_') || uid.startsWith('user_'))) {
+    // 🛡️ Auto-restore / register this user in db.users so they NEVER lose coins or get 401 error!
+    user = {
+      uid,
+      displayName: 'ইউজার ' + uid.slice(-4),
+      email: `${uid}@watchandearn.bd`,
+      phone: '',
+      password: '',
+      phoneVerified: true,
+      photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      coins: 100,
+      pendingWithdrawalCoins: 0,
+      lifetimeCoins: 100,
+      todayCoins: 0,
+      todayVideosCount: 0,
+      streakDays: 1,
+      lastCheckInDate: new Date().toISOString().split('T')[0],
+      role: 'user',
+      accountStatus: 'active',
+      riskScore: 0,
+      referralCode: 'BD' + Math.floor(1000 + Math.random() * 9000),
+      referralCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    db.users.push(user);
+    saveDbToDisk();
+  }
   return user || null;
 }
 
@@ -876,6 +904,47 @@ app.post('/api/auth/login', (req, res) => {
     success: true,
     user,
     message: 'লগইন সফল হয়েছে!'
+  });
+});
+
+// ⚡ 1-Click Instant Guest Login for frictionless onboarding on any device
+app.post('/api/auth/guest-login', (req, res) => {
+  const requestedUid = req.body?.uid;
+  const guestUid = requestedUid || ('usr_guest_' + Date.now() + '_' + Math.floor(100 + Math.random() * 900));
+  
+  let user = db.users.find(u => u.uid === guestUid);
+  if (!user) {
+    user = {
+      uid: guestUid,
+      displayName: 'গেস্ট মেম্বার',
+      email: `${guestUid}@watchandearn.bd`,
+      phone: '',
+      password: '',
+      phoneVerified: true,
+      photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+      coins: 100,
+      pendingWithdrawalCoins: 0,
+      lifetimeCoins: 100,
+      todayCoins: 0,
+      todayVideosCount: 0,
+      streakDays: 1,
+      lastCheckInDate: new Date().toISOString().split('T')[0],
+      role: 'user',
+      accountStatus: 'active',
+      riskScore: 0,
+      referralCode: 'BD' + Math.floor(1000 + Math.random() * 9000),
+      referralCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    db.users.unshift(user);
+    saveDbToDisk();
+  }
+
+  res.json({
+    success: true,
+    user,
+    message: 'গেস্ট মোডে স্বাগতম! ভিডিও দেখে কয়েন আয় শুরু করুন।'
   });
 });
 
@@ -1302,6 +1371,8 @@ app.post('/api/reward/ad-reward', (req, res) => {
     status: 'COMPLETED',
     createdAt: new Date().toISOString()
   });
+
+  saveDbToDisk();
 
   res.json({
     success: true,
