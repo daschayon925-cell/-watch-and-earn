@@ -5,12 +5,12 @@ import { triggerAdReward } from '../../services/adBonus';
 
 export const AdsterraScriptInjector: React.FC = () => {
   const { settings, showToast, activeTab } = useApp();
-  const { awardCoinsLocally } = useAuth();
+  const { user, awardCoinsLocally } = useAuth();
   const isExecutingRef = useRef(false);
 
   useEffect(() => {
-    // 🛡️ CRITICAL: Never inject any ad scripts or popunder listeners inside Admin Panel!
-    if ((activeTab as string) === 'admin') {
+    // 🛡️ CRITICAL: Never inject any ad scripts or popunder listeners inside Admin Panel or during Login Modal!
+    if (!user || (activeTab as string) === 'admin') {
       const socialScript = document.getElementById('adsterra-dynamic-social-bar-script');
       const popScript = document.getElementById('adsterra-official-popunder-script');
       const mScript = document.getElementById('monetag-dynamic-tag-script');
@@ -161,7 +161,7 @@ export const AdsterraScriptInjector: React.FC = () => {
       clearInterval(socialInterval);
       window.removeEventListener('click', triggerSmartPopunder, { capture: true });
     };
-  }, [settings?.adsConfig, activeTab]);
+  }, [settings?.adsConfig, activeTab, user]);
 
   return null;
 };

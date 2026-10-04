@@ -235,43 +235,45 @@ export const TasksScreen: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 py-4 pb-24 space-y-4">
+    <div className="w-full max-w-md mx-auto px-4 pt-3 pb-24 space-y-4">
       {/* 🚀 Main Navigation Tabs: Offerwall Hub vs Daily Tasks */}
-      <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-lg">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('offerwall');
-            setActiveTask(null);
-          }}
-          className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl font-black text-xs transition-all ${
-            activeTab === 'offerwall'
-              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md shadow-amber-500/20'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Flame className={`w-3.5 h-3.5 ${activeTab === 'offerwall' ? 'text-slate-950' : 'text-amber-400'}`} />
-          <span>CPA অফারওয়াল ($)</span>
-        </button>
+      <div className="p-1.5 rounded-2xl bg-slate-900/95 border border-slate-800 shadow-xl backdrop-blur-md">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('offerwall');
+              setActiveTask(null);
+            }}
+            className={`flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl font-black text-xs transition-all cursor-pointer ${
+              activeTab === 'offerwall'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md shadow-amber-500/30'
+                : 'text-slate-400 hover:text-white bg-slate-950/40'
+            }`}
+          >
+            <Flame className={`w-4 h-4 ${activeTab === 'offerwall' ? 'text-slate-950' : 'text-amber-400'}`} />
+            <span>CPA অফারওয়াল ($)</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('daily_tasks');
-          }}
-          className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl font-black text-xs transition-all ${
-            activeTab === 'daily_tasks'
-              ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/20'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <CheckSquare className={`w-3.5 h-3.5 ${activeTab === 'daily_tasks' ? 'text-white' : 'text-purple-400'}`} />
-          <span>ডেইলি কুইজ ও ক্যাপচা</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('daily_tasks');
+            }}
+            className={`flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl font-black text-xs transition-all cursor-pointer ${
+              activeTab === 'daily_tasks'
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/30'
+                : 'text-slate-400 hover:text-white bg-slate-950/40'
+            }`}
+          >
+            <CheckSquare className={`w-4 h-4 ${activeTab === 'daily_tasks' ? 'text-white' : 'text-purple-400'}`} />
+            <span>সাধারণ টাস্ক ও কুইজ 📝</span>
+          </button>
+        </div>
       </div>
 
       {activeTab === 'offerwall' ? (
-        <OfferwallHub />
+        <OfferwallHub onSwitchToDailyTasks={() => setActiveTab('daily_tasks')} />
       ) : (
         <>
           {/* Header Banner */}

@@ -89,7 +89,7 @@ const BOTTOM_DIRECT_LINK_ADS: BottomDirectLinkItem[] = [
 
 export const ContinuousSocialBar: React.FC = () => {
   const { settings, showToast, activeTab } = useApp();
-  const { awardCoinsLocally } = useAuth();
+  const { user, awardCoinsLocally } = useAuth();
 
   // Top Social Bar State (Push / Chat style)
   const [topIndex, setTopIndex] = useState(0);
@@ -101,8 +101,8 @@ export const ContinuousSocialBar: React.FC = () => {
   const [isBottomVisible, setIsBottomVisible] = useState(false);
   const [isBottomDismissed, setIsBottomDismissed] = useState(false);
 
-  // 🛡️ Completely disable all social bar ads in admin panel
-  if ((activeTab as string) === 'admin') {
+  // 🛡️ Completely disable all social bar ads in admin panel and during auth modal
+  if (!user || (activeTab as string) === 'admin') {
     return null;
   }
 
@@ -191,7 +191,7 @@ export const ContinuousSocialBar: React.FC = () => {
       {isTopVisible && !isTopDismissed && (
         <aside 
           aria-label="Social Bar Alert"
-          className="fixed top-16 left-3 right-3 sm:left-auto sm:right-4 sm:w-84 z-50 animate-in slide-in-from-top duration-300 pointer-events-auto shadow-2xl"
+          className="fixed top-20 left-3 right-3 sm:left-auto sm:right-4 sm:w-84 z-40 animate-in slide-in-from-top duration-300 pointer-events-auto shadow-2xl"
         >
           <div 
             onClick={(e) => {

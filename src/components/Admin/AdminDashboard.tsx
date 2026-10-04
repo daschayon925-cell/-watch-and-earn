@@ -137,7 +137,8 @@ export const AdminDashboard: React.FC = () => {
       const cloudUsers = await cloudDb.getAllUsers();
       const mergedUsers = [...(usrs || [])];
       cloudUsers.forEach(cu => {
-        const existing = mergedUsers.find(u => u.uid === cu.uid || (u.phone && cu.phone && u.phone === cu.phone));
+        if (!cu || !cu.uid) return;
+        const existing = mergedUsers.find(u => u && (u.uid === cu.uid || (u.phone && cu.phone && u.phone === cu.phone)));
         if (!existing) {
           mergedUsers.push(cu);
         } else {
@@ -224,11 +225,12 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleUserAction = async (uid: string, action: string, delta?: number) => {
+    if (!uid) return;
     try {
-      const target = usersList.find(u => u.uid === uid);
+      const target = usersList.find(u => u && u.uid === uid);
       const res = await api.adminUserAction(uid, action, delta, coinAdjustReason || 'Admin Console Action', target?.displayName, target?.phone);
-      if (res.success && res.user) {
-        setUsersList(prev => prev.map(u => u.uid === uid ? res.user : u));
+      if (res?.success && res?.user && res.user.uid) {
+        setUsersList(prev => prev.map(u => u && u.uid === uid ? res.user! : u));
         showToast('ইউজার অ্যাকশন সম্পন্ন হয়েছে 🎉', `${res.user.displayName || 'ইউজার'} এর নতুন ব্যালেন্স: ${res.user.coins} কয়েন`, 'success');
         setCoinAdjustUser(null);
       }
@@ -2334,7 +2336,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
       {/* 🪙 COIN ADJUSTMENT MODAL */}
-      {coinAdjustUser && (
+      {coinAdjustUser && coinAdjustUser.uid && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-sm bg-slate-900 border border-amber-500/40 rounded-3xl p-5 shadow-2xl text-left space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -2342,7 +2344,7 @@ export const AdminDashboard: React.FC = () => {
                 <span className="text-2xl">🪙</span>
                 <div>
                   <h3 className="font-bold text-sm text-white">{coinAdjustUser.displayName || 'ইউজার'}</h3>
-                  <p className="text-[11px] text-slate-400 font-mono">UID: {coinAdjustUser.uid.slice(0, 16)}...</p>
+                  <p className="text-[11px] text-slate-400 font-mono">UID: {coinAdjustUser.uid ? coinAdjustUser.uid.slice(0, 16) : ''}...</p>
                 </div>
               </div>
               <button
@@ -2356,7 +2358,7 @@ export const AdminDashboard: React.FC = () => {
             <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 flex justify-between items-center">
               <span className="text-xs text-slate-400">বর্তমান ব্যালেন্স:</span>
               <span className="text-base font-extrabold text-amber-400 flex items-center gap-1">
-                <span>🪙</span> {coinAdjustUser.coins.toLocaleString()} কয়েন
+                <span>🪙</span> {(coinAdjustUser.coins || 0).toLocaleString()} কয়েন
               </span>
             </div>
 
@@ -2403,7 +2405,9 @@ export const AdminDashboard: React.FC = () => {
                     showToast('সঠিক পরিমাণ লিখুন', '', 'error');
                     return;
                   }
-                  handleUserAction(coinAdjustUser.uid, 'adjust_coins', val);
+                  if (coinAdjustUser?.uid) {
+                    handleUserAction(coinAdjustUser.uid, 'adjust_coins', val);
+                  }
                 }}
                 className="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-sm shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
               >

@@ -376,6 +376,18 @@ const db: {
       monetagTagCode: '<script src="https://5gvci.com/act/files/tag.min.js?z=11948885" data-cfasync="false" async></script>',
       monetagDirectLink: ''
     },
+    offerwallsConfig: {
+      enabled: true,
+      cpaleadEnabled: true,
+      cpaleadApiKey: '6879945464ff4be390fdabff423e4eb0',
+      cpaleadPublisherId: '3364429',
+      cpaleadUrl: 'https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429',
+      monlixEnabled: true,
+      monlixAppId: '',
+      timewallEnabled: true,
+      timewallUrl: '',
+      customTasksRewardMultiplier: 1.0
+    },
     activeNotice: {
       enabled: true,
       title: '🚨 ব্যানার ও পপআন্ডার বিজ্ঞাপন বোনাস নোটিশ 🇧🇩',

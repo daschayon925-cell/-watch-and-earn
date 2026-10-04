@@ -223,23 +223,23 @@ export const HomeScreen: React.FC = () => {
                   <span>🔒 শুধুমাত্র আপনার জন্য ব্যক্তিগত নোটিশ</span>
                 </span>
                 <span className="text-[9px] text-slate-400 font-mono">
-                  {user.privateNotice.createdAt ? new Date(user.privateNotice.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                  {user?.privateNotice?.createdAt ? new Date(user.privateNotice.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                 </span>
               </div>
               <h4 className="text-xs font-black text-white leading-snug">
-                {user.privateNotice.title}
+                {user?.privateNotice?.title}
               </h4>
               <p className="text-xs text-cyan-100/90 leading-relaxed bg-black/40 p-2.5 rounded-xl border border-cyan-500/20 font-sans">
-                {user.privateNotice.message}
+                {user?.privateNotice?.message}
               </p>
               <div className="flex items-center gap-2 pt-1">
-                {user.privateNotice.linkTab && (
+                {user?.privateNotice?.linkTab && (
                   <button
                     onClick={() => setActiveTab(user.privateNotice?.linkTab as any)}
                     className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black transition active:scale-95 shadow-md shadow-cyan-500/20 flex items-center gap-1"
                   >
                     <span>
-                      {user.privateNotice.linkTab === 'wallet' ? 'ওয়ালেটে যান ➔' : (user.privateNotice.linkTab === 'watch' ? 'ভিডিও দেখুন ➔' : (user.privateNotice.linkTab === 'rewards' ? 'বোনাস সেন্টারে যান ➔' : 'পেজে যান ➔'))}
+                      {user?.privateNotice?.linkTab === 'wallet' ? 'ওয়ালেটে যান ➔' : (user?.privateNotice?.linkTab === 'watch' ? 'ভিডিও দেখুন ➔' : (user?.privateNotice?.linkTab === 'rewards' ? 'বোনাস সেন্টারে যান ➔' : 'পেজে যান ➔'))}
                     </span>
                   </button>
                 )}

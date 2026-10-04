@@ -75,7 +75,7 @@ export const ProfileScreen: React.FC = () => {
   ];
 
   const handleCopyUid = () => {
-    if (!user) return;
+    if (!user || !user.uid) return;
     navigator.clipboard.writeText(user.uid);
     setCopiedUid(true);
     showToast(language === 'bn' ? 'ইউজার আইডি কপি হয়েছে' : 'UID copied', '', 'info');

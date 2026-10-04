@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
-      if (!googleUser) {
+      if (!googleUser || !googleUser.uid) {
         return { success: false, fallbackRequired: true, message: 'গুগল তথ্য পাওয়া যায়নি' };
       }
 
@@ -153,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (currentCached) {
         try {
           const parsed = JSON.parse(currentCached);
-          if (parsed.coins) cachedCoins = parsed.coins;
+          if (parsed?.coins) cachedCoins = parsed.coins;
         } catch {}
       }
       if (user && user.coins > cachedCoins) cachedCoins = user.coins;
@@ -166,7 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cachedCoins
       });
 
-      if (res.success && res.user) {
+      if (res?.success && res?.user && res.user.uid) {
         const finalUser = res.user;
         setApiUserId(finalUser.uid);
         localStorage.setItem('we_user_id', finalUser.uid);
@@ -175,7 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cloudDb.saveUser(finalUser).catch(() => {});
         return { success: true, message: res.message || 'গুগল লগইন সফল হয়েছে!' };
       } else {
-        throw new Error(res.message || 'গুগল লগইন সম্পন্ন করা যায়নি');
+        throw new Error(res?.message || 'গুগল লগইন সম্পন্ন করা যায়নি');
       }
     } catch (err: any) {
       console.error('Google Auth Error:', err);
@@ -298,7 +298,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const registerUser = async (data: { displayName: string; phone: string; password?: string; otpCode?: string; email?: string; referralCodeInput?: string }) => {
     try {
       const res = await api.register(data);
-      if (res.success && res.user) {
+      if (res?.success && res?.user && res.user.uid) {
         setApiUserId(res.user.uid);
         localStorage.setItem('we_user_id', res.user.uid);
         setUser(res.user);
@@ -306,7 +306,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cloudDb.saveUser(res.user).catch(() => {});
         return { success: true, message: res.message, bonusAdded: res.bonusAdded };
       }
-      return { success: false, message: res.message || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে।' };
+      return { success: false, message: res?.message || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে।' };
     } catch (err: any) {
       return { success: false, message: err.message || 'নেটওয়ার্ক সমস্যা।' };
     }
@@ -315,7 +315,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginUser = async (identifier: string, password?: string) => {
     try {
       const res = await api.login(identifier, password);
-      if (res.success && res.user) {
+      if (res?.success && res?.user && res.user.uid) {
         setApiUserId(res.user.uid);
         localStorage.setItem('we_user_id', res.user.uid);
         setUser(res.user);
@@ -327,7 +327,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // If server lost state due to Render restart, check Cloud Firestore directly!
       const clean = (identifier || '').replace(/\s+/g, '');
       const cloudUser = await cloudDb.findUserByPhone(clean);
-      if (cloudUser) {
+      if (cloudUser && cloudUser.uid) {
         if (cloudUser.password && password && cloudUser.password !== password.trim()) {
           return { success: false, message: 'ভুল পাসওয়ার্ড! আপনার সঠিক পাসওয়ার্ডটি লিখুন।' };
         }
@@ -346,12 +346,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true, message: 'লগইন সফল হয়েছে (ক্লাউড ডাটাবেস থেকে পুনরুদ্ধার করা হয়েছে)!' };
       }
 
-      return { success: false, message: res.message || 'লগইন ব্যর্থ হয়েছে।' };
+      return { success: false, message: res?.message || 'লগইন ব্যর্থ হয়েছে।' };
     } catch (err: any) {
       // Cloud fallback on network error
       const clean = (identifier || '').replace(/\s+/g, '');
       const cloudUser = await cloudDb.findUserByPhone(clean);
-      if (cloudUser) {
+      if (cloudUser && cloudUser.uid) {
         if (cloudUser.password && password && cloudUser.password !== password.trim()) {
           return { success: false, message: 'ভুল পাসওয়ার্ড! আপনার সঠিক পাসওয়ার্ডটি লিখুন।' };
         }
@@ -366,7 +366,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfile = async (data: { displayName?: string; phone?: string; photoURL?: string; biometricType?: 'fingerprint' | 'face' | 'none'; biometricEnrolled?: boolean; biometricPhoto?: string; webAuthnCredentialId?: string }) => {
     try {
-      if (user) {
+      if (user && user.uid) {
         const mergedUser: User = {
           ...user,
           ...data,
@@ -374,14 +374,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(mergedUser);
         localStorage.setItem('we_user_cached_profile', JSON.stringify(mergedUser));
-        if (data.photoURL) {
+        if (data.photoURL && user.uid) {
           localStorage.setItem(`we_user_photo_${user.uid}`, data.photoURL);
         }
         cloudDb.saveUser(mergedUser).catch(() => {});
       }
 
       const updated = await api.updateProfile(data);
-      if (updated) {
+      if (updated && updated.uid) {
         const finalUser: User = {
           ...updated,
           photoURL: data.photoURL || updated.photoURL || user?.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
@@ -393,7 +393,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       console.error('Update profile error', err);
       // Even on API error, maintain local & cloud Firestore persist
-      if (user) {
+      if (user && user.uid) {
         const fallbackUser: User = {
           ...user,
           ...data,
@@ -401,7 +401,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(fallbackUser);
         localStorage.setItem('we_user_cached_profile', JSON.stringify(fallbackUser));
-        if (data.photoURL) {
+        if (data.photoURL && user.uid) {
           localStorage.setItem(`we_user_photo_${user.uid}`, data.photoURL);
         }
         cloudDb.saveUser(fallbackUser).catch(() => {});
