@@ -7,7 +7,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   loginDemo: (uid?: string) => Promise<void>;
-  loginWithGoogle: () => Promise<{ success: boolean; message: string }>;
+  loginWithGoogle: () => Promise<{ success: boolean; message: string; fallbackRequired?: boolean }>;
+  loginWithGoogleDirect: (data: { email: string; displayName?: string; photoURL?: string }) => Promise<{ success: boolean; message: string }>;
   sendPhoneOtp: (phone: string) => Promise<{ success: boolean; message: string; otpCode?: string }>;
   registerUser: (data: { displayName: string; phone: string; password?: string; otpCode?: string; email?: string; referralCodeInput?: string; biometricType?: 'fingerprint' | 'face' | 'none'; biometricEnrolled?: boolean; biometricPhoto?: string; webAuthnCredentialId?: string; photoURL?: string }) => Promise<{ success: boolean; message: string; bonusAdded?: number }>;
   loginUser: (identifier: string, password?: string) => Promise<{ success: boolean; message: string }>;
@@ -69,7 +70,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginWithGoogle = async (): Promise<{ success: boolean; message: string }> => {
+  const loginWithGoogleDirect = async (data: { email: string; displayName?: string; photoURL?: string }): Promise<{ success: boolean; message: string }> => {
+    setLoading(true);
+    try {
+      const cleanEmail = (data.email || '').trim().toLowerCase();
+      if (!cleanEmail || !cleanEmail.includes('@')) {
+        throw new Error('অনুগ্রহ করে সঠিক গুগল/জিমেইল অ্যাড্রেস লিখুন।');
+      }
+
+      let cachedCoins = 0;
+      const currentCached = localStorage.getItem('we_user_cached_profile');
+      if (currentCached) {
+        try {
+          const parsed = JSON.parse(currentCached);
+          if (parsed.coins) cachedCoins = parsed.coins;
+        } catch {}
+      }
+      if (user && user.coins > cachedCoins) cachedCoins = user.coins;
+
+      const baseName = data.displayName?.trim() || cleanEmail.split('@')[0];
+      const autoPhoto = data.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(baseName)}&background=0284c7&color=fff&bold=true`;
+      const generatedUid = 'usr_g_' + cleanEmail.replace(/[^a-zA-Z0-9]/g, '_');
+
+      const res = await api.googleLogin({
+        uid: generatedUid,
+        email: cleanEmail,
+        displayName: baseName,
+        photoURL: autoPhoto,
+        cachedCoins
+      });
+
+      if (res.success && res.user) {
+        const finalUser = res.user;
+        setApiUserId(finalUser.uid);
+        localStorage.setItem('we_user_id', finalUser.uid);
+        localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
+        setUser(finalUser);
+        cloudDb.saveUser(finalUser).catch(() => {});
+        return { success: true, message: res.message || 'গুগল অ্যাকাউন্ট সফলভাবে কানেক্ট হয়েছে!' };
+      } else {
+        throw new Error(res.message || 'গুগল লগইন সম্পন্ন করা যায়নি');
+      }
+    } catch (err: any) {
+      return { success: false, message: err.message || 'গুগল লগইন সম্পন্ন করা যায়নি।' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async (): Promise<{ success: boolean; message: string; fallbackRequired?: boolean }> => {
     setLoading(true);
     try {
       const { signInWithPopup, GoogleAuthProvider } = await import('firebase/auth');
@@ -83,16 +132,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const result = await signInWithPopup(auth, provider);
         googleUser = result.user;
       } catch (popupErr: any) {
-        console.warn('Popup login note:', popupErr);
-        throw new Error(
-          popupErr.code === 'auth/popup-blocked'
-            ? 'ব্রাউজার পপ-আপ ব্লক করেছে। অনুগ্রহ করে অনুমতি দিন অথবা আবার চাপ দিন।'
-            : (popupErr.message || 'গুগল সাইন-ইন সম্পন্ন হয়নি।')
-        );
+        console.warn('Firebase Popup Login Notice:', popupErr);
+        // Fallback required if browser blocks popup or domain isn't authorized
+        return {
+          success: false,
+          fallbackRequired: true,
+          message: popupErr.code === 'auth/popup-blocked'
+            ? 'ব্রাউজারে পপ-আপ ব্লক থাকায় বিকল্প উপায়ে গুগল অ্যাকাউন্ট নির্বাচন করুন।'
+            : 'গুগল অ্যাকাউন্ট নির্বাচন করে ১ ক্লিকে লগইন করুন।'
+        };
       }
 
       if (!googleUser) {
-        throw new Error('গুগল তথ্য পাওয়া যায়নি');
+        return { success: false, fallbackRequired: true, message: 'গুগল তথ্য পাওয়া যায়নি' };
       }
 
       // Collect any cached guest coins so they are NOT lost!
@@ -128,8 +180,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       console.error('Google Auth Error:', err);
       return { 
-        success: false, 
-        message: err.message || 'গুগল লগইন সম্পন্ন হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন।' 
+        success: false,
+        fallbackRequired: true,
+        message: err.message || 'গুগল সাইন-ইন সম্পন্ন করতে নিচে ইমেইল নির্বাচন করুন।' 
       };
     } finally {
       setLoading(false);
@@ -412,7 +465,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginDemo, loginWithGoogle, sendPhoneOtp, registerUser, loginUser, updateProfile, toggleAdminRole, logout, refreshUser, awardCoinsLocally }}>
+    <AuthContext.Provider value={{ user, loading, loginDemo, loginWithGoogle, loginWithGoogleDirect, sendPhoneOtp, registerUser, loginUser, updateProfile, toggleAdminRole, logout, refreshUser, awardCoinsLocally }}>
       {children}
     </AuthContext.Provider>
   );
