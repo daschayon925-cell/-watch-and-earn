@@ -32,72 +32,16 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
   const initialDuration = durationSeconds !== undefined ? durationSeconds : (settings?.adsConfig?.rewardedVideoDurationSeconds || 20);
   const [secondsRemaining, setSecondsRemaining] = useState<number>(initialDuration);
   const [canSkip, setCanSkip] = useState<boolean>(false);
-  const [isMuted, setIsMuted] = useState<boolean>(true);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
   const [showEarlyExitWarning, setShowEarlyExitWarning] = useState<boolean>(false);
   const [confirmExitOpen, setConfirmExitOpen] = useState<boolean>(false);
+  const [hasClickedAd, setHasClickedAd] = useState<boolean>(false);
   const [adClickedNotice, setAdClickedNotice] = useState<boolean>(false);
+  const [autoOpenedPhase1, setAutoOpenedPhase1] = useState<boolean>(false);
+  const [autoOpenedPhase2, setAutoOpenedPhase2] = useState<boolean>(false);
   const [adSessionId, setAdSessionId] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const adsterraContainerRef = useRef<HTMLDivElement | null>(null);
-
-  // Initialize secure backend ad session on start
-  useEffect(() => {
-    api.startRewardedAdSession().then(res => {
-      if (res && res.success && res.adSessionId) {
-        setAdSessionId(res.adSessionId);
-      }
-    }).catch(() => {});
-  }, []);
-
-  const customAdsterraCode = settings?.adsConfig?.adsterraRewardedVideoCode?.trim();
-
-  // Inject real Adsterra script tag or VAST player if provided
-  useEffect(() => {
-    if (customAdsterraCode && adsterraContainerRef.current) {
-      adsterraContainerRef.current.innerHTML = '';
-      try {
-        const range = document.createRange();
-        const documentFragment = range.createContextualFragment(customAdsterraCode);
-        adsterraContainerRef.current.appendChild(documentFragment);
-      } catch (e) {
-        console.error('Failed to inject Adsterra video code:', e);
-      }
-    }
-  }, [customAdsterraCode]);
-
-  // 🛡️ Hide floating social bar overlays and lock body scroll while modal is active
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.body.classList.add('rewarded-ad-active');
-    }
-    return () => {
-      if (typeof document !== 'undefined') {
-        document.body.classList.remove('rewarded-ad-active');
-      }
-    };
-  }, []);
-
-  // 🛡️ Mobile Hardware Back Button (বিজ্ঞাপন শেষ না হলে সতর্কতা)
-  useEffect(() => {
-    try {
-      window.history.pushState({ interstitialOpen: true }, '', window.location.href);
-    } catch {
-      // Ignore
-    }
-
-    const handlePopState = () => {
-      if (secondsRemaining <= 0) {
-        onAdCompleted(adSessionId || undefined);
-      } else {
-        setConfirmExitOpen(true);
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [secondsRemaining, onAdCompleted]);
 
   // High-converting Rewarded Video Ads with authentic video & sponsor badges
   const rewardedAds = [
@@ -193,36 +137,40 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
     }
   ];
 
-  // 🎬 3-Ad Chain Sequence across 50 seconds (1-17s: Ad 1, 18-34s: Ad 2, 35-50s: Ad 3)
-  const [selectedAdIndex] = useState(() => Math.floor(Math.random() * rewardedAds.length));
-  const elapsedTime = initialDuration - secondsRemaining;
-  const currentAdStep = Math.min(3, Math.floor((elapsedTime / initialDuration) * 3) + 1); // 1, 2, or 3
-  const currentAd = rewardedAds[(selectedAdIndex + currentAdStep - 1) % rewardedAds.length] || rewardedAds[0];
-  const [hasClickedAd, setHasClickedAd] = useState<boolean>(false);
+  const currentAd = rewardedAds[(adNumber - 1) % rewardedAds.length] || rewardedAds[0];
 
-  // Opening sponsor direct link (Smart 1-open-per-tap to prevent annoying multiple tab spam)
+  // 🎬 Dual-Sponsor 2-Stage Sequence: Stage 1 = Adsterra (First half), Stage 2 = Monetag (Second half)
+  const isSecondPhase = (initialDuration - secondsRemaining) >= (initialDuration / 2);
+  const currentNetwork = isSecondPhase ? 'Monetag' : 'Adsterra';
+
+  // Opening sponsor direct link (Directs to Adsterra during Phase 1, Monetag during Phase 2)
   const handleAdClick = (e?: React.MouseEvent | React.TouchEvent, forceOpen: boolean = false) => {
     if (e) {
       e.stopPropagation();
     }
-    // If user already clicked and this is just an accidental viewport tap, don't spam new tabs
     if (hasClickedAd && !forceOpen) {
       return;
     }
 
     const adsterraLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
-    const monetagLink = settings?.adsConfig?.monetagDirectLink?.trim();
-    // High-CPM smart rotation: alternate between Adsterra & Monetag without collision
-    let targetUrl = adsterraLink;
-    if (monetagLink && Math.random() > 0.5) {
-      targetUrl = monetagLink;
-    }
-    if (!targetUrl) {
-      targetUrl = currentAd.ctaUrl;
-    }
+    const monetagLink = settings?.adsConfig?.monetagDirectLink?.trim() || 'https://5gvci.com/act/files/tag.min.js?z=11948885';
+    
+    // Dynamic routing: Phase 1 goes to Adsterra, Phase 2 goes to Monetag
+    const targetUrl = isSecondPhase ? (monetagLink || adsterraLink) : adsterraLink;
+
     if (typeof window !== 'undefined') {
       try {
-        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+        const openedWin = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+        if (!openedWin) {
+          // If popup blocked, use hidden anchor or fallback
+          const a = document.createElement('a');
+          a.href = targetUrl;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
       } catch {
         try {
           window.location.href = targetUrl;
@@ -232,8 +180,89 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
 
     setHasClickedAd(true);
     setAdClickedNotice(true);
-    setTimeout(() => setAdClickedNotice(false), 4000);
+    setTimeout(() => setAdClickedNotice(false), 5000);
   };
+
+  // 🚀 AUTOMATIC AD LAUNCH ON MOUNT (কোন চাপ ছাড়াই নিজে নিজে অ্যাড চালু হবে)
+  useEffect(() => {
+    if (!autoOpenedPhase1) {
+      const autoTimer = setTimeout(() => {
+        setAutoOpenedPhase1(true);
+        handleAdClick(undefined, true);
+      }, 500);
+      return () => clearTimeout(autoTimer);
+    }
+  }, [autoOpenedPhase1]);
+
+  // 🚀 AUTOMATIC AD LAUNCH ON PHASE 2 (Monetag Phase)
+  useEffect(() => {
+    if (isSecondPhase && !autoOpenedPhase2) {
+      setAutoOpenedPhase2(true);
+      const autoTimer = setTimeout(() => {
+        handleAdClick(undefined, true);
+      }, 400);
+      return () => clearTimeout(autoTimer);
+    }
+  }, [isSecondPhase, autoOpenedPhase2]);
+
+  // Initialize secure backend ad session on start
+  useEffect(() => {
+    api.startRewardedAdSession().then(res => {
+      if (res && res.success && res.adSessionId) {
+        setAdSessionId(res.adSessionId);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const customAdsterraCode = settings?.adsConfig?.adsterraRewardedVideoCode?.trim();
+
+  // Inject real Adsterra script tag or VAST player if provided
+  useEffect(() => {
+    if (customAdsterraCode && adsterraContainerRef.current) {
+      adsterraContainerRef.current.innerHTML = '';
+      try {
+        const range = document.createRange();
+        const documentFragment = range.createContextualFragment(customAdsterraCode);
+        adsterraContainerRef.current.appendChild(documentFragment);
+      } catch (e) {
+        console.error('Failed to inject Adsterra video code:', e);
+      }
+    }
+  }, [customAdsterraCode]);
+
+  // 🛡️ Hide floating social bar overlays and lock body scroll while modal is active
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.classList.add('rewarded-ad-active');
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('rewarded-ad-active');
+      }
+    };
+  }, []);
+
+  // 🛡️ Mobile Hardware Back Button (বিজ্ঞাপন শেষ না হলে সতর্কতা)
+  useEffect(() => {
+    try {
+      window.history.pushState({ interstitialOpen: true }, '', window.location.href);
+    } catch {
+      // Ignore
+    }
+
+    const handlePopState = () => {
+      if (secondsRemaining <= 0) {
+        onAdCompleted(adSessionId || undefined);
+      } else {
+        setConfirmExitOpen(true);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [secondsRemaining, onAdCompleted]);
 
   useEffect(() => {
     // ⏱️ Strict Countdown Timer - NO EARLY REWARDS (Pauses if tab is hidden for Maximum CPM)
@@ -340,13 +369,15 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
             <span>বের হন</span>
           </button>
 
-          {/* 3-Ad Chain Badge: ১/৩, ২/৩, ৩/৩ */}
+          {/* Dual-Phase Ad Chain Badge */}
           <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-slate-900/90 border border-amber-500/50 backdrop-blur-md shadow-lg">
-            <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400 animate-pulse" />
-            <span className="text-[10px] sm:text-[11px] font-black text-amber-300 uppercase tracking-wider">
-              {language === 'bn' ? `অ্যাড ${currentAdStep}/৩ (মোট ৫০ সে.)` : `Ad ${currentAdStep}/3 (50s)`}
+            <Zap className={`w-3.5 h-3.5 ${isSecondPhase ? 'text-purple-400 fill-purple-400' : 'text-amber-400 fill-amber-400'} animate-pulse`} />
+            <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-wider ${isSecondPhase ? 'text-purple-300' : 'text-amber-300'}`}>
+              {language === 'bn' 
+                ? (isSecondPhase ? '🟣 ধাপ ২/২: Monetag স্পন্সর' : '🟡 ধাপ ১/২: Adsterra স্পন্সর') 
+                : (isSecondPhase ? '🟣 Phase 2/2: Monetag' : '🟡 Phase 1/2: Adsterra')}
             </span>
-            <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-[9px] font-black text-amber-300">
+            <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-[9px] font-black text-emerald-300">
               +{rewardCoins} 🪙
             </span>
           </div>
@@ -396,25 +427,27 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       {/* 🚨 Big Notice Banner: Mandatory Click Requirement */}
       <div 
         onClick={handleAdClick}
-        className="mx-3 z-40 p-3 rounded-2xl bg-gradient-to-r from-rose-950/95 via-amber-950/95 to-rose-950/95 border-2 border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.5)] flex items-center justify-between gap-2.5 cursor-pointer animate-pulse pointer-events-auto active:scale-[0.98] transition"
+        className={`mx-3 z-40 p-3 rounded-2xl ${isSecondPhase ? 'bg-gradient-to-r from-purple-950/95 via-indigo-950/95 to-purple-950/95 border-2 border-purple-400 shadow-[0_0_25px_rgba(168,85,247,0.5)]' : 'bg-gradient-to-r from-rose-950/95 via-amber-950/95 to-rose-950/95 border-2 border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.5)]'} flex items-center justify-between gap-2.5 cursor-pointer animate-pulse pointer-events-auto active:scale-[0.98] transition`}
       >
         <div className="flex items-center gap-2.5">
           <span className="text-2xl animate-bounce">👉</span>
           <div className="text-left">
             <p className="text-xs sm:text-sm font-black text-amber-300">
-              {hasClickedAd ? '✅ বিজ্ঞাপন ভিজিট সম্পন্ন হয়েছে!' : '🚨 বিজ্ঞাপনে চাপ না দিলে কয়েন যুক্ত হবে না!'}
+              {hasClickedAd 
+                ? '✅ বিজ্ঞাপন ভিজিট সম্পন্ন হয়েছে!' 
+                : (isSecondPhase ? '🟣 Monetag অফারে চাপ দিন (ধাপ ২/২)!' : '🟡 Adsterra অফারে চাপ দিন (ধাপ ১/২)!')}
             </p>
             <p className="text-[10px] sm:text-xs text-slate-200">
-              {hasClickedAd ? 'বাকি সময় অপেক্ষা করুন এবং পুরো কয়েন গ্রহণ করুন।' : 'এখানে চাপ দিয়ে অফার পেজে ১০ সেকেন্ড থাকুন।'}
+              {hasClickedAd ? 'বাকি সময় অপেক্ষা করুন এবং পুরো কয়েন গ্রহণ করুন।' : 'এখানে চাপ দিয়ে স্পন্সর পেজ ১০ সেকেন্ড ভিজিট করুন।'}
             </p>
           </div>
         </div>
         <button
           type="button"
           onClick={handleAdClick}
-          className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 text-slate-950 font-black text-xs shrink-0 shadow-lg border border-white"
+          className={`px-3 py-1.5 rounded-xl ${isSecondPhase ? 'bg-gradient-to-r from-purple-400 to-indigo-400 text-white' : 'bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950'} font-black text-xs shrink-0 shadow-lg border border-white`}
         >
-          {hasClickedAd ? 'ভিজিট সম্পন্ন' : 'চাপ দিন ▶'}
+          {hasClickedAd ? 'ভিজিট সম্পন্ন' : (isSecondPhase ? 'Monetag ▶' : 'Adsterra ▶')}
         </button>
       </div>
 

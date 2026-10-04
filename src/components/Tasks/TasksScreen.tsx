@@ -7,10 +7,13 @@ import {
   CalendarCheck, 
   Coins, 
   Sparkles, 
-  ArrowLeft,
-  Check,
-  RefreshCw,
-  Trophy
+  ArrowLeft, 
+  Check, 
+  RefreshCw, 
+  Trophy, 
+  Flame, 
+  Award, 
+  Zap 
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -18,13 +21,16 @@ import { api } from '../../services/api';
 import { soundService } from '../../services/audio';
 import { AdInterstitial } from '../Feed/AdInterstitial';
 import { MiniBannerAd } from '../Common/MiniBannerAd';
+import { OfferwallHub } from './OfferwallHub';
 
 type TaskType = 'math' | 'gk' | 'captcha' | 'daily_checkin';
+type TaskTab = 'offerwall' | 'daily_tasks';
 
 export const TasksScreen: React.FC = () => {
   const { user, refreshUser, awardCoinsLocally } = useAuth();
   const { language, showToast, triggerConfetti, settings } = useApp();
 
+  const [activeTab, setActiveTab] = useState<TaskTab>('offerwall');
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
 
   // Ad stages:
@@ -230,36 +236,74 @@ export const TasksScreen: React.FC = () => {
 
   return (
     <div className="w-full max-w-md mx-auto px-4 py-4 pb-24 space-y-4">
-      {/* Header Banner */}
-      <div className="rounded-3xl bg-gradient-to-br from-[#121128] via-[#1B163B] to-[#0D182E] border border-purple-500/30 p-5 shadow-2xl relative overflow-hidden">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-wider">
-            <CheckSquare className="w-4 h-4" />
-            <span>টাস্ক এবং কুইজ মডিউল 📝</span>
-          </div>
-          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-            সহজ কাজ • বাড়তি আয়
-          </span>
-        </div>
+      {/* 🚀 Main Navigation Tabs: Offerwall Hub vs Daily Tasks */}
+      <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-lg">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('offerwall');
+            setActiveTask(null);
+          }}
+          className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl font-black text-xs transition-all ${
+            activeTab === 'offerwall'
+              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md shadow-amber-500/20'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Flame className={`w-3.5 h-3.5 ${activeTab === 'offerwall' ? 'text-slate-950' : 'text-amber-400'}`} />
+          <span>CPA অফারওয়াল ($)</span>
+        </button>
 
-        <h2 className="text-xl font-black text-white font-['Outfit'] mb-1">
-          কুইজ খেলে ও টাস্ক করে কয়েন নিন
-        </h2>
-        <p className="text-xs text-slate-300">
-          প্রতিটি টাস্কের আগে ও পরে স্পন্সরড বিজ্ঞাপন দেখে আপনি অতিরিক্ত ক্যাশআউট পয়েন্ট আয় করতে পারবেন।
-        </p>
-
-        {/* Ad Info */}
-        <div className="mt-3 p-2.5 rounded-2xl bg-slate-950/70 border border-amber-500/30 flex items-center justify-between text-[11px]">
-          <span className="text-amber-300 font-bold flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>টাস্ক প্রি ও পোস্ট অ্যাড সিস্টেম সক্রিয়</span>
-          </span>
-          <span className="text-emerald-400 font-mono font-black">
-            +৮ হতে +১৫ কয়েন
-          </span>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('daily_tasks');
+          }}
+          className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl font-black text-xs transition-all ${
+            activeTab === 'daily_tasks'
+              ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/20'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <CheckSquare className={`w-3.5 h-3.5 ${activeTab === 'daily_tasks' ? 'text-white' : 'text-purple-400'}`} />
+          <span>ডেইলি কুইজ ও ক্যাপচা</span>
+        </button>
       </div>
+
+      {activeTab === 'offerwall' ? (
+        <OfferwallHub />
+      ) : (
+        <>
+          {/* Header Banner */}
+          <div className="rounded-3xl bg-gradient-to-br from-[#121128] via-[#1B163B] to-[#0D182E] border border-purple-500/30 p-5 shadow-2xl relative overflow-hidden">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-wider">
+                <CheckSquare className="w-4 h-4" />
+                <span>টাস্ক এবং কুইজ মডিউল 📝</span>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                সহজ কাজ • বাড়তি আয়
+              </span>
+            </div>
+
+            <h2 className="text-xl font-black text-white font-['Outfit'] mb-1">
+              কুইজ খেলে ও টাস্ক করে কয়েন নিন
+            </h2>
+            <p className="text-xs text-slate-300">
+              প্রতিটি টাস্কের আগে ও পরে স্পন্সরড বিজ্ঞাপন দেখে আপনি অতিরিক্ত ক্যাশআউট পয়েন্ট আয় করতে পারবেন।
+            </p>
+
+            {/* Ad Info */}
+            <div className="mt-3 p-2.5 rounded-2xl bg-slate-950/70 border border-amber-500/30 flex items-center justify-between text-[11px]">
+              <span className="text-amber-300 font-bold flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>টাস্ক প্রি ও পোস্ট অ্যাড সিস্টেম সক্রিয়</span>
+              </span>
+              <span className="text-emerald-400 font-mono font-black">
+                +৮ হতে +১৫ কয়েন
+              </span>
+            </div>
+          </div>
 
       {/* Main Task Selector or Active Task Arena */}
       {!activeTask ? (
@@ -411,6 +455,8 @@ export const TasksScreen: React.FC = () => {
             </form>
           )}
         </div>
+      )}
+      </>
       )}
 
       {/* ========================================================= */}

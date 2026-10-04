@@ -1860,6 +1860,44 @@ app.post('/api/reward/task-reward', (req, res) => {
   });
 });
 
+// 6c-2. Universal CPA Offerwall Postback Webhook (CPALead, Monlix, TimeWall, AdGate Media)
+app.all(['/api/postback/offerwall', '/api/postback/cpalead', '/api/postback/monlix', '/api/postback/timewall'], (req, res) => {
+  const params = { ...req.query, ...req.body };
+  const subid = (params.subid || params.user_id || params.userId || params.uid || params.sub_id || '') as string;
+  const payout = parseFloat((params.payout || params.amount || params.payout_usd || '0') as string);
+  const points = parseInt((params.points || params.coins || '0') as string, 10) || Math.round((payout || 0.05) * 6667 * 0.4);
+
+  if (!subid) {
+    return res.status(400).send('ERROR_MISSING_SUBID');
+  }
+
+  const user = db.users.find(u => u.uid === subid || u.email === subid);
+  if (!user) {
+    return res.status(404).send('USER_NOT_FOUND');
+  }
+
+  const earned = Math.max(50, points);
+  user.coins += earned;
+  user.lifetimeCoins += earned;
+  user.todayCoins += earned;
+  user.updatedAt = new Date().toISOString();
+
+  db.transactions.unshift({
+    transactionId: 'trx_offerwall_' + Date.now(),
+    userId: user.uid,
+    type: 'TASK_REWARD',
+    amount: earned,
+    bdtEquivalent: earned * (db.settings.coinToBDTRate || 0.015),
+    source: `CPA অফারওয়াল রিওয়ার্ড: ${params.offer_name || params.campaign_name || 'সার্ভে ও অফার সম্পন্ন'}`,
+    status: 'COMPLETED',
+    createdAt: new Date().toISOString()
+  });
+
+  saveDbToDisk();
+  // Return '1' as standard HTTP response for CPALead & Monlix postbacks
+  return res.status(200).send('1');
+});
+
 // 6d. Direct Banner Ad Click Reward (+15 Coins, daily click limit protection)
 app.post('/api/reward/ad-click', (req, res) => {
   const user = getUser(req);

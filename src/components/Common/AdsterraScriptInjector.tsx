@@ -48,14 +48,14 @@ export const AdsterraScriptInjector: React.FC = () => {
       }
     }
 
-    // 🚀 3. HIGH-CPM SMART POPUNDER TRIGGER ENGINE (2-MINUTE COOLDOWN)
+    // 🚀 3. HIGH-CPM SMART POPUNDER TRIGGER ENGINE (2-HOUR / 120-MINUTE COOLDOWN)
     const isPopunderActive = adsConfig?.popunderEnabled !== false;
-    const intervalMinutes = adsConfig?.popunderIntervalMinutes || 2;
-    const COOLDOWN_MS = intervalMinutes * 60 * 1000; // ২ মিনিট (120 সেকেন্ড) কুলডাউন
+    const intervalMinutes = adsConfig?.popunderIntervalMinutes ?? 120; // দিনে ২ ঘণ্টা (১২০ মিনিট) পর পর
+    const COOLDOWN_MS = intervalMinutes * 60 * 1000;
     const STORAGE_KEY_LAST = 'watch_earn_smart_popunder_last_trigger';
     const STORAGE_KEY_COUNT = 'watch_earn_smart_popunder_daily_count';
     const STORAGE_KEY_DATE = 'watch_earn_smart_popunder_date';
-    const dailyCap = adsConfig?.popunderDailyCap || 25;
+    const dailyCap = adsConfig?.popunderDailyCap || 8;
 
     const getDailyCount = () => {
       const today = new Date().toISOString().split('T')[0];

@@ -155,6 +155,18 @@ export interface AdminSettings {
     monetagTagCode?: string; // Monetag In-Page Push / OnClick / Vignette script tag
     monetagZoneId?: string; // Monetag Zone ID
   };
+  offerwallsConfig?: {
+    enabled: boolean;
+    cpaleadEnabled?: boolean;
+    cpaleadUrl?: string; // CPALead Offerwall or Direct Locker URL
+    monlixEnabled?: boolean;
+    monlixAppId?: string; // Monlix App ID
+    timewallEnabled?: boolean;
+    timewallUrl?: string; // TimeWall publisher URL
+    adgateEnabled?: boolean;
+    adgateWallId?: string; // AdGate Media Wall ID
+    customTasksRewardMultiplier?: number;
+  };
   activeNotice?: {
     enabled: boolean;
     title: string;

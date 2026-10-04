@@ -1202,17 +1202,17 @@ export const AdminDashboard: React.FC = () => {
                           </span>
                         </div>
                         <select
-                          value={editSettings.adsConfig?.rewardedVideoDurationSeconds || 20}
+                          value={editSettings.adsConfig?.rewardedVideoDurationSeconds || 45}
                           onChange={(e) => setEditSettings({
                             ...editSettings,
                             adsConfig: { ...editSettings.adsConfig, rewardedVideoDurationSeconds: Number(e.target.value) } as any
                           })}
                           className="bg-slate-900 border border-amber-500/60 text-amber-300 text-xs font-black rounded-lg px-2.5 py-1 focus:outline-none"
                         >
-                          <option value={15}>১৫ সেকেন্ড (দ্রুত)</option>
-                          <option value={20}>২০ সেকেন্ড (প্রস্তাবিত/স্ট্যান্ডার্ড)</option>
-                          <option value={25}>২৫ সেকেন্ড (সর্বোচ্চ CPM)</option>
-                          <option value={30}>৩০ সেকেন্ড (প্রিমিয়াম)</option>
+                          <option value={45}>৪৫ সেকেন্ড (২২ সে. Adsterra + ২৩ সে. Monetag - প্রস্তাবিত)</option>
+                          <option value={40}>৪০ সেকেন্ড (২০ সে. Adsterra + ২০ সে. Monetag)</option>
+                          <option value={50}>৫০ সেকেন্ড (২৫ সে. Adsterra + ২৫ সে. Monetag - সর্বোচ্চ CPM)</option>
+                          <option value={30}>৩০ সেকেন্ড (১৫ সে. Adsterra + ১৫ সে. Monetag)</option>
                         </select>
                       </div>
                       <span className="text-[9px] text-slate-400 block">
@@ -1246,18 +1246,18 @@ export const AdminDashboard: React.FC = () => {
                             ⏱️ ক্লিকের বিরতি (Interval):
                           </label>
                           <select
-                            value={editSettings.adsConfig?.popunderIntervalMinutes ?? 3}
+                            value={editSettings.adsConfig?.popunderIntervalMinutes ?? 120}
                             onChange={(e) => setEditSettings({
                               ...editSettings,
                               adsConfig: { ...editSettings.adsConfig, popunderIntervalMinutes: parseInt(e.target.value, 10) } as any
                             })}
                             className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white"
                           >
-                            <option value={1}>প্রতি ১ মিনিট পর পর</option>
-                            <option value={2}>প্রতি ২ মিনিট পর পর</option>
-                            <option value={3}>প্রতি ৩ মিনিট পর পর (রেকমেন্ডেড)</option>
+                            <option value={120}>প্রতি ২ ঘণ্টা পর পর (১২০ মিনিট - প্রস্তাবিত)</option>
+                            <option value={60}>প্রতি ১ ঘণ্টা পর পর (৬০ মিনিট)</option>
+                            <option value={30}>প্রতি ৩০ মিনিট পর পর</option>
+                            <option value={15}>প্রতি ১৫ মিনিট পর পর</option>
                             <option value={5}>প্রতি ৫ মিনিট পর পর</option>
-                            <option value={10}>প্রতি ১০ মিনিট পর পর</option>
                           </select>
                         </div>
 
@@ -1420,6 +1420,100 @@ export const AdminDashboard: React.FC = () => {
                       className="w-4 h-4 accent-cyan-500"
                     />
                   </label>
+                </div>
+              </div>
+            </div>
+
+            {/* 🎯 CPA Offerwalls & Micro-Tasks Settings (CPALead, Monlix, TimeWall) */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#1C1304] via-[#241708] to-[#120B02] border border-amber-500/50 space-y-3 shadow-lg">
+              <div className="flex items-center justify-between pb-1 border-b border-amber-500/20">
+                <span className="text-xs font-black text-amber-300 flex items-center gap-1.5 uppercase">
+                  <Flame className="w-4 h-4 text-amber-400" />
+                  CPA অফারওয়াল ও মাইক্রো-টাস্ক সেটিংস ($ হাই ইনকাম)
+                </span>
+                <span className="text-[9px] text-amber-400 font-mono font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                  CPA Offerwalls
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-amber-500/30 text-xs text-slate-200 cursor-pointer">
+                  <span className="font-bold flex items-center gap-1.5 text-amber-300">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    CPA অফারওয়াল হাব সম্পূর্ণ চালু
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={editSettings.offerwallsConfig?.enabled ?? true}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      offerwallsConfig: { 
+                        ...editSettings.offerwallsConfig, 
+                        enabled: e.target.checked 
+                      } as any
+                    })}
+                    className="w-4 h-4 accent-amber-500"
+                  />
+                </label>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                    🎯 CPALead Offerwall / Direct Locker URL:
+                  </label>
+                  <input
+                    type="url"
+                    value={editSettings.offerwallsConfig?.cpaleadUrl ?? ''}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      offerwallsConfig: { 
+                        ...editSettings.offerwallsConfig, 
+                        cpaleadUrl: e.target.value,
+                        enabled: true
+                      } as any
+                    })}
+                    placeholder="https://fastfile.click/direct/12345 (বা CPALead লিংক)"
+                    className="w-full p-2 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                    💎 Monlix App ID:
+                  </label>
+                  <input
+                    type="text"
+                    value={editSettings.offerwallsConfig?.monlixAppId ?? ''}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      offerwallsConfig: { 
+                        ...editSettings.offerwallsConfig, 
+                        monlixAppId: e.target.value,
+                        enabled: true
+                      } as any
+                    })}
+                    placeholder="Monlix App ID (যেমন: 12345)"
+                    className="w-full p-2 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                    ⚡ TimeWall Publisher URL:
+                  </label>
+                  <input
+                    type="url"
+                    value={editSettings.offerwallsConfig?.timewallUrl ?? ''}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      offerwallsConfig: { 
+                        ...editSettings.offerwallsConfig, 
+                        timewallUrl: e.target.value,
+                        enabled: true
+                      } as any
+                    })}
+                    placeholder="https://timewall.io/?..."
+                    className="w-full p-2 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 focus:outline-none focus:border-amber-400"
+                  />
                 </div>
               </div>
             </div>
