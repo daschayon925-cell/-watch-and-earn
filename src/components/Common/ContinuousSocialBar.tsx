@@ -88,7 +88,7 @@ const BOTTOM_DIRECT_LINK_ADS: BottomDirectLinkItem[] = [
 ];
 
 export const ContinuousSocialBar: React.FC = () => {
-  const { settings, showToast } = useApp();
+  const { settings, showToast, activeTab } = useApp();
   const { awardCoinsLocally } = useAuth();
 
   // Top Social Bar State (Push / Chat style)
@@ -100,6 +100,11 @@ export const ContinuousSocialBar: React.FC = () => {
   const [bottomIndex, setBottomIndex] = useState(0);
   const [isBottomVisible, setIsBottomVisible] = useState(false);
   const [isBottomDismissed, setIsBottomDismissed] = useState(false);
+
+  // 🛡️ Completely disable all social bar ads in admin panel
+  if ((activeTab as string) === 'admin') {
+    return null;
+  }
 
   const adsterraLink =
     settings?.adsConfig?.adsterraDirectLink?.trim() ||

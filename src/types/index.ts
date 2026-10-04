@@ -64,6 +64,15 @@ export interface User {
   biometricEnrolled?: boolean;
   biometricPhoto?: string; // Captured real camera face selfie
   webAuthnCredentialId?: string; // Device hardware fingerprint key
+  privateNotice?: {
+    id: string;
+    title: string;
+    message: string;
+    linkTab?: string;
+    createdAt: string;
+    active: boolean;
+    dismissed?: boolean;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -208,6 +217,9 @@ export interface NotificationItem {
   read: boolean;
   createdAt: string;
   linkTab?: string;
+  isPrivate?: boolean;
+  targetUserName?: string;
+  targetUserPhone?: string;
 }
 
 export interface Comment {

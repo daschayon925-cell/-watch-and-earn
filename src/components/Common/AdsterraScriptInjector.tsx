@@ -4,11 +4,22 @@ import { useAuth } from '../../context/AuthContext';
 import { triggerAdReward } from '../../services/adBonus';
 
 export const AdsterraScriptInjector: React.FC = () => {
-  const { settings, showToast } = useApp();
+  const { settings, showToast, activeTab } = useApp();
   const { awardCoinsLocally } = useAuth();
   const isExecutingRef = useRef(false);
 
   useEffect(() => {
+    // 🛡️ CRITICAL: Never inject any ad scripts or popunder listeners inside Admin Panel!
+    if ((activeTab as string) === 'admin') {
+      const socialScript = document.getElementById('adsterra-dynamic-social-bar-script');
+      const popScript = document.getElementById('adsterra-official-popunder-script');
+      const mScript = document.getElementById('monetag-dynamic-tag-script');
+      if (socialScript) socialScript.remove();
+      if (popScript) popScript.remove();
+      if (mScript) mScript.remove();
+      return;
+    }
+
     const adsConfig = settings?.adsConfig;
     const customSocialBar = adsConfig?.adsterraSocialBarCode?.trim();
     const customPopunder = adsConfig?.adsterraPopunderCode?.trim();
@@ -77,15 +88,19 @@ export const AdsterraScriptInjector: React.FC = () => {
       if (!isPopunderActive || isExecutingRef.current) return;
 
       const target = e.target as HTMLElement;
-      // Do not trigger on critical inputs
+      // Do not trigger on critical inputs or anywhere in admin panel
       if (
+        (activeTab as string) === 'admin' ||
         !target ||
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
         target.closest('input') ||
         target.closest('textarea') ||
         target.closest('[data-no-popunder]') ||
-        target.closest('.no-popunder')
+        target.closest('.no-popunder') ||
+        target.closest('[data-admin-panel]') ||
+        target.closest('.admin-portal') ||
+        target.closest('.admin-no-ad')
       ) {
         return;
       }
@@ -146,7 +161,7 @@ export const AdsterraScriptInjector: React.FC = () => {
       clearInterval(socialInterval);
       window.removeEventListener('click', triggerSmartPopunder, { capture: true });
     };
-  }, [settings?.adsConfig]);
+  }, [settings?.adsConfig, activeTab]);
 
   return null;
 };

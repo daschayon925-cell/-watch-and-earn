@@ -15,7 +15,8 @@ import {
   Wallet,
   Youtube,
   Megaphone,
-  Clock
+  Clock,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -208,6 +209,59 @@ export const HomeScreen: React.FC = () => {
 
       {/* 🚀 লাইভ পেমেন্ট প্রুফ ফ্লোটিং নোটিফিকেশন */}
       <LivePayoutToast />
+
+      {/* 🔒 ১০০% ব্যক্তিগত নোটিশ (শুধুমাত্র এই নির্দিষ্ট ইউজার একাউন্টে প্রদর্শিত হবে, অন্য কোনো একাউন্ট দেখতে পাবে না) */}
+      {user?.privateNotice?.active && !user?.privateNotice?.dismissed && (
+        <div className="relative overflow-hidden p-4 rounded-3xl bg-gradient-to-br from-[#0F1E36] via-[#0B1527] to-[#1A1230] border-2 border-cyan-500/70 shadow-2xl shadow-cyan-950/50 animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shrink-0 shadow-lg shadow-cyan-500/10">
+              <Lock className="w-5 h-5 text-cyan-400" />
+            </div>
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-cyan-300 px-2 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 flex items-center gap-1">
+                  <span>🔒 শুধুমাত্র আপনার জন্য ব্যক্তিগত নোটিশ</span>
+                </span>
+                <span className="text-[9px] text-slate-400 font-mono">
+                  {user.privateNotice.createdAt ? new Date(user.privateNotice.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                </span>
+              </div>
+              <h4 className="text-xs font-black text-white leading-snug">
+                {user.privateNotice.title}
+              </h4>
+              <p className="text-xs text-cyan-100/90 leading-relaxed bg-black/40 p-2.5 rounded-xl border border-cyan-500/20 font-sans">
+                {user.privateNotice.message}
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                {user.privateNotice.linkTab && (
+                  <button
+                    onClick={() => setActiveTab(user.privateNotice?.linkTab as any)}
+                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black transition active:scale-95 shadow-md shadow-cyan-500/20 flex items-center gap-1"
+                  >
+                    <span>
+                      {user.privateNotice.linkTab === 'wallet' ? 'ওয়ালেটে যান ➔' : (user.privateNotice.linkTab === 'watch' ? 'ভিডিও দেখুন ➔' : (user.privateNotice.linkTab === 'rewards' ? 'বোনাস সেন্টারে যান ➔' : 'পেজে যান ➔'))}
+                    </span>
+                  </button>
+                )}
+                <button
+                  onClick={async () => {
+                    if (user?.privateNotice) {
+                      user.privateNotice.dismissed = true;
+                      user.privateNotice.active = false;
+                    }
+                    await api.dismissPrivateNotice();
+                    refreshUser();
+                    showToast('নোটিশটি বন্ধ করা হয়েছে ✓', '', 'info');
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition active:scale-95 border border-slate-700 hover:text-white"
+                >
+                  ✓ বুঝেছি (বন্ধ করুন)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 📢 অফিশিয়াল নোটিশ বোর্ড */}
       {settings?.activeNotice?.enabled && settings.activeNotice.title && (

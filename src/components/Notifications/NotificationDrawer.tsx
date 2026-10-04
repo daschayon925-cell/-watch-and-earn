@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, CheckCheck, Coins, ArrowDownLeft, Sparkles, Bell } from 'lucide-react';
+import { X, CheckCheck, Coins, ArrowDownLeft, Sparkles, Bell, Lock } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const NotificationDrawer: React.FC = () => {
@@ -53,6 +53,7 @@ export const NotificationDrawer: React.FC = () => {
             </div>
           ) : (
             notifications.map((n) => {
+              const isPriv = n.isPrivate || (n.userId !== 'all' && n.type === 'system');
               return (
                 <div
                   key={n.id}
@@ -63,24 +64,43 @@ export const NotificationDrawer: React.FC = () => {
                     }
                   }}
                   className={`p-3.5 rounded-2xl border transition cursor-pointer ${
-                    !n.read
-                      ? 'bg-slate-800/80 border-emerald-500/30 hover:border-emerald-500/60'
-                      : 'bg-slate-900/40 border-slate-800/60 text-slate-400'
+                    isPriv
+                      ? (!n.read ? 'bg-cyan-950/40 border-cyan-500/50 shadow-md shadow-cyan-950/40' : 'bg-slate-900/60 border-cyan-500/20 text-slate-300')
+                      : (!n.read
+                        ? 'bg-slate-800/80 border-emerald-500/30 hover:border-emerald-500/60'
+                        : 'bg-slate-900/40 border-slate-800/60 text-slate-400')
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 shrink-0">
-                      {n.type === 'reward' && <Coins className="w-4 h-4 text-amber-400" />}
-                      {n.type === 'withdrawal' && <ArrowDownLeft className="w-4 h-4 text-emerald-400" />}
-                      {n.type === 'streak' && <Sparkles className="w-4 h-4 text-cyan-400" />}
-                      {n.type === 'system' && <Bell className="w-4 h-4 text-slate-300" />}
+                    <div className={`p-2 rounded-xl border shrink-0 ${
+                      isPriv 
+                        ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' 
+                        : 'bg-slate-950 border-slate-800'
+                    }`}>
+                      {isPriv ? (
+                        <Lock className="w-4 h-4 text-cyan-400" />
+                      ) : (
+                        <>
+                          {n.type === 'reward' && <Coins className="w-4 h-4 text-amber-400" />}
+                          {n.type === 'withdrawal' && <ArrowDownLeft className="w-4 h-4 text-emerald-400" />}
+                          {n.type === 'streak' && <Sparkles className="w-4 h-4 text-cyan-400" />}
+                          {n.type === 'system' && <Bell className="w-4 h-4 text-slate-300" />}
+                        </>
+                      )}
                     </div>
 
                     <div className="flex-1 min-w-0">
+                      {isPriv && (
+                        <div className="mb-1">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-cyan-300 px-1.5 py-0.2 rounded bg-cyan-500/20 border border-cyan-500/30">
+                            🔒 ব্যক্তিগত নোটিশ (Private)
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold text-slate-100 truncate">{n.title}</h4>
+                        <h4 className={`text-xs font-bold truncate ${isPriv ? 'text-cyan-100 font-black' : 'text-slate-100'}`}>{n.title}</h4>
                         {!n.read && (
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${isPriv ? 'bg-cyan-400 ring-2 ring-cyan-400/40' : 'bg-emerald-400'}`} />
                         )}
                       </div>
                       <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">{n.message}</p>

@@ -60,9 +60,9 @@ const MainLayout: React.FC = () => {
       <NotificationDrawer />
       <ToastContainer />
       <InstallPrompt />
-      <AdsterraScriptInjector />
-      <ContinuousSocialBar />
-      <AdVisitTimerModal />
+      {(activeTab as string) !== 'admin' && <AdsterraScriptInjector />}
+      {(activeTab as string) !== 'admin' && <ContinuousSocialBar />}
+      {(activeTab as string) !== 'admin' && <AdVisitTimerModal />}
       {!user && <AuthModal />}
     </div>
   );

@@ -320,6 +320,10 @@ export const api = {
     return await safeJsonFetch('/api/notifications/mark-read', { method: 'POST', headers: headers() });
   },
 
+  dismissPrivateNotice: async () => {
+    return await safeJsonFetch('/api/user/dismiss-private-notice', { method: 'POST', headers: headers() });
+  },
+
   // Admin
   getAdminOverview: async () => {
     return await safeJsonFetch('/api/admin/overview', { headers: headers() });
@@ -387,6 +391,26 @@ export const api = {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ title, message, linkTab })
+    });
+  },
+
+  sendAdminNotice: async (payload: { targetType: 'single' | 'all'; targetUserId?: string; title: string; message: string; linkTab?: string; isHighPriorityBanner?: boolean }): Promise<{ success: boolean; message: string; notification?: any }> => {
+    return await safeJsonFetch('/api/admin/send-notice', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify(payload)
+    });
+  },
+
+  getAdminNotices: async (): Promise<any[]> => {
+    const data = await safeJsonFetch<{ success: boolean; notices: any[] }>('/api/admin/notices', { headers: headers() });
+    return data?.notices || [];
+  },
+
+  deleteAdminNotice: async (id: string): Promise<{ success: boolean; message: string }> => {
+    return await safeJsonFetch(`/api/admin/notices/${id}`, {
+      method: 'DELETE',
+      headers: headers()
     });
   }
 };

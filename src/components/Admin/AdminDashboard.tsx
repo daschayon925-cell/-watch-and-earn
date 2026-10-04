@@ -29,7 +29,8 @@ import {
   Copy,
   MessageCircle,
   ExternalLink,
-  Zap
+  Zap,
+  Flame
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -50,11 +51,16 @@ export const AdminDashboard: React.FC = () => {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Broadcast Notice Form
+  // Notice & Broadcast Form
+  const [noticeTargetType, setNoticeTargetType] = useState<'single' | 'all'>('single');
+  const [selectedTargetUserId, setSelectedTargetUserId] = useState<string>('');
+  const [targetUserSearch, setTargetUserSearch] = useState<string>('');
+  const [isHighPriorityBanner, setIsHighPriorityBanner] = useState<boolean>(true);
   const [bcTitle, setBcTitle] = useState('');
   const [bcMessage, setBcMessage] = useState('');
   const [bcTab, setBcTab] = useState('home');
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [sentNoticesList, setSentNoticesList] = useState<any[]>([]);
 
   // Video Form
   const [showAddVideo, setShowAddVideo] = useState(false);
@@ -117,13 +123,14 @@ export const AdminDashboard: React.FC = () => {
   const loadAllAdminData = async (showFullLoader: boolean = true) => {
     if (showFullLoader) setLoading(true);
     try {
-      const [ov, vids, usrs, wths, reps, freshSettings] = await Promise.all([
+      const [ov, vids, usrs, wths, reps, freshSettings, notices] = await Promise.all([
         api.getAdminOverview(),
         api.getVideos(),
         api.getAdminUsers(),
         api.getAdminWithdrawals(),
         api.getAdminReports(),
-        api.getSettings()
+        api.getSettings(),
+        api.getAdminNotices()
       ]);
       
       // Merge with Cloud Firestore to make sure no user or request is missed even after server refresh
@@ -144,6 +151,7 @@ export const AdminDashboard: React.FC = () => {
       setUsersList(mergedUsers);
       setWithdrawals(wths || []);
       setReports(reps || []);
+      setSentNoticesList(notices || []);
       if (freshSettings) {
         setEditSettings(freshSettings);
       } else if (settings) {
@@ -242,27 +250,58 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleSendBroadcast = async (e: React.FormEvent) => {
+  const handleSendNotice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bcTitle.trim() || !bcMessage.trim()) {
       showToast('শিরোনাম ও বার্তা উভয়ই লিখুন', '', 'error');
       return;
     }
+
+    if (noticeTargetType === 'single' && !selectedTargetUserId) {
+      showToast('অনুগ্রহ করে একজন ইউজার নির্বাচন করুন', '', 'error');
+      return;
+    }
+
     setSendingBroadcast(true);
     try {
-      const res = await api.broadcastAnnouncement(bcTitle.trim(), bcMessage.trim(), bcTab);
+      const res = await api.sendAdminNotice({
+        targetType: noticeTargetType,
+        targetUserId: selectedTargetUserId,
+        title: bcTitle.trim(),
+        message: bcMessage.trim(),
+        linkTab: bcTab,
+        isHighPriorityBanner
+      });
+
       if (res.success) {
-        showToast('ঘোষণা সমস্ত ইউজারের কাছে পাঠানো হয়েছে! 📢', '', 'success');
+        showToast(
+          noticeTargetType === 'single' ? '🔒 প্রাইভেট নোটিশ পাঠানো হয়েছে!' : '📢 সকল ইউজারের কাছে নোটিশ প্রচার করা হয়েছে!',
+          res.message,
+          'success'
+        );
         setBcTitle('');
         setBcMessage('');
+        loadAllAdminData(false);
         await refreshSettings();
       } else {
-        showToast('ঘোষণা পাঠানো সম্ভব হয়নি', '', 'error');
+        showToast(res.message || 'নোটিশ পাঠানো সম্ভব হয়নি', '', 'error');
       }
     } catch {
       showToast('নেটওয়ার্ক সমস্যা', '', 'error');
     } finally {
       setSendingBroadcast(false);
+    }
+  };
+
+  const handleDeleteNotice = async (id: string) => {
+    try {
+      const res = await api.deleteAdminNotice(id);
+      if (res.success) {
+        setSentNoticesList(prev => prev.filter(n => n.id !== id));
+        showToast('নোটিশ মুছে ফেলা হয়েছে 🗑️', '', 'info');
+      }
+    } catch {
+      showToast('মুছতে ব্যর্থ হয়েছে', '', 'error');
     }
   };
 
@@ -333,7 +372,7 @@ export const AdminDashboard: React.FC = () => {
 
   if (!isAdminUnlocked) {
     return (
-      <div className="w-full max-w-md mx-auto px-4 py-8 pb-28 space-y-6">
+      <div data-no-popunder="true" data-admin-panel="true" className="w-full max-w-md mx-auto px-4 py-8 pb-28 space-y-6 no-popunder admin-no-ad">
         <div className="p-6 rounded-3xl bg-gradient-to-b from-slate-900 to-[#070B11] border border-cyan-500/30 text-center shadow-2xl">
           <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-cyan-500/10">
             <ShieldAlert className="w-8 h-8" />
@@ -373,7 +412,7 @@ export const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 py-4 pb-24 space-y-4 font-sans">
+    <div data-no-popunder="true" data-admin-panel="true" className="w-full max-w-md mx-auto px-4 py-4 pb-24 space-y-4 font-sans no-popunder admin-no-ad">
       {/* Admin Title & Live Mode Header */}
       <div className="p-4 rounded-3xl bg-gradient-to-r from-[#0E1A2B] via-[#09121E] to-[#12231A] border border-cyan-500/40 shadow-xl flex items-center justify-between">
         <div className="flex items-center gap-2.5">
@@ -850,7 +889,7 @@ export const AdminDashboard: React.FC = () => {
                         : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                     }`}
                   >
-                    {u.accountStatus === 'active' ? 'স্থগিত করুন (Suspend)' : 'সক্রিয় করুন'}
+                    {u.accountStatus === 'active' ? 'স্থগিত' : 'সক্রিয়'}
                   </button>
 
                   <button
@@ -858,9 +897,23 @@ export const AdminDashboard: React.FC = () => {
                       setCoinAdjustUser(u);
                       setCoinAdjustAmount('2000');
                     }}
-                    className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs rounded-xl hover:bg-amber-500/30 transition-all flex items-center gap-1 active:scale-95"
+                    className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs rounded-xl hover:bg-amber-500/30 transition-all flex items-center gap-1 active:scale-95"
+                    title="কয়েন যোগ বা বিয়োগ করুন"
                   >
-                    <span>🪙</span> কয়েন সমন্বয়
+                    <span>🪙</span> কয়েন
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setNoticeTargetType('single');
+                      setSelectedTargetUserId(u.uid);
+                      setActiveTab('broadcast');
+                      showToast(`💬 ${u.displayName || 'ইউজার'} নির্বাচিত হয়েছে!`, 'নিচের বক্সে শিরোনাম ও বার্তা লিখে পাঠান। অন্য কেউ দেখতে পাবে না।', 'info');
+                    }}
+                    className="px-2.5 py-1 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-xs rounded-xl hover:bg-cyan-500/30 transition-all flex items-center gap-1 active:scale-95"
+                    title="শুধুমাত্র এই ইউজারকে প্রাইভেট নোটিশ পাঠান"
+                  >
+                    <span>💬</span> নোটিশ
                   </button>
                 </div>
               </div>
@@ -1726,83 +1779,332 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 5B. BROADCAST ANNOUNCEMENT TO ALL USERS TAB */}
+      {/* 5B. NOTICE BOARD & PRIVATE USER NOTIFICATION CENTER */}
       {activeTab === 'broadcast' && (
-        <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-          <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
-            <Megaphone className="w-4 h-4" />
-            <span>সকল ইউজারের কাছে পুশ নোটিশ ও ব্যানার পাঠান</span>
+        <div className="space-y-4">
+          <div className="p-4 sm:p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                <Megaphone className="w-4 h-4" />
+                <span>অ্যাডমিন নোটিশ বোর্ড ও ইউজার মেসেজিং সেন্টার</span>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">
+                {sentNoticesList.length} নোটিশ সংরক্ষিত
+              </span>
+            </div>
+
+            {/* Target Selector Tabs: Single User (Private) vs All Users (Broadcast) */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+              <button
+                type="button"
+                onClick={() => setNoticeTargetType('single')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
+                  noticeTargetType === 'single'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>🔒 নির্দিষ্ট ১ জন ইউজার (Private)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setNoticeTargetType('all')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
+                  noticeTargetType === 'all'
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Megaphone className="w-3.5 h-3.5" />
+                <span>📢 সকল ইউজার (Broadcast)</span>
+              </button>
+            </div>
+
+            {noticeTargetType === 'single' ? (
+              <div className="p-3 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-200 text-xs flex items-start gap-2">
+                <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  <strong>১০০% গোপনীয় নোটিশ:</strong> আপনি এখানে যে ইউজারকে নির্বাচন করবেন, শুধুমাত্র সেই ইউজারের অ্যাকাউন্ট থেকেই এই নোটিশ দেখা যাবে। অন্য কোনো ইউজার এটি কখনোই দেখতে পাবে না।
+                </p>
+              </div>
+            ) : (
+              <div className="p-3 rounded-2xl bg-amber-950/40 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2">
+                <Megaphone className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  <strong>পাবলিক ঘোষণা:</strong> এই নোটিশটি অ্যাপের সমস্ত ইউজারের নোটিফিকেশন বক্সে ও হোম স্ক্রিনের ব্যানারে চলে যাবে।
+                </p>
+              </div>
+            )}
+
+            <form onSubmit={handleSendNotice} className="space-y-3.5">
+              {/* Target User Selection when mode is Single User */}
+              {noticeTargetType === 'single' && (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-300">
+                    কাকে নোটিশ পাঠাবেন? (ইউজার নির্বাচন করুন): *
+                  </label>
+
+                  {/* Search input for filtering users */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={targetUserSearch}
+                      onChange={(e) => setTargetUserSearch(e.target.value)}
+                      placeholder="নাম, ফোন নাম্বার বা UID দিয়ে খুঁজুন..."
+                      className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+
+                  {/* User Dropdown Selector */}
+                  <select
+                    value={selectedTargetUserId}
+                    onChange={(e) => setSelectedTargetUserId(e.target.value)}
+                    className="w-full p-2.5 bg-slate-950 border border-cyan-500/50 rounded-xl text-xs text-cyan-300 focus:outline-none"
+                    required
+                  >
+                    <option value="">-- ইউজার বেছে নিন ({usersList.length} জন ইউজার উপলব্ধ) --</option>
+                    {usersList
+                      .filter(u => {
+                        if (!targetUserSearch.trim()) return true;
+                        const term = targetUserSearch.toLowerCase();
+                        return (
+                          (u.displayName && u.displayName.toLowerCase().includes(term)) ||
+                          (u.phone && u.phone.includes(term)) ||
+                          (u.uid && u.uid.toLowerCase().includes(term))
+                        );
+                      })
+                      .map(u => (
+                        <option key={u.uid} value={u.uid}>
+                          👤 {u.displayName || 'নামহীন'} | 📱 {u.phone || 'ফোন নেই'} | 💰 {u.coins || 0} কয়েন | (UID: {u.uid.slice(-6)})
+                        </option>
+                      ))}
+                  </select>
+
+                  {selectedTargetUserId && (
+                    <div className="p-2.5 rounded-xl bg-slate-950 border border-cyan-500/30 flex items-center justify-between">
+                      {(() => {
+                        const targetUserObj = usersList.find(u => u.uid === selectedTargetUserId);
+                        return (
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center text-cyan-300 font-bold text-xs">
+                              {targetUserObj?.displayName?.[0] || 'U'}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-white">{targetUserObj?.displayName || 'ইউজার'}</p>
+                              <p className="text-[10px] text-slate-400">{targetUserObj?.phone || targetUserObj?.email || targetUserObj?.uid}</p>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">
+                        🔒 টার্গেটেড ইউজার
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Quick Template Presets */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-400 block">
+                  ⚡ দ্রুত নোটিশ লেখার প্রিসেট (১ ক্লিকে অটো-লিখুন):
+                </span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBcTitle('পেমেন্ট সফলভাবে পাঠানো হয়েছে! 🎉');
+                      setBcMessage('প্রিয় মেম্বার, আপনার বিকাশ/নগদ একাউন্টে টাকা পাঠানো হয়েছে। নিয়মিত ভিডিও দেখুন এবং বন্ধুদের ইনভাইট করে আরো বেশি আয় করুন!');
+                      setBcTab('wallet');
+                    }}
+                    className="p-2 rounded-xl bg-slate-950 border border-emerald-500/30 hover:border-emerald-400 text-emerald-300 text-[10px] font-bold text-left transition active:scale-95"
+                  >
+                    💰 পেমেন্ট পরিশোধ নোটিশ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBcTitle('🎁 আপনার একাউন্টে স্পেশাল বোনাস যোগ হয়েছে!');
+                      setBcMessage('অসাধারণ কাজের জন্য আপনার ওয়ালেটে বিশেষ লয়ালটি বোনাস কয়েন দেওয়া হয়েছে। ওয়ালেট চেক করুন!');
+                      setBcTab('wallet');
+                    }}
+                    className="p-2 rounded-xl bg-slate-950 border border-amber-500/30 hover:border-amber-400 text-amber-300 text-[10px] font-bold text-left transition active:scale-95"
+                  >
+                    🎁 বিশেষ বোনাস নোটিশ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBcTitle('⚠️ একাউন্ট সংক্রান্ত গুরুত্বপূর্ণ সতর্কতা');
+                      setBcMessage('অনুগ্রহ করে কোনো প্রকার অটো-ক্লিকার বা ভিপিএন ছাড়া আসল মোবাইল থেকে কাজ করুন। আপনার নিরাপত্তা আমাদের কাছে সবার আগে।');
+                      setBcTab('home');
+                    }}
+                    className="p-2 rounded-xl bg-slate-950 border border-rose-500/30 hover:border-rose-400 text-rose-300 text-[10px] font-bold text-left transition active:scale-95"
+                  >
+                    ⚠️ সিকিউরিটি সতর্কতা
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBcTitle('🔥 নতুন হাই-সিপিএম ভিডিও ও অফার চালু হয়েছে!');
+                      setBcMessage('আজকের নতুন স্পনসর ভিডিও ও অফারওয়াল কাজ সম্পন্ন করে দ্বিগুণ কয়েন জিতে নিন!');
+                      setBcTab('watch');
+                    }}
+                    className="p-2 rounded-xl bg-slate-950 border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 text-[10px] font-bold text-left transition active:scale-95"
+                  >
+                    🚀 নতুন ভিডিও ও অফার
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  নোটিশের শিরোনাম (Title): *
+                </label>
+                <input
+                  type="text"
+                  value={bcTitle}
+                  onChange={(e) => setBcTitle(e.target.value)}
+                  placeholder={noticeTargetType === 'single' ? "যেমন: প্রিয় ইউজার, আপনার পেমেন্ট পাঠানো হয়েছে" : "যেমন: আজকের বিশেষ অফার! প্রতিটি ভিডিওতে ৫০ কয়েন"}
+                  className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-400"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  বিস্তারিত বার্তা (Message): *
+                </label>
+                <textarea
+                  value={bcMessage}
+                  onChange={(e) => setBcMessage(e.target.value)}
+                  rows={3}
+                  placeholder={noticeTargetType === 'single' ? "যেমন: আপনার বিকাশ একাউন্টে টাকা পাঠানো হয়েছে। ট্রানজেকশন আইডি চেক করুন এবং নিয়মিত কাজ করুন।" : "যেমন: সকল ব্যবহারকারীদের জানানো যাচ্ছে যে আজ বোনাস বৃদ্ধি করা হয়েছে..."}
+                  className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-400"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    নোটিশে ক্লিক করলে কোন পেজ খুলবে:
+                  </label>
+                  <select
+                    value={bcTab}
+                    onChange={(e) => setBcTab(e.target.value)}
+                    className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
+                  >
+                    <option value="home">হোম স্ক্রিন (ভিডিও ফিড)</option>
+                    <option value="wallet">ওয়ালেট (ক্যাশআউট স্ক্রিন)</option>
+                    <option value="rewards">বোনাস সেন্টার (রেফারেল)</option>
+                    <option value="games">গেমস আর্নিং</option>
+                  </select>
+                </div>
+
+                {noticeTargetType === 'single' && (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800 self-end">
+                    <span className="text-[11px] font-bold text-slate-300">হোম পেজে বিশেষ ব্যানার হিসেবে দেখান</span>
+                    <input
+                      type="checkbox"
+                      checked={isHighPriorityBanner}
+                      onChange={(e) => setIsHighPriorityBanner(e.target.checked)}
+                      className="w-4 h-4 accent-cyan-500"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={sendingBroadcast}
+                className={`w-full py-3 font-black text-xs rounded-2xl shadow-xl transition active:scale-98 flex items-center justify-center gap-2 disabled:opacity-50 ${
+                  noticeTargetType === 'single'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 text-slate-950 shadow-cyan-500/20'
+                    : 'bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 text-slate-950 shadow-amber-500/20'
+                }`}
+              >
+                <Send className="w-4 h-4" />
+                <span>
+                  {sendingBroadcast 
+                    ? 'নোটিশ পাঠানো হচ্ছে...' 
+                    : (noticeTargetType === 'single' ? '🔒 শুধুমাত্র এই নির্দিষ্ট ইউজারের কাছে পাঠান' : '📢 সকল ইউজারের কাছে প্রচার করুন')}
+                </span>
+              </button>
+            </form>
           </div>
 
-          <p className="text-[11px] text-slate-300 leading-relaxed">
-            📢 এখানে নোটিশ লিখলে সাথে সাথে সকল ইউজারের অ্যাপের শীর্ষে ব্যানার হিসেবে প্রদর্শিত হবে এবং তাদের নোটিফিকেশন বক্সে যুক্ত হবে।
-          </p>
-
-          <form onSubmit={handleSendBroadcast} className="space-y-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">
-                নোটিশের শিরোনাম (Title):
-              </label>
-              <input
-                type="text"
-                value={bcTitle}
-                onChange={(e) => setBcTitle(e.target.value)}
-                placeholder="যেমন: ঈদ স্পেশাল অফার! কয়েন রেট বৃদ্ধি করা হয়েছে 🎁"
-                className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-400"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">
-                বিস্তারিত বার্তা (Message):
-              </label>
-              <textarea
-                value={bcMessage}
-                onChange={(e) => setBcMessage(e.target.value)}
-                rows={3}
-                placeholder="যেমন: সকল ব্যবহারকারীদের জানানো যাচ্ছে যে আজকের জন্য প্রতিটি ভিডিওতে ৫০ কয়েন দেওয়া হচ্ছে। বেশি বেশি ভিডিও দেখুন এবং বন্ধুদের রেফার করুন!"
-                className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-400"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">
-                নোটিশে ক্লিক করলে কোন পেজ খুলবে:
-              </label>
-              <select
-                value={bcTab}
-                onChange={(e) => setBcTab(e.target.value)}
-                className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white"
+          {/* 📋 SENT NOTICES HISTORY & DELETE MANAGER */}
+          <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                <span>📋 পাঠানো নোটিশের হিস্ট্রি ও ডিলিট অপশন ({sentNoticesList.length})</span>
+              </h4>
+              <button
+                onClick={() => loadAllAdminData(false)}
+                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+                title="রিফ্রেশ করুন"
               >
-                <option value="home">হোম স্ক্রিন (ভিডিও ফিড)</option>
-                <option value="wallet">ওয়ালেট (ক্যাশআউট স্ক্রিন)</option>
-                <option value="rewards">বোনাস সেন্টার (রেফারেল)</option>
-                <option value="games">গেমস আর্নিং</option>
-              </select>
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
             </div>
 
-            <button
-              type="submit"
-              disabled={sendingBroadcast}
-              className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 text-slate-950 font-black text-xs rounded-2xl shadow-lg shadow-amber-500/20 transition active:scale-98 flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <Send className="w-4 h-4" />
-              <span>{sendingBroadcast ? 'পাঠানো হচ্ছে...' : 'সকল ইউজারের কাছে অবিলম্বে প্রচার করুন 📢'}</span>
-            </button>
-          </form>
+            {sentNoticesList.length === 0 ? (
+              <div className="py-6 text-center text-slate-500 text-xs">
+                কোনো নোটিশের ইতিহাস পাওয়া যায়নি।
+              </div>
+            ) : (
+              <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+                {sentNoticesList.map((n) => (
+                  <div 
+                    key={n.id}
+                    className={`p-3 rounded-2xl border transition flex items-start justify-between gap-3 ${
+                      n.isPrivate 
+                        ? 'bg-cyan-950/20 border-cyan-500/30' 
+                        : 'bg-slate-950 border-slate-800'
+                    }`}
+                  >
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {n.isPrivate ? (
+                          <span className="px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 text-[9px] font-black flex items-center gap-1">
+                            <Lock className="w-2.5 h-2.5" />
+                            <span>🔒 শুধু: {n.targetUserName || n.userId}</span>
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[9px] font-black flex items-center gap-1">
+                            <Megaphone className="w-2.5 h-2.5" />
+                            <span>📢 সকল ইউজার</span>
+                          </span>
+                        )}
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          {new Date(n.createdAt).toLocaleString('bn-BD', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
+                        </span>
+                      </div>
 
-          {/* Current Active Notice Preview */}
-          {settings?.activeNotice?.title && (
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-1 mt-3">
-              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">
-                🔔 বর্তমানে চালু থাকা নোটিশ:
-              </span>
-              <p className="text-xs font-bold text-white">{settings.activeNotice.title}</p>
-              <p className="text-[11px] text-slate-300">{settings.activeNotice.message}</p>
-            </div>
-          )}
+                      <h5 className="text-xs font-black text-white">{n.title}</h5>
+                      <p className="text-[11px] text-slate-300 leading-snug">{n.message}</p>
+                      {n.linkTab && (
+                        <span className="text-[9px] text-emerald-400 font-bold block">
+                          লিংক: {n.linkTab}
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => handleDeleteNotice(n.id)}
+                      className="p-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-500/30 text-rose-300 hover:text-white transition shrink-0"
+                      title="নোটিশ মুছে ফেলুন"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

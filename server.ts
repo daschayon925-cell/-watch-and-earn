@@ -2396,6 +2396,21 @@ app.post('/api/notifications/mark-read', (req, res) => {
   res.json({ success: true });
 });
 
+app.post('/api/user/dismiss-private-notice', (req, res) => {
+  const user = getUser(req);
+  if ((user as any).privateNotice) {
+    (user as any).privateNotice.active = false;
+    (user as any).privateNotice.dismissed = true;
+  }
+  const dbUser = db.users.find(u => u.uid === user.uid);
+  if (dbUser && (dbUser as any).privateNotice) {
+    (dbUser as any).privateNotice.active = false;
+    (dbUser as any).privateNotice.dismissed = true;
+  }
+  saveDbToDisk();
+  res.json({ success: true });
+});
+
 // 11. ADMIN DASHBOARD & MANAGEMENT
 // Overview KPIs
 app.get('/api/admin/overview', (req, res) => {
@@ -2776,7 +2791,123 @@ app.post('/api/admin/settings', (req, res) => {
   res.json({ success: true, settings: db.settings });
 });
 
-// Admin Broadcast Push Announcement
+// Admin Send Notice (Target Single User or Broadcast to All)
+app.post('/api/admin/send-notice', (req, res) => {
+  const user = getUser(req);
+  if (user.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin required' });
+
+  const { targetType, targetUserId, title, message, linkTab, isHighPriorityBanner } = req.body;
+  if (!title || !message) {
+    return res.status(400).json({ success: false, message: 'শিরোনাম এবং বার্তা উভয়ই প্রয়োজন' });
+  }
+
+  if (targetType === 'single') {
+    if (!targetUserId) {
+      return res.status(400).json({ success: false, message: 'অনুগ্রহ করে একজন ইউজার নির্বাচন করুন' });
+    }
+
+    const target = db.users.find(u => u.uid === targetUserId || u.phone === targetUserId);
+    if (!target) {
+      return res.status(404).json({ success: false, message: 'নির্বাচিত ইউজার খুঁজে পাওয়া যায়নি' });
+    }
+
+    const newNotif = {
+      id: 'notif_priv_' + Date.now(),
+      userId: target.uid,
+      targetUserName: target.displayName || target.phone || target.uid,
+      targetUserPhone: target.phone || '',
+      title: title.trim(),
+      message: message.trim(),
+      type: 'system',
+      isPrivate: true,
+      read: false,
+      createdAt: new Date().toISOString(),
+      linkTab: linkTab || 'home'
+    };
+
+    db.notifications.unshift(newNotif);
+
+    // If high priority banner is enabled, set private notice on target user object
+    (target as any).privateNotice = {
+      id: newNotif.id,
+      title: title.trim(),
+      message: message.trim(),
+      linkTab: linkTab || 'home',
+      createdAt: new Date().toISOString(),
+      active: true
+    };
+
+    saveDbToDisk();
+
+    return res.json({ 
+      success: true, 
+      message: `🔒 '${target.displayName || target.phone || target.uid}' এর অ্যাকাউন্টে প্রাইভেট নোটিশ সফলভাবে পাঠানো হয়েছে! অন্য কেউ এটি দেখতে পাবে না।`,
+      notification: newNotif 
+    });
+  } else {
+    // Broadcast to All Users
+    db.settings.activeNotice = {
+      enabled: true,
+      title: title.trim(),
+      message: message.trim(),
+      type: 'announcement',
+      updatedAt: new Date().toISOString()
+    };
+
+    const newNotif = {
+      id: 'notif_bc_' + Date.now(),
+      userId: 'all',
+      targetUserName: 'সকল ইউজার (All Users)',
+      title: title.trim(),
+      message: message.trim(),
+      type: 'system',
+      isPrivate: false,
+      read: false,
+      createdAt: new Date().toISOString(),
+      linkTab: linkTab || 'home'
+    };
+
+    db.notifications.unshift(newNotif);
+    saveDbToDisk();
+
+    return res.json({ 
+      success: true, 
+      message: '📢 ঘোষণা সফলভাবে সকল ইউজারের কাছে পাঠানো হয়েছে!',
+      notification: newNotif 
+    });
+  }
+});
+
+// Admin Get All Sent Notices
+app.get('/api/admin/notices', (req, res) => {
+  const user = getUser(req);
+  if (user.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin required' });
+
+  const notices = (db.notifications || []).filter(n => n.type === 'system' || (n as any).isPrivate);
+  res.json({ success: true, notices });
+});
+
+// Admin Delete / Revoke Notice
+app.delete('/api/admin/notices/:id', (req, res) => {
+  const user = getUser(req);
+  if (user.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin required' });
+
+  const { id } = req.params;
+  const initialCount = db.notifications.length;
+  db.notifications = db.notifications.filter(n => n.id !== id);
+
+  // Also remove from any user's active privateNotice
+  db.users.forEach(u => {
+    if ((u as any).privateNotice && (u as any).privateNotice.id === id) {
+      delete (u as any).privateNotice;
+    }
+  });
+
+  saveDbToDisk();
+  res.json({ success: true, message: 'নোটিশ সফলভাবে মুছে ফেলা হয়েছে' });
+});
+
+// Admin Broadcast Push Announcement (Legacy route support)
 app.post('/api/admin/broadcast', (req, res) => {
   const user = getUser(req);
   if (user.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin required' });
@@ -2807,6 +2938,7 @@ app.post('/api/admin/broadcast', (req, res) => {
     linkTab: linkTab || 'home'
   });
 
+  saveDbToDisk();
   res.json({ success: true, message: 'ঘোষণা সফলভাবে সকল ইউজারের কাছে পাঠানো হয়েছে!' });
 });
 
