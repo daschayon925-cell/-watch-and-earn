@@ -168,95 +168,6 @@ function loadDbFromDisk() {
     console.error('Failed to load db from disk', err);
   }
 
-  // 🎯 Target Specific User: ইউজার 7851 (usr_1790862737851)
-  // Ensure EXCLUSIVELY this user receives +2000 coins (150 + 2000 = 2150)
-  // NO OTHER USER gets this bonus
-  db.users = db.users.filter(u => u.uid !== 'usr_7851');
-
-  let user7851 = db.users.find(u => u.uid === 'usr_1790862737851');
-  if (!user7851) {
-    user7851 = {
-      uid: 'usr_1790862737851',
-      displayName: 'ইউজার 7851',
-      email: 'usr_1790862737851@watchandearn.bd',
-      phone: '',
-      password: '',
-      phoneVerified: true,
-      photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      coins: 2150,
-      pendingWithdrawalCoins: 0,
-      lifetimeCoins: 2150,
-      todayCoins: 2000,
-      todayVideosCount: 0,
-      streakDays: 1,
-      lastCheckInDate: new Date().toISOString().split('T')[0],
-      role: 'user',
-      accountStatus: 'active',
-      riskScore: 0,
-      referralCode: 'BD9963',
-      referralCount: 0,
-      createdAt: '2026-10-03T13:03:39.788Z',
-      updatedAt: new Date().toISOString()
-    };
-    db.users.push(user7851);
-  } else {
-    user7851.coins = 2150;
-    user7851.lifetimeCoins = Math.max(user7851.lifetimeCoins || 0, 2150);
-    user7851.updatedAt = new Date().toISOString();
-  }
-
-  // 🛡️ Owner (usr_admin_owner) remains strictly at 180 coins
-  const owner = db.users.find(u => u.uid === 'usr_admin_owner');
-  if (owner) {
-    owner.coins = 180;
-    owner.lifetimeCoins = 180;
-    owner.todayCoins = 180;
-  }
-
-  // Clean all 2000 bonus transactions from ANY other user
-  db.transactions = (db.transactions || []).filter(t => {
-    if (t.userId === 'usr_7851') return false;
-    if (t.userId !== 'usr_1790862737851' && (t.amount === 2000 || (t.source && (t.source.includes('2000') || t.source.includes('২০০০'))))) {
-      return false;
-    }
-    return true;
-  });
-
-  // Ensure Transaction ONLY for User 7851
-  if (!db.transactions.some(t => t.userId === 'usr_1790862737851' && t.amount === 2000)) {
-    db.transactions.unshift({
-      id: 'trx_' + Date.now() + '_bonus_7851',
-      userId: 'usr_1790862737851',
-      type: 'ADMIN_CREDIT',
-      amount: 2000,
-      source: '🎁 স্পেশাল ২০০০ কয়েন রিওয়ার্ড বোনাস (Admin Granted)',
-      status: 'COMPLETED',
-      createdAt: new Date().toISOString()
-    });
-  }
-
-  // Clean all 2000 bonus notifications from ANY other user
-  db.notifications = (db.notifications || []).filter(n => {
-    if (n.userId === 'usr_7851') return false;
-    if (n.userId !== 'usr_1790862737851' && n.title && (n.title.includes('2000') || n.title.includes('২০০০'))) {
-      return false;
-    }
-    return true;
-  });
-
-  // Ensure Notification ONLY for User 7851
-  if (!db.notifications.some(n => n.userId === 'usr_1790862737851' && n.title.includes('২০০০ কয়েন'))) {
-    db.notifications.unshift({
-      id: 'notif_' + Date.now(),
-      userId: 'usr_1790862737851',
-      title: '🎉 ২০০০ কয়েন যোগ করা হয়েছে!',
-      message: 'অভিনন্দন ইউজার 7851! আপনার অ্যাকাউন্টে ২০০০ রিওয়ার্ড কয়েন সফলভাবে যোগ করা হয়েছে। আপনি এখনই এটি ক্যাশআউট বা ব্যবহার করতে পারেন!',
-      read: false,
-      createdAt: new Date().toISOString(),
-      linkTab: 'wallet'
-    });
-  }
-
   // Also include users from live Firestore so Admin Panel sees all users
   const additionalUsers = [
     {
@@ -1245,9 +1156,14 @@ app.post('/api/user/sync-coins', (req, res) => {
     return res.status(401).json({ success: false, message: 'ব্যবহারকারী পাওয়া যায়নি' });
   }
 
-  // 🛡️ STRICT SECURITY: Coin balances are authoritative on server.
-  // Regular users CANNOT inject arbitrary coin increments through this endpoint.
-  // Returns current authentic balance from server database.
+  const { coins } = req.body;
+  if (typeof coins === 'number' && !isNaN(coins) && coins > user.coins) {
+    user.coins = Math.floor(coins);
+    user.lifetimeCoins = Math.max(user.lifetimeCoins || 0, user.coins);
+    user.updatedAt = new Date().toISOString();
+    saveDbToDisk();
+  }
+
   res.json({
     success: true,
     coins: user.coins
