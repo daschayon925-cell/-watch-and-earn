@@ -158,11 +158,16 @@ export interface AdminSettings {
     popunderEnabled?: boolean; // Smart Popunder Engine On/Off
     popunderIntervalMinutes?: number; // Smart Popunder Cooldown in minutes (e.g. 3)
     popunderDailyCap?: number; // Max popunders per user daily (e.g. 8)
-    // 🌟 Dual Network: Monetag (PropellerAds) Integration
+    // 🌟 Multi-Network: Monetag (PropellerAds) Integration
     monetagEnabled?: boolean;
     monetagDirectLink?: string; // Monetag Direct Link / SmartLink
     monetagTagCode?: string; // Monetag In-Page Push / OnClick / Vignette script tag
     monetagZoneId?: string; // Monetag Zone ID
+    // 🚀 High-CPM Network: HilltopAds Official Integration
+    hilltopAdsEnabled?: boolean;
+    hilltopAdsDirectLink?: string; // HilltopAds Direct Link (e.g. https://affectionatestorage.com/Ah6g5c)
+    hilltopAdsZoneId?: string; // HilltopAds Zone ID (e.g. 7488677)
+    hilltopAdsBannerCode?: string; // HilltopAds Script / Video Slider Code
   };
   offerwallsConfig?: {
     enabled: boolean;
@@ -171,6 +176,7 @@ export interface AdminSettings {
     monlixEnabled?: boolean;
     monlixAppId?: string; // Monlix App ID
     timewallEnabled?: boolean;
+    timewallPlacementId?: string; // TimeWall Placement ID (e.g. d7521f148f92a2d3)
     timewallUrl?: string; // TimeWall publisher URL
     adgateEnabled?: boolean;
     adgateWallId?: string; // AdGate Media Wall ID

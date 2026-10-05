@@ -666,31 +666,52 @@ export const AuthModal: React.FC = () => {
           </form>
         )}
 
-        {/* ⚡ Instant 1-Click Guest & International Visitor Access (Zero Friction) */}
+        {/* ⚡ Instant 1-Click Guest Access (ONLY FOR FOREIGN / INTERNATIONAL VISITORS) */}
         {mode !== 'admin' && (
           <div className="mt-4 pt-3 border-t border-slate-800/80 text-center relative z-10">
-            <button
-              type="button"
-              onClick={async () => {
-                setLoading(true);
-                await loginDemo();
-                setLoading(false);
-                soundService.playCoinReward();
-                showToast(
-                  language === 'bn' ? 'গেস্ট মোডে স্বাগতম! 🎮' : 'Welcome Guest! 🎮',
-                  language === 'bn' ? 'সরাসরি ভিডিও দেখুন ও রিওয়ার্ড উপভোগ করুন।' : 'Enjoy watching videos and earning rewards.',
-                  'success'
-                );
-              }}
-              className="w-full py-2.5 px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 text-slate-300 hover:text-white text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer group"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>⚡ ১-ক্লিকে ইনস্ট্যান্ট ভিডিও দেখুন (Instant Guest Access)</span>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition" />
-            </button>
-            <p className="text-[10px] text-slate-500 mt-1.5">
-              USA বা বিশ্বের যেকোনো প্রান্ত থেকে লগইন ছাড়াই সরাসরি ভিডিও ও বিজ্ঞাপন চলবে।
-            </p>
+            {region === 'GLOBAL' ? (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setLoading(true);
+                    await loginDemo();
+                    setLoading(false);
+                    soundService.playCoinReward();
+                    showToast(
+                      'Welcome Global Member! 🌍',
+                      'Enjoy high-CPM video feed & rewards.',
+                      'success'
+                    );
+                  }}
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-900/60 to-cyan-900/60 hover:from-blue-800/70 border border-cyan-500/40 text-cyan-200 hover:text-white text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer group shadow"
+                >
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                  <span>🌍 1-Click Foreign Guest Access (USA/Global)</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-cyan-400 group-hover:translate-x-1 transition" />
+                </button>
+                <p className="text-[10px] text-slate-400">
+                  Designed for users outside Bangladesh who do not possess a Bangladeshi SIM card.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-center gap-1.5 text-[11px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/30 py-2 px-3 rounded-xl">
+                  <span>⚠️</span>
+                  <span>বিকাশ, নগদ ও রিচার্জে পেমেন্ট পেতে সঠিক নম্বর দিয়ে অ্যাকাউন্ট খুলুন।</span>
+                </div>
+                <div className="flex items-center justify-center gap-1 text-[10px] text-slate-500 pt-1">
+                  <span>বিদেশি ইউজার?</span>
+                  <button
+                    type="button"
+                    onClick={() => setRegion('GLOBAL')}
+                    className="text-cyan-400 font-bold hover:underline cursor-pointer"
+                  >
+                    এখানে ক্লিক করুন (Foreign Mode)
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

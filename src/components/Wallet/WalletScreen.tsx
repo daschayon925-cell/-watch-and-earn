@@ -39,7 +39,7 @@ export const WalletScreen: React.FC = () => {
   const [accountType, setAccountType] = useState<'Personal' | 'Agent' | 'Prepaid' | 'Postpaid' | 'Binance Pay / USDT'>('Prepaid');
   // Auto-fill user's own registered phone ONLY if it is a real standard user phone, never fallback to owner phone
   const [mobileNumber, setMobileNumber] = useState<string>(() => {
-    if (user?.phone && user.role !== 'admin') {
+    if (user?.phone && user?.role !== 'admin') {
       return user.phone;
     }
     return '';

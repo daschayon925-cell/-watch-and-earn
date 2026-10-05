@@ -109,8 +109,15 @@ export const ContinuousSocialBar: React.FC = () => {
   const adsterraLink =
     settings?.adsConfig?.adsterraDirectLink?.trim() ||
     'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
-  const monetagLink = settings?.adsConfig?.monetagDirectLink?.trim();
-  const directLink = (monetagLink && Math.random() > 0.5) ? monetagLink : adsterraLink;
+  const hilltopAdsLink =
+    settings?.adsConfig?.hilltopAdsDirectLink?.trim() ||
+    'https://affectionatestorage.com/Ah6g5c';
+  const monetagLink =
+    settings?.adsConfig?.monetagDirectLink?.trim() ||
+    'https://5gvci.com/act/files/tag.min.js?z=11948885';
+
+  const randVal = Math.random();
+  const directLink = randVal < 0.33 ? adsterraLink : randVal < 0.66 ? hilltopAdsLink : monetagLink;
 
   // 💬 Top Social Bar Lifecycle (Cycles smoothly)
   useEffect(() => {
@@ -187,11 +194,11 @@ export const ContinuousSocialBar: React.FC = () => {
 
   return (
     <>
-      {/* 💬 1. TOP BAR: Official Social Bar Push Alert Style */}
-      {isTopVisible && !isTopDismissed && (
+      {/* ⚡ SINGLE BOTTOM FLOATING SPONSOR & SOCIAL BAR NOTIFICATION (Above Bottom Nav, Never Blocking Top Buttons) */}
+      {(isTopVisible && !isTopDismissed) ? (
         <aside 
           aria-label="Social Bar Alert"
-          className="fixed top-20 left-3 right-3 sm:left-auto sm:right-4 sm:w-84 z-40 animate-in slide-in-from-top duration-300 pointer-events-auto shadow-2xl"
+          className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-4 sm:w-88 z-40 animate-in slide-in-from-bottom duration-300 pointer-events-auto shadow-2xl"
         >
           <div 
             onClick={(e) => {
@@ -219,7 +226,7 @@ export const ContinuousSocialBar: React.FC = () => {
                     {topPush.badge}
                   </span>
                   <span className="text-[9px] font-black text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/40">
-                    👉 চাপ দিলে ১০ কয়েন 🪙
+                    +১০ কয়েন 🪙
                   </span>
                 </div>
                 <h4 className="text-xs font-bold text-white truncate group-hover:text-blue-300 transition">
@@ -248,19 +255,16 @@ export const ContinuousSocialBar: React.FC = () => {
               type="button"
               onClick={handleDismissTop}
               className="absolute top-1.5 right-1.5 p-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
-              title="বন্ধ করুন"
+              title="বিজ্ঞাপন বন্ধ করুন"
             >
               <X className="w-3 h-3" />
             </button>
           </div>
         </aside>
-      )}
-
-      {/* ⚡ 2. BOTTOM BAR: Exact Image 2 Compact Sponsored Messenger Bar */}
-      {isBottomVisible && !isBottomDismissed && (
+      ) : (isBottomVisible && !isBottomDismissed) ? (
         <aside 
           aria-label="Sponsored Notification"
-          className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-4 sm:w-88 z-50 animate-in slide-in-from-bottom duration-300 pointer-events-auto shadow-2xl"
+          className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-4 sm:w-88 z-40 animate-in slide-in-from-bottom duration-300 pointer-events-auto shadow-2xl"
         >
           <div 
             onClick={(e) => {
@@ -270,12 +274,12 @@ export const ContinuousSocialBar: React.FC = () => {
             className="group relative cursor-pointer overflow-hidden rounded-2xl bg-[#0d1627]/98 border border-cyan-500/40 p-2.5 sm:p-3 shadow-[0_10px_30px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all hover:border-cyan-400 active:scale-[0.98]"
           >
             <div className="flex items-center gap-2.5">
-              {/* Image 2 Messenger Icon Box */}
+              {/* Messenger Icon Box */}
               <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/40 p-1 shadow flex-shrink-0 flex items-center justify-center text-cyan-400">
                 <MessageSquare className="w-5 h-5 fill-cyan-400 text-cyan-400 animate-pulse" />
               </div>
 
-              {/* Content matching Image 2 */}
+              {/* Content */}
               <div className="flex-1 min-w-0 pr-2">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 font-bold text-[9px] border border-amber-500/30">
@@ -293,7 +297,7 @@ export const ContinuousSocialBar: React.FC = () => {
                 </p>
               </div>
 
-              {/* Image 2 Orange Action Button */}
+              {/* Action Button */}
               <div className="flex items-center gap-1 flex-shrink-0">
                 <span className="text-[11px] font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 text-slate-950 px-3 py-1.5 rounded-xl shadow-md flex items-center gap-1 active:scale-95 transition">
                   <span>দেখুন</span>
@@ -313,7 +317,7 @@ export const ContinuousSocialBar: React.FC = () => {
             </button>
           </div>
         </aside>
-      )}
+      ) : null}
     </>
   );
 };

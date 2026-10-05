@@ -120,6 +120,16 @@ export const cloudDb = {
     }
   },
 
+  deleteUser: async (uid: string): Promise<void> => {
+    if (isCloudDisabled() || !uid) return;
+    try {
+      const userRef = doc(db, 'users', uid);
+      await withTimeout(deleteDoc(userRef), 1500);
+    } catch (err: any) {
+      markQuotaExceeded(err);
+    }
+  },
+
   // --- SETTINGS COLLECTION ---
   saveSettings: async (settings: AdminSettings): Promise<void> => {
     if (isCloudDisabled()) return;

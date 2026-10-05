@@ -36,6 +36,16 @@ const MainLayout: React.FC = () => {
     );
   }
 
+  // If user is not authenticated (logged out or fresh session), show the AuthModal registration/login screen directly
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#05070B] text-[#F8FAFC] flex flex-col justify-center items-center font-['Hind_Siliguri','Outfit',sans-serif] p-2">
+        <AuthModal />
+        <ToastContainer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#05070B] text-[#F8FAFC] flex flex-col justify-between selection:bg-emerald-500 selection:text-slate-950 font-['Hind_Siliguri','Outfit',sans-serif]">
       {/* Top Navbar */}
@@ -63,7 +73,6 @@ const MainLayout: React.FC = () => {
       {(activeTab as string) !== 'admin' && <AdsterraScriptInjector />}
       {(activeTab as string) !== 'admin' && <ContinuousSocialBar />}
       {(activeTab as string) !== 'admin' && <AdVisitTimerModal />}
-      {!user && <AuthModal />}
     </div>
   );
 };

@@ -20,9 +20,11 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', cl
   const maxClicks = 10;
   const isLimitReached = clicksToday >= maxClicks;
 
-  const directLink =
-    settings?.adsConfig?.adsterraDirectLink?.trim() ||
-    'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+  const adsterraLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+  const hilltopAdsLink = settings?.adsConfig?.hilltopAdsDirectLink?.trim() || 'https://affectionatestorage.com/Ah6g5c';
+  
+  // Dynamic rotation: alternates between Adsterra & HilltopAds for double earnings
+  const directLink = (clicksToday % 2 === 0) ? hilltopAdsLink : adsterraLink;
 
   // Rich Authentic Bangladesh Sponsor Campaigns (Matches Image 2 exactly)
   const ADS = [

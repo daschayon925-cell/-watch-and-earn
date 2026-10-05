@@ -448,9 +448,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (savedUid) {
       loginDemo(savedUid);
     } else {
-      // 🌟 Frictionless Auto-Onboarding for new devices / other mobiles!
-      // Instantly gives them an active account with 100 welcome coins so they can earn immediately!
-      loginDemo();
+      // Require explicit registration/login for Bangladeshi users
+      setLoading(false);
+      setUser(null);
     }
 
     // 🔄 Dynamic User Profile Polling every 12 seconds to reflect realtime earnings without overloading network

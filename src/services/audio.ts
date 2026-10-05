@@ -135,6 +135,10 @@ class SoundService {
     }
   }
 
+  public playSuccess() {
+    this.playSuccessFanfare();
+  }
+
   public playSuccessFanfare() {
     if (this.isMuted) return;
     try {

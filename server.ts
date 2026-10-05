@@ -24,6 +24,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// HilltopAds Verification Route
+app.get('/5a6aa39ee3ae413ebcefceebfc1a31468855fd81*', (req, res) => {
+  res.type('text/plain');
+  res.send('5a6aa39ee3ae413ebcefceebfc1a31468855fd81');
+});
+
 // Explicit SEO Routes for Googlebot Crawler
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
@@ -144,6 +150,10 @@ function loadDbFromDisk() {
         db.settings.dailyMaxVideos = 40;
         db.settings.dailyRewardedAdLimit = 25;
         db.settings.referralBonus = 50;
+        if (!db.settings.adsConfig) db.settings.adsConfig = {};
+        db.settings.adsConfig.hilltopAdsEnabled = true;
+        db.settings.adsConfig.hilltopAdsDirectLink = 'https://affectionatestorage.com/Ah6g5c';
+        db.settings.adsConfig.hilltopAdsZoneId = '7488677';
         db.users = loaded.users || db.users;
         db.videos = loaded.videos || db.videos;
         db.transactions = loaded.transactions || db.transactions;
@@ -374,7 +384,11 @@ const db: {
       monetagEnabled: true,
       monetagZoneId: '11948885',
       monetagTagCode: '<script src="https://5gvci.com/act/files/tag.min.js?z=11948885" data-cfasync="false" async></script>',
-      monetagDirectLink: ''
+      monetagDirectLink: '',
+      hilltopAdsEnabled: true,
+      hilltopAdsDirectLink: 'https://affectionatestorage.com/Ah6g5c',
+      hilltopAdsZoneId: '7488677',
+      hilltopAdsBannerCode: ''
     },
     offerwallsConfig: {
       enabled: true,
@@ -385,7 +399,8 @@ const db: {
       monlixEnabled: true,
       monlixAppId: '',
       timewallEnabled: true,
-      timewallUrl: '',
+      timewallPlacementId: 'd7521f148f92a2d3',
+      timewallUrl: 'https://timewall.io/offers/d7521f148f92a2d3',
       customTasksRewardMultiplier: 1.0
     },
     activeNotice: {
@@ -762,21 +777,47 @@ const activeSessions: Map<string, WatchSessionData> = new Map();
 const phoneOtps: Map<string, { code: string; expiresAt: number }> = new Map();
 
 // Helper to get current active user (with auto-recovery for persistent multi-device sessions)
-function getUser(req: express.Request) {
+function getUser(req: express.Request): any {
   const uid = ((req.headers['x-user-id'] as string) || '').trim();
-  if (!uid) return null;
-
-  const clientCoinsHeader = req.headers['x-user-coins'];
-  const clientCoins = clientCoinsHeader ? parseInt(clientCoinsHeader as string, 10) : 0;
+  
+  if (!uid) {
+    let guest = db.users.find(u => u.uid === 'guest_user');
+    if (!guest) {
+      guest = {
+        uid: 'guest_user',
+        displayName: 'অতিথি ইউজার',
+        email: 'guest@watchandearn.bd',
+        phone: '',
+        password: '',
+        phoneVerified: false,
+        photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        coins: 100,
+        pendingWithdrawalCoins: 0,
+        lifetimeCoins: 100,
+        todayCoins: 0,
+        todayVideosCount: 0,
+        streakDays: 1,
+        lastCheckInDate: new Date().toISOString().split('T')[0],
+        role: 'user',
+        accountStatus: 'active',
+        riskScore: 0,
+        referralCode: 'BD1000',
+        referralCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      db.users.push(guest);
+    }
+    return guest;
+  }
 
   let user = db.users.find(u => u.uid === uid);
-  if (!user && (uid.startsWith('usr_') || uid.startsWith('user_'))) {
+  if (!user) {
     // 🛡️ Auto-restore / register this user in db.users with standard starting balance (100 coins max)
-    // Never allow unverified client headers to forge arbitrary starting balance!
     const startingCoins = 100;
     user = {
       uid,
-      displayName: 'ইউজার ' + uid.slice(-4),
+      displayName: 'ইউজার ' + (uid.length > 4 ? uid.slice(-4) : uid),
       email: `${uid}@watchandearn.bd`,
       phone: '',
       password: '',
@@ -800,7 +841,7 @@ function getUser(req: express.Request) {
     db.users.push(user);
     saveDbToDisk();
   }
-  return user || null;
+  return user;
 }
 
 // ---------------- API ENDPOINTS ---------------- //
@@ -2522,6 +2563,12 @@ app.post('/api/admin/users/:uid/action', (req, res) => {
     db.users.push(targetUser);
   }
 
+  if (action === 'delete') {
+    db.users = db.users.filter(u => u.uid !== uid);
+    saveDbToDisk();
+    return res.json({ success: true, deletedUid: uid, message: 'User deleted permanently' });
+  }
+
   if (action === 'suspend') {
     targetUser.accountStatus = 'suspended';
   } else if (action === 'unsuspend') {
@@ -2959,6 +3006,62 @@ app.get('/api/admin/reports', (req, res) => {
   const user = getUser(req);
   if (user.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin required' });
   res.json({ success: true, reports: db.reports });
+});
+
+// 12. OFFERWALL POSTBACK WEBHOOKS
+// TimeWall Official Postback
+app.all(['/api/postback/timewall', '/api/postbacks/timewall'], (req, res) => {
+  try {
+    const params = { ...req.query, ...req.body };
+    const userId = (params.userId || params.userid || params.subid || '').toString().trim();
+    const txid = (params.txid || params.transactionID || params.transactionId || 'tx_' + Date.now()).toString();
+    const revenue = parseFloat(params.revenue || '0');
+    const currencyAmount = parseInt(params.currencyAmount || params.currency || '0', 10) || Math.round(revenue * 1000);
+
+    console.log(`[TimeWall Postback] Received: User=${userId}, TxID=${txid}, Revenue=$${revenue}, Coins=${currencyAmount}`);
+
+    if (userId) {
+      const targetUser = db.users.find(u => u.uid === userId || u.id === userId || u.phone === userId);
+      if (targetUser) {
+        // Prevent duplicate transaction
+        const alreadyCredited = (db.transactions || []).some(t => t.id === `timewall_${txid}`);
+        if (!alreadyCredited && currencyAmount > 0) {
+          targetUser.coins = (targetUser.coins || 0) + currencyAmount;
+          targetUser.lifetimeCoins = (targetUser.lifetimeCoins || 0) + currencyAmount;
+          targetUser.todayCoins = (targetUser.todayCoins || 0) + currencyAmount;
+
+          db.transactions.unshift({
+            id: `timewall_${txid}`,
+            userId: targetUser.uid,
+            type: 'CPA_OFFER_COMPLETED',
+            amount: currencyAmount,
+            source: `🎯 TimeWall অফার রিওয়ার্ড (+${currencyAmount} কয়েন)`,
+            status: 'COMPLETED',
+            createdAt: new Date().toISOString()
+          });
+
+          db.notifications.unshift({
+            id: 'notif_tw_' + Date.now(),
+            userId: targetUser.uid,
+            title: '🎉 TimeWall রিওয়ার্ড সফল!',
+            message: `TimeWall থেকে অফার সম্পন্ন করার জন্য আপনার একাউন্টে ${currencyAmount} কয়েন যোগ করা হয়েছে!`,
+            type: 'coin',
+            read: false,
+            createdAt: new Date().toISOString(),
+            linkTab: 'wallet'
+          });
+
+          saveDbToDisk();
+        }
+      }
+    }
+
+    // TimeWall expects HTTP 200 OK
+    return res.status(200).send('OK');
+  } catch (err) {
+    console.error('[TimeWall Postback] Error:', err);
+    return res.status(200).send('OK'); // Always return 200 so TimeWall doesn't retry infinitely
+  }
 });
 
 // Explicit 404 for unhandled API endpoints so they never return HTML

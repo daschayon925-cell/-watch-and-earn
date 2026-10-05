@@ -28,7 +28,22 @@
       "adsterraDirectLink": "https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4",
       "adsterraSocialBarCode": "<script src=\"https://pl31612557.profitableratecpmnetwork.com/4b/5b/f5/4b5bf560a60882eaf9fc46b3684fb3f4.js\"></script>",
       "adsterraBannerCode": "<script type=\"text/javascript\">\n  atOptions = {\n    'key' : '026df0717402ab99e2cfeea66cbde373',\n    'format' : 'iframe',\n    'height' : 250,\n    'width' : 300,\n    'params' : {}\n  };\n</script>\n<script type=\"text/javascript\" src=\"https://www.highrevenueformat.com/026df0717402ab99e2cfeea66cbde373/invoke.js\"></script>",
-      "rewardedVideoDurationSeconds": 20
+      "rewardedVideoDurationSeconds": 20,
+      "hilltopAdsEnabled": true,
+      "hilltopAdsDirectLink": "https://affectionatestorage.com/Ah6g5c",
+      "hilltopAdsZoneId": "7488677"
+    },
+    "offerwallsConfig": {
+      "enabled": true,
+      "cpaleadEnabled": true,
+      "cpaleadApiKey": "6879945464ff4be390fdabff423e4eb0",
+      "cpaleadPublisherId": "3364429",
+      "cpaleadUrl": "https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429",
+      "monlixEnabled": true,
+      "monlixAppId": "",
+      "timewallEnabled": true,
+      "timewallUrl": "",
+      "customTasksRewardMultiplier": 1
     },
     "activeNotice": {
       "enabled": true,
@@ -102,7 +117,7 @@
       "referralCode": "BD9963",
       "referralCount": 0,
       "createdAt": "2026-10-03T13:03:39.788Z",
-      "updatedAt": "2026-10-03T16:19:19.321Z"
+      "updatedAt": "2026-10-04T20:37:48.360Z"
     },
     {
       "uid": "usr_1790827850530",
@@ -175,6 +190,29 @@
       "riskScore": 0,
       "referralCount": 0,
       "updatedAt": "2026-10-03T13:30:04.261Z"
+    },
+    {
+      "uid": "usr_guest_1791108719537_362",
+      "displayName": "ইউজার _362",
+      "email": "usr_guest_1791108719537_362@watchandearn.bd",
+      "phone": "",
+      "password": "",
+      "phoneVerified": true,
+      "photoURL": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "coins": 120,
+      "pendingWithdrawalCoins": 0,
+      "lifetimeCoins": 120,
+      "todayCoins": 20,
+      "todayVideosCount": 0,
+      "streakDays": 1,
+      "lastCheckInDate": "2026-10-04",
+      "role": "user",
+      "accountStatus": "active",
+      "riskScore": 0,
+      "referralCode": "BD9764",
+      "referralCount": 0,
+      "createdAt": "2026-10-04T18:40:55.067Z",
+      "updatedAt": "2026-10-04T18:43:05.525Z"
     }
   ],
   "videos": [
@@ -557,6 +595,26 @@
     }
   ],
   "transactions": [
+    {
+      "transactionId": "trx_bonus_1791139385525_896",
+      "userId": "usr_guest_1791108719537_362",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "ইউটিউব ভিডিও দেখুন ও চ্যানেল সাবস্ক্রাইব করুন 📺",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-04T18:43:05.525Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791139297945_406",
+      "userId": "usr_guest_1791108719537_362",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-04T18:41:37.945Z"
+    },
     {
       "transactionId": "trx_bonus_1791044343522_211",
       "userId": "usr_admin_owner",

@@ -95,6 +95,10 @@ export const AdminDashboard: React.FC = () => {
   const [coinAdjustAmount, setCoinAdjustAmount] = useState<string>('2000');
   const [coinAdjustReason, setCoinAdjustReason] = useState<string>('লয়ালটি রিওয়ার্ড বোনাস');
 
+  // 🗑️ User Delete Confirmation Modal
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [deletingUser, setDeletingUser] = useState<boolean>(false);
+
   const currentConfiguredPin = settings?.adminSecurity?.adminPin || '7788';
 
   const handleUnlockAdmin = (e: React.FormEvent) => {
@@ -224,9 +228,43 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleConfirmDeleteUser = async () => {
+    if (!userToDelete || !userToDelete.uid) return;
+    const uid = userToDelete.uid;
+    const name = userToDelete.displayName || 'ইউজার';
+    setDeletingUser(true);
+    try {
+      // 1. Delete from Server
+      await api.adminUserAction(uid, 'delete');
+      // 2. Delete from Cloud Firestore
+      cloudDb.deleteUser(uid).catch(() => {});
+
+      // 3. Immediately filter out from list
+      setUsersList(prev => prev.filter(u => u && u.uid !== uid));
+      showToast('🗑️ ইউজার সফলভাবে ডিলিট হয়েছে!', `${name} অ্যাকাউন্ট স্থায়ীভাবে মুছে ফেলা হয়েছে।`, 'success');
+      setUserToDelete(null);
+    } catch (err) {
+      console.error('Delete error', err);
+      // Ensure UI list is updated regardless
+      setUsersList(prev => prev.filter(u => u && u.uid !== uid));
+      showToast('ইউজার অপসারিত হয়েছে', '', 'info');
+      setUserToDelete(null);
+    } finally {
+      setDeletingUser(false);
+    }
+  };
+
   const handleUserAction = async (uid: string, action: string, delta?: number) => {
     if (!uid) return;
     try {
+      if (action === 'delete') {
+        const target = usersList.find(u => u && u.uid === uid);
+        if (target) {
+          setUserToDelete(target);
+        }
+        return;
+      }
+
       const target = usersList.find(u => u && u.uid === uid);
       const res = await api.adminUserAction(uid, action, delta, coinAdjustReason || 'Admin Console Action', target?.displayName, target?.phone);
       if (res?.success && res?.user && res.user.uid) {
@@ -917,6 +955,14 @@ export const AdminDashboard: React.FC = () => {
                   >
                     <span>💬</span> নোটিশ
                   </button>
+
+                  <button
+                    onClick={() => handleUserAction(u.uid, 'delete')}
+                    className="px-2.5 py-1 bg-rose-600/30 hover:bg-rose-600/60 text-rose-300 border border-rose-500/50 font-bold text-xs rounded-xl transition-all flex items-center gap-1 active:scale-95"
+                    title="এই ইউজারকে স্থায়ীভাবে ডিলিট করুন"
+                  >
+                    <span>🗑️</span> ডিলিট
+                  </button>
                 </div>
               </div>
             ))}
@@ -1445,6 +1491,67 @@ export const AdminDashboard: React.FC = () => {
                         />
                       </div>
                     </div>
+
+                    {/* 🚀 High-CPM Network: HilltopAds Official Integration */}
+                    <div className="p-3 rounded-xl bg-teal-950/40 border border-teal-500/40 space-y-2 mt-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-teal-300 flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-teal-400" />
+                          <span>৩য় হাই-CPM নেটওয়ার্ক: HilltopAds (হিলটপ অ্যাডস)</span>
+                        </span>
+                        <label className="flex items-center gap-1.5 text-[10px] font-bold text-teal-200 cursor-pointer">
+                          <span>চালু</span>
+                          <input
+                            type="checkbox"
+                            checked={editSettings.adsConfig?.hilltopAdsEnabled ?? true}
+                            onChange={(e) => setEditSettings({
+                              ...editSettings,
+                              adsConfig: { ...editSettings.adsConfig, hilltopAdsEnabled: e.target.checked } as any
+                            })}
+                            className="w-4 h-4 accent-teal-500"
+                          />
+                        </label>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-teal-200 mb-1">
+                          🔗 HilltopAds Direct Link (হাই-আর্নিং লিঙ্ক):
+                        </label>
+                        <input
+                          type="url"
+                          value={editSettings.adsConfig?.hilltopAdsDirectLink ?? 'https://affectionatestorage.com/Ah6g5c'}
+                          onChange={(e) => setEditSettings({
+                            ...editSettings,
+                            adsConfig: { ...editSettings.adsConfig, hilltopAdsDirectLink: e.target.value } as any
+                          })}
+                          placeholder="https://affectionatestorage.com/Ah6g5c"
+                          className="w-full p-2 bg-slate-950 border border-teal-500/30 rounded-xl text-xs font-mono text-teal-200 focus:outline-none focus:border-teal-400"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-bold text-teal-200 mb-1">
+                            Zone ID:
+                          </label>
+                          <input
+                            type="text"
+                            value={editSettings.adsConfig?.hilltopAdsZoneId ?? '7488677'}
+                            onChange={(e) => setEditSettings({
+                              ...editSettings,
+                              adsConfig: { ...editSettings.adsConfig, hilltopAdsZoneId: e.target.value } as any
+                            })}
+                            placeholder="7488677"
+                            className="w-full p-2 bg-slate-950 border border-teal-500/30 rounded-xl text-xs font-mono text-teal-200 focus:outline-none focus:border-teal-400"
+                          />
+                        </div>
+                        <div className="flex flex-col justify-end">
+                          <span className="text-[9px] text-teal-400 bg-teal-950/60 p-2 rounded-xl border border-teal-500/20">
+                            ✅ স্ট্যাটাস: Approved ও সক্রিয়
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1553,11 +1660,38 @@ export const AdminDashboard: React.FC = () => {
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-300 mb-1">
-                    ⚡ TimeWall Publisher URL:
+                    ⚡ TimeWall Placement ID (প্লেসমেন্ট আইডি):
+                  </label>
+                  <input
+                    type="text"
+                    value={editSettings.offerwallsConfig?.timewallPlacementId ?? 'd7521f148f92a2d3'}
+                    onChange={(e) => {
+                      const id = e.target.value.trim();
+                      setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: { 
+                          ...editSettings.offerwallsConfig, 
+                          timewallPlacementId: id,
+                          timewallUrl: id ? `https://timewall.io/offers/${id}` : '',
+                          enabled: true
+                        } as any
+                      });
+                    }}
+                    placeholder="d7521f148f92a2d3"
+                    className="w-full p-2 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 focus:outline-none focus:border-amber-400"
+                  />
+                  <span className="text-[9px] text-amber-400/80 block mt-0.5">
+                    💡 Placement ID: <strong>d7521f148f92a2d3</strong> (WatchEarnBD)
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-300 mb-1">
+                    ⚡ TimeWall Offerwall URL:
                   </label>
                   <input
                     type="url"
-                    value={editSettings.offerwallsConfig?.timewallUrl ?? ''}
+                    value={editSettings.offerwallsConfig?.timewallUrl ?? 'https://timewall.io/offers/d7521f148f92a2d3'}
                     onChange={(e) => setEditSettings({
                       ...editSettings,
                       offerwallsConfig: { 
@@ -1566,7 +1700,7 @@ export const AdminDashboard: React.FC = () => {
                         enabled: true
                       } as any
                     })}
-                    placeholder="https://timewall.io/?..."
+                    placeholder="https://timewall.io/offers/d7521f148f92a2d3"
                     className="w-full p-2 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 focus:outline-none focus:border-amber-400"
                   />
                 </div>
@@ -2417,6 +2551,65 @@ export const AdminDashboard: React.FC = () => {
                 type="button"
                 onClick={() => setCoinAdjustUser(null)}
                 className="px-4 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold"
+              >
+                বাতিল
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🗑️ USER DELETE CONFIRMATION MODAL */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm bg-[#0F172A] border border-rose-500/50 rounded-3xl p-5 shadow-2xl text-left space-y-4">
+            <div className="flex items-center gap-3 border-b border-slate-800 pb-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-xl">
+                🗑️
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-white">ইউজার ডিলিট নিশ্চিত করুন</h3>
+                <p className="text-[11px] text-rose-400 font-semibold">এই কাজ আর কখনো ফেরানো যাবে না!</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">নাম:</span>
+                <span className="font-bold text-white">{userToDelete.displayName || 'গেস্ট মেম্বার'}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">মোবাইল / আইডি:</span>
+                <span className="font-mono text-emerald-400">{userToDelete.phone || userToDelete.email}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">ব্যালেন্স:</span>
+                <span className="font-bold text-amber-400 font-mono">🪙 {userToDelete.coins || 0} কয়েন</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">UID:</span>
+                <span className="font-mono text-[10px] text-slate-500 truncate max-w-[160px]">{userToDelete.uid}</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-400 text-center">
+              আপনি কি নিশ্চিত যে এই ইউজারকে স্থায়ীভাবে ডিলিট করতে চান?
+            </p>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                disabled={deletingUser}
+                onClick={handleConfirmDeleteUser}
+                className="flex-1 py-2.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-xl text-xs shadow-lg shadow-rose-600/30 active:scale-95 transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <span>{deletingUser ? 'ডিলিট হচ্ছে...' : '🗑️ হ্যাঁ, স্থায়ীভাবে ডিলিট করুন'}</span>
+              </button>
+              <button
+                type="button"
+                disabled={deletingUser}
+                onClick={() => setUserToDelete(null)}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
               >
                 বাতিল
               </button>

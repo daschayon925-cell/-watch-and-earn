@@ -139,11 +139,11 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
 
   const currentAd = rewardedAds[(adNumber - 1) % rewardedAds.length] || rewardedAds[0];
 
-  // 🎬 Dual-Sponsor 2-Stage Sequence: Stage 1 = Adsterra (First half), Stage 2 = Monetag (Second half)
+  // 🎬 Dual-Sponsor 2-Stage Sequence: Stage 1 = Adsterra (First half), Stage 2 = HilltopAds (Second half)
   const isSecondPhase = (initialDuration - secondsRemaining) >= (initialDuration / 2);
-  const currentNetwork = isSecondPhase ? 'Monetag' : 'Adsterra';
+  const currentNetwork = isSecondPhase ? 'HilltopAds' : 'Adsterra';
 
-  // Opening sponsor direct link (Directs to Adsterra during Phase 1, Monetag during Phase 2)
+  // Opening sponsor direct link (Directs to Adsterra during Phase 1, HilltopAds during Phase 2)
   const handleAdClick = (e?: React.MouseEvent | React.TouchEvent, forceOpen: boolean = false) => {
     if (e) {
       e.stopPropagation();
@@ -153,10 +153,11 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
     }
 
     const adsterraLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+    const hilltopAdsLink = settings?.adsConfig?.hilltopAdsDirectLink?.trim() || 'https://affectionatestorage.com/Ah6g5c';
     const monetagLink = settings?.adsConfig?.monetagDirectLink?.trim() || 'https://5gvci.com/act/files/tag.min.js?z=11948885';
     
-    // Dynamic routing: Phase 1 goes to Adsterra, Phase 2 goes to Monetag
-    const targetUrl = isSecondPhase ? (monetagLink || adsterraLink) : adsterraLink;
+    // Dynamic routing: Phase 1 goes to Adsterra, Phase 2 goes to HilltopAds ($ High CPM)
+    const targetUrl = isSecondPhase ? (hilltopAdsLink || monetagLink || adsterraLink) : (adsterraLink || hilltopAdsLink);
 
     if (typeof window !== 'undefined') {
       try {
@@ -435,7 +436,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
             <p className="text-xs sm:text-sm font-black text-amber-300">
               {hasClickedAd 
                 ? '✅ বিজ্ঞাপন ভিজিট সম্পন্ন হয়েছে!' 
-                : (isSecondPhase ? '🟣 Monetag অফারে চাপ দিন (ধাপ ২/২)!' : '🟡 Adsterra অফারে চাপ দিন (ধাপ ১/২)!')}
+                : (isSecondPhase ? '🟢 HilltopAds অফারে চাপ দিন (ধাপ ২/২)!' : '🟡 Adsterra অফারে চাপ দিন (ধাপ ১/২)!')}
             </p>
             <p className="text-[10px] sm:text-xs text-slate-200">
               {hasClickedAd ? 'বাকি সময় অপেক্ষা করুন এবং পুরো কয়েন গ্রহণ করুন।' : 'এখানে চাপ দিয়ে স্পন্সর পেজ ১০ সেকেন্ড ভিজিট করুন।'}
@@ -445,9 +446,9 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
         <button
           type="button"
           onClick={handleAdClick}
-          className={`px-3 py-1.5 rounded-xl ${isSecondPhase ? 'bg-gradient-to-r from-purple-400 to-indigo-400 text-white' : 'bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950'} font-black text-xs shrink-0 shadow-lg border border-white`}
+          className={`px-3 py-1.5 rounded-xl ${isSecondPhase ? 'bg-gradient-to-r from-emerald-400 to-teal-400 text-slate-950' : 'bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950'} font-black text-xs shrink-0 shadow-lg border border-white`}
         >
-          {hasClickedAd ? 'ভিজিট সম্পন্ন' : (isSecondPhase ? 'Monetag ▶' : 'Adsterra ▶')}
+          {hasClickedAd ? 'ভিজিট সম্পন্ন' : (isSecondPhase ? 'HilltopAds ▶' : 'Adsterra ▶')}
         </button>
       </div>
 

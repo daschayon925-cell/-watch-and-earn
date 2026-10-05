@@ -13,7 +13,16 @@ import {
   Trophy, 
   Flame, 
   Award, 
-  Zap 
+  Zap,
+  Youtube,
+  Globe,
+  Smartphone,
+  Send,
+  Gift,
+  ExternalLink,
+  CheckCircle2,
+  Lock,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -22,16 +31,151 @@ import { soundService } from '../../services/audio';
 import { AdInterstitial } from '../Feed/AdInterstitial';
 import { MiniBannerAd } from '../Common/MiniBannerAd';
 import { OfferwallHub } from './OfferwallHub';
+import { TwoStepAdTaskModal, TwoStepTaskData } from './TwoStepAdTaskModal';
 
 type TaskType = 'math' | 'gk' | 'captcha' | 'daily_checkin';
-type TaskTab = 'offerwall' | 'daily_tasks';
+type TaskTab = 'micro_tasks' | 'daily_tasks' | 'offerwall';
+
+interface FreeMicroTask {
+  id: string;
+  titleBn: string;
+  category: 'youtube' | 'web' | 'app' | 'social';
+  icon: string;
+  badge: string;
+  timeSec: number;
+  reward: number;
+  descBn: string;
+  link: string;
+}
 
 export const TasksScreen: React.FC = () => {
   const { user, refreshUser, awardCoinsLocally } = useAuth();
   const { language, showToast, triggerConfetti, settings } = useApp();
 
-  const [activeTab, setActiveTab] = useState<TaskTab>('offerwall');
+  const [activeTab, setActiveTab] = useState<TaskTab>('micro_tasks');
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
+
+  // Free Micro-task state
+  const [completedMicroTasks, setCompletedMicroTasks] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('completed_free_micro_tasks');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const adsterraDirectLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+  const hilltopAdsDirectLink = settings?.adsConfig?.hilltopAdsDirectLink?.trim() || 'https://affectionatestorage.com/Ah6g5c';
+
+  const freeMicroTasksList: FreeMicroTask[] = [
+    {
+      id: 'free_task_hilltop_visit',
+      titleBn: 'স্পন্সর ওয়েবসাইট ভিজিট ও ১৫ সেকেন্ড স্ক্রোল 🚀',
+      category: 'web',
+      icon: '⚡',
+      badge: '১০০% ফ্রি',
+      timeSec: 15,
+      reward: 35,
+      descBn: 'স্পন্সর সাইটে প্রবেশ করে ১৫ সেকেন্ড স্ক্রোল করুন—কোনো টাকা বা সাইনআপ লাগবে না',
+      link: hilltopAdsDirectLink
+    },
+    {
+      id: 'free_task_yt_sub',
+      titleBn: 'ইউটিউব ভিডিও দেখুন ও চ্যানেল সাবস্ক্রাইব করুন 📺',
+      category: 'youtube',
+      icon: '🔴',
+      badge: '১০০% ফ্রি',
+      timeSec: 20,
+      reward: 30,
+      descBn: 'ইউটিউব ভিডিওটি ২০ সেকেন্ড দেখুন এবং চ্যানেলটি সাবস্ক্রাইব করে কয়েন নিন',
+      link: adsterraDirectLink
+    },
+    {
+      id: 'free_task_web_visit',
+      titleBn: 'স্পন্সর ওয়েবসাইট ভিজিট ও ২০ সেকেন্ড রিড 🌐',
+      category: 'web',
+      icon: '🌐',
+      badge: 'সহজ ভিজিট',
+      timeSec: 20,
+      reward: 25,
+      descBn: 'স্পন্সর সাইটে প্রবেশ করে ২০ সেকেন্ড স্ক্রোল করে পড়ুন—কোনো রেজিস্ট্রেশন লাগবে না',
+      link: adsterraDirectLink
+    },
+    {
+      id: 'free_task_app_trial',
+      titleBn: 'ফ্রি অ্যান্ড্রয়েড লাইট অ্যাপ ও গেম টেস্ট 📱',
+      category: 'app',
+      icon: '📲',
+      badge: 'প্লে-স্টোর ফ্রি',
+      timeSec: 30,
+      reward: 50,
+      descBn: 'প্লে-স্টোরের ১টি ছোট ফ্রি অ্যাপ বা গেম ১ মিনিট টেস্ট করে বড় কয়েন বোনাস নিন',
+      link: 'https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429'
+    },
+    {
+      id: 'free_task_telegram',
+      titleBn: 'অফিশিয়াল টেলিগ্রাম চ্যানেল ও সাপোর্ট গ্রুপ ✈️',
+      category: 'social',
+      icon: '✈️',
+      badge: 'সোশ্যাল জয়েন',
+      timeSec: 15,
+      reward: 20,
+      descBn: 'আমাদের টেলিগ্রাম চ্যানেলে জয়েন করুন এবং নতুন পেমেন্ট প্রুফ ও আপডেট পান',
+      link: 'https://t.me/+EarnWatchBD'
+    },
+    {
+      id: 'free_task_deal_view',
+      titleBn: 'বাংলাদেশ প্রিমিয়াম ক্যাশব্যাক ও রিওয়ার্ড ভিউ 🎁',
+      category: 'web',
+      icon: '🎁',
+      badge: '১০০% ফ্রি বোনাস',
+      timeSec: 20,
+      reward: 35,
+      descBn: 'ফ্রি রিওয়ার্ড ভাউচার ও গিফট কার্ড সাইট ২০ সেকেন্ড ভিউ করুন',
+      link: 'https://www.cdnflyer.com/view.php?id=5546977&pub=3364429'
+    },
+    {
+      id: 'free_task_quiz_portal',
+      titleBn: 'অনলাইন দ্রুত মতামত সার্ভে ও বিকাশ কুইজ 📋',
+      category: 'app',
+      icon: '📝',
+      badge: 'সহজ কুইজ',
+      timeSec: 20,
+      reward: 40,
+      descBn: 'সহজ বাংলা কুইজে মতামত দিন ও ইনস্ট্যান্ট ওয়ালেট পয়েন্ট অর্জন করুন',
+      link: 'https://www.fastsvr.com/view.php?id=5547029&pub=3364429'
+    }
+  ];
+
+  // Two-Step Ad Task state
+  const [twoStepModalOpen, setTwoStepModalOpen] = useState(false);
+  const [currentTwoStepTask, setCurrentTwoStepTask] = useState<TwoStepTaskData | null>(null);
+
+  const handleStartMicroTask = (task: FreeMicroTask) => {
+    soundService.playCoinReward();
+    setCurrentTwoStepTask({
+      id: task.id,
+      title: task.titleBn,
+      desc: task.descBn,
+      reward: task.reward,
+      timeSec: task.timeSec,
+      primaryLink: task.link,
+      step1AdLink: hilltopAdsDirectLink,
+      step2AdLink: adsterraDirectLink
+    });
+    setTwoStepModalOpen(true);
+  };
+
+  const handleTwoStepSuccess = (taskId: string, reward: number) => {
+    if (!completedMicroTasks.includes(taskId)) {
+      const updated = [...completedMicroTasks, taskId];
+      setCompletedMicroTasks(updated);
+      try {
+        localStorage.setItem('completed_free_micro_tasks', JSON.stringify(updated));
+      } catch {}
+    }
+  };
 
   // Ad stages:
   // PRE_TASK: Before task opens
@@ -236,23 +380,23 @@ export const TasksScreen: React.FC = () => {
 
   return (
     <div className="w-full max-w-md mx-auto px-4 pt-3 pb-24 space-y-4">
-      {/* 🚀 Main Navigation Tabs: Offerwall Hub vs Daily Tasks */}
+      {/* 🚀 Main Navigation Tabs: Micro Tasks vs Daily Tasks vs Offerwall */}
       <div className="p-1.5 rounded-2xl bg-slate-900/95 border border-slate-800 shadow-xl backdrop-blur-md">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-1.5">
           <button
             type="button"
             onClick={() => {
-              setActiveTab('offerwall');
+              setActiveTab('micro_tasks');
               setActiveTask(null);
             }}
-            className={`flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl font-black text-xs transition-all cursor-pointer ${
-              activeTab === 'offerwall'
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md shadow-amber-500/30'
+            className={`flex flex-col items-center justify-center gap-1 py-2.5 px-2 rounded-xl font-black text-[11px] transition-all cursor-pointer ${
+              activeTab === 'micro_tasks'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-md shadow-emerald-500/30 font-black'
                 : 'text-slate-400 hover:text-white bg-slate-950/40'
             }`}
           >
-            <Flame className={`w-4 h-4 ${activeTab === 'offerwall' ? 'text-slate-950' : 'text-amber-400'}`} />
-            <span>CPA অফারওয়াল ($)</span>
+            <Zap className={`w-4 h-4 ${activeTab === 'micro_tasks' ? 'text-slate-950 fill-slate-950' : 'text-emerald-400'}`} />
+            <span>১০০% ফ্রি টাস্ক ⚡</span>
           </button>
 
           <button
@@ -260,21 +404,150 @@ export const TasksScreen: React.FC = () => {
             onClick={() => {
               setActiveTab('daily_tasks');
             }}
-            className={`flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl font-black text-xs transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center gap-1 py-2.5 px-2 rounded-xl font-black text-[11px] transition-all cursor-pointer ${
               activeTab === 'daily_tasks'
-                ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/30'
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/30 font-black'
                 : 'text-slate-400 hover:text-white bg-slate-950/40'
             }`}
           >
             <CheckSquare className={`w-4 h-4 ${activeTab === 'daily_tasks' ? 'text-white' : 'text-purple-400'}`} />
-            <span>সাধারণ টাস্ক ও কুইজ 📝</span>
+            <span>কুইজ ও ক্যাপচা 📝</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('offerwall');
+              setActiveTask(null);
+            }}
+            className={`flex flex-col items-center justify-center gap-1 py-2.5 px-2 rounded-xl font-black text-[11px] transition-all cursor-pointer ${
+              activeTab === 'offerwall'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md shadow-amber-500/30 font-black'
+                : 'text-slate-400 hover:text-white bg-slate-950/40'
+            }`}
+          >
+            <Flame className={`w-4 h-4 ${activeTab === 'offerwall' ? 'text-slate-950' : 'text-amber-400'}`} />
+            <span>CPA অফার ($)</span>
           </button>
         </div>
       </div>
 
-      {activeTab === 'offerwall' ? (
+      {/* TAB 1: 100% FREE MICRO TASKS (NO DEPOSIT / ZERO COST) */}
+      {activeTab === 'micro_tasks' && (
+        <div className="space-y-3 animate-in fade-in duration-200">
+          {/* Header Banner */}
+          <div className="rounded-3xl bg-gradient-to-br from-[#06201B] via-[#0A2E26] to-[#041512] border border-emerald-500/40 p-4 shadow-2xl relative overflow-hidden">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5 text-emerald-400 font-black text-xs uppercase tracking-wider">
+                <Zap className="w-4 h-4 fill-emerald-400" />
+                <span>১০০% ফ্রি মাইক্রো-টাস্ক 📱</span>
+              </div>
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                কোনো টাকা লাগবে না 🆓
+              </span>
+            </div>
+
+            <h2 className="text-lg font-black text-white font-['Outfit'] mb-1">
+              ইউটিউব সাবস্ক্রাইব, ওয়েবসাইট ভিজিট ও ফ্রি অ্যাপ
+            </h2>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              সহজ ১৫-২০ সেকেন্ডের কাজ শেষ করে ইনস্ট্যান্ট ওয়ালেট কয়েন ক্লেইম করুন। ইউজারের ১ পয়সাও খরচ নেই!
+            </p>
+
+            <div className="mt-3 p-2 rounded-xl bg-slate-950/80 border border-emerald-500/30 flex items-center justify-between text-[11px]">
+              <span className="text-emerald-300 font-bold flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>ভেরিফাইড ফ্রি কাজ • আনলিমিটেড পয়েন্ট</span>
+              </span>
+              <span className="text-amber-400 font-mono font-black">
+                +২০ হতে +৫০ কয়েন
+              </span>
+            </div>
+          </div>
+
+          {/* Micro Tasks List */}
+          <div className="space-y-2.5">
+            {freeMicroTasksList.map((task) => {
+              const isDone = completedMicroTasks.includes(task.id);
+              return (
+                <div
+                  key={task.id}
+                  onClick={() => handleStartMicroTask(task)}
+                  className={`p-3.5 rounded-2xl border transition flex items-center justify-between group active:scale-98 cursor-pointer ${
+                    isDone 
+                      ? 'bg-[#0a1612] border-emerald-500/30' 
+                      : 'bg-[#0B111E] border-slate-800 hover:border-emerald-500/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-xl shadow-inner group-hover:scale-105 transition">
+                      {task.icon}
+                    </div>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-xs text-white leading-tight">
+                          {task.titleBn}
+                        </span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          {task.badge}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 line-clamp-1">{task.descBn}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                        <span className="flex items-center gap-0.5">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          <span>{task.timeSec} সেকেন্ড</span>
+                        </span>
+                        <span>•</span>
+                        <span className="text-amber-400 font-bold">১০০% সম্পূর্ণ ফ্রি</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right pl-2 shrink-0">
+                    <span className="text-xs font-black text-emerald-400 font-mono block">
+                      +{task.reward} কয়েন
+                    </span>
+                    <button 
+                      type="button"
+                      className={`mt-1.5 px-3 py-1 rounded-xl font-black text-[10px] shadow transition flex items-center gap-1 ${
+                        isDone 
+                          ? 'bg-emerald-600 text-slate-950 font-black' 
+                          : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                      }`}
+                    >
+                      {isDone ? (
+                        <>
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>সম্পন্ন</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>শুরু করুন</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Mini Banner */}
+          <div className="pt-2">
+            <MiniBannerAd slotId="tasks_screen_micro_bottom" category="gaming" />
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: CPA OFFERWALL */}
+      {activeTab === 'offerwall' && (
         <OfferwallHub onSwitchToDailyTasks={() => setActiveTab('daily_tasks')} />
-      ) : (
+      )}
+
+      {/* TAB 3: DAILY QUIZ & CAPTCHA TASKS */}
+      {activeTab === 'daily_tasks' && (
         <>
           {/* Header Banner */}
           <div className="rounded-3xl bg-gradient-to-br from-[#121128] via-[#1B163B] to-[#0D182E] border border-purple-500/30 p-5 shadow-2xl relative overflow-hidden">
@@ -289,7 +562,7 @@ export const TasksScreen: React.FC = () => {
             </div>
 
             <h2 className="text-xl font-black text-white font-['Outfit'] mb-1">
-              কুইজ খেলে ও টাস্ক করে কয়েন নিন
+              কুইজ খেলে ও ক্যাপচা পূরণ করে কয়েন নিন
             </h2>
             <p className="text-xs text-slate-300">
               প্রতিটি টাস্কের আগে ও পরে স্পন্সরড বিজ্ঞাপন দেখে আপনি অতিরিক্ত ক্যাশআউট পয়েন্ট আয় করতে পারবেন।
@@ -490,6 +763,13 @@ export const TasksScreen: React.FC = () => {
           </div>
         </div>
       )}
+      {/* 🚀 DOUBLE-DIRECT-LINK TWO STEP AD TASK MODAL */}
+      <TwoStepAdTaskModal
+        isOpen={twoStepModalOpen}
+        task={currentTwoStepTask}
+        onClose={() => setTwoStepModalOpen(false)}
+        onSuccess={handleTwoStepSuccess}
+      />
     </div>
   );
 };

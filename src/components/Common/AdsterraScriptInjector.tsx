@@ -136,10 +136,20 @@ export const AdsterraScriptInjector: React.FC = () => {
         }
       }
 
-      const isMonetagTurn = Boolean(adsConfig?.monetagEnabled && adsConfig?.monetagDirectLink && Math.random() > 0.5);
-      const targetDirectLink = (isMonetagTurn && adsConfig?.monetagDirectLink)
-        ? adsConfig.monetagDirectLink.trim()
-        : (adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4');
+      const adsterraLink = adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+      const hilltopAdsLink = adsConfig?.hilltopAdsDirectLink?.trim() || 'https://affectionatestorage.com/Ah6g5c';
+      const monetagLink = adsConfig?.monetagDirectLink?.trim() || 'https://5gvci.com/act/files/tag.min.js?z=11948885';
+
+      // Dynamic 3-network popunder rotation (Equal 33.3% share for Adsterra, HilltopAds, Monetag)
+      const randomChoice = Math.random();
+      let targetDirectLink = adsterraLink;
+      if (randomChoice < 0.33) {
+        targetDirectLink = adsterraLink;
+      } else if (randomChoice < 0.66) {
+        targetDirectLink = hilltopAdsLink;
+      } else {
+        targetDirectLink = monetagLink;
+      }
 
       try {
         const popWindow = window.open(targetDirectLink, '_blank');

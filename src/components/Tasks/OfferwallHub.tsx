@@ -26,6 +26,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { soundService } from '../../services/audio';
 import { api } from '../../services/api';
+import { TwoStepAdTaskModal, TwoStepTaskData } from './TwoStepAdTaskModal';
 
 interface OfferwallProvider {
   id: string;
@@ -70,10 +71,18 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
   const [verifyingTaskId, setVerifyingTaskId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Two Step Ad Modal State
+  const [twoStepModalOpen, setTwoStepModalOpen] = useState(false);
+  const [currentTwoStepTask, setCurrentTwoStepTask] = useState<TwoStepTaskData | null>(null);
+
+  const hilltopAdsDirectLink = settings?.adsConfig?.hilltopAdsDirectLink?.trim() || 'https://affectionatestorage.com/Ah6g5c';
+  const adsterraDirectLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+
   // Configured or fallback Offerwall URLs with automatic subid parameter
   const cpaleadBaseUrl = settings?.offerwallsConfig?.cpaleadUrl?.trim() || 'https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429';
   const monlixAppId = settings?.offerwallsConfig?.monlixAppId?.trim() || 'demo_monlix';
-  const timewallBaseUrl = settings?.offerwallsConfig?.timewallUrl?.trim() || 'https://timewall.io';
+  const timewallPlacementId = settings?.offerwallsConfig?.timewallPlacementId?.trim() || 'd7521f148f92a2d3';
+  const timewallBaseUrl = settings?.offerwallsConfig?.timewallUrl?.trim() || `https://timewall.io/offers/${timewallPlacementId}`;
 
   const providers: OfferwallProvider[] = [
     {
@@ -117,200 +126,159 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
     }
   ];
 
-  // 🇧🇩 বাংলাদেশ ও 🇺🇸 USA লাইভ CPALead অফার লিস্ট
+  // 🇧🇩 বাংলাদেশ ও 🇺🇸 USA লাইভ CPALead ও HilltopAds ১০০% ফ্রি অফার লিস্ট (কোনো টাকা লাগবে না)
   const curatedTasks: CpaTask[] = [
-    // 🇧🇩 BANGLADESH OFFERS (Pub ID: 3364429)
+    // 🚀 HilltopAds VIP Sponsor (100% Free Website Visit)
+    {
+      id: 'hilltop_direct_7488677',
+      title: 'HilltopAds ফ্রি স্পন্সর ওয়েবসাইট ভিজিট ও বোনাস 🚀',
+      category: 'bd',
+      country: 'GLOBAL',
+      icon: '🌐',
+      provider: 'HilltopAds Sponsor',
+      time: '২০ সেকেন্ড',
+      reward: 70,
+      estPayoutBDT: '৳১.০৫',
+      difficulty: '১০০% ফ্রি (টাকা লাগবে না)',
+      link: settings?.adsConfig?.hilltopAdsDirectLink?.trim() || 'https://affectionatestorage.com/Ah6g5c'
+    },
+    // 🇧🇩 100% FREE BANGLADESH TASKS (NO MONEY / NO DEPOSIT)
     {
       id: 'bd_cpa_5547000',
-      title: 'বাংলাদেশ প্রিমিয়াম অ্যাপ টেস্ট ও ইন্সটল 📱',
+      title: 'ফ্রি প্লে-স্টোর অ্যাপ ইনস্টল ও ১ মিনিট ওপেন 📱',
       category: 'bd',
       country: 'BD',
       icon: '📲',
-      provider: 'CPALead BD #1',
-      time: '২ মিনিট',
-      reward: 120,
-      estPayoutBDT: '৳১.৮০',
-      difficulty: 'খুব সহজ',
+      provider: 'CPALead PlayStore',
+      time: '১.৫ মিনিট',
+      reward: 180,
+      estPayoutBDT: '৳২.৭০',
+      difficulty: '১০০% ফ্রি ইনস্টল',
       link: 'https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429'
     },
     {
       id: 'bd_cpa_5547029',
-      title: 'দ্রুত মতামত সার্ভে ও বিকাশ কুইজ 📋',
+      title: 'ফ্রি ওপিনিয়ন সার্ভে ও বিকাশ জ্ঞান কুইজ 📋',
       category: 'bd',
       country: 'BD',
       icon: '📝',
-      provider: 'CPALead BD #2',
-      time: '২.৫ মিনিট',
-      reward: 150,
-      estPayoutBDT: '৳২.২৫',
-      difficulty: 'সহজ',
+      provider: 'CPALead Free Survey',
+      time: '২ মিনিট',
+      reward: 160,
+      estPayoutBDT: '৳২.৪০',
+      difficulty: '১০০% ফ্রি কুইজ',
       link: 'https://www.fastsvr.com/view.php?id=5547029&pub=3364429'
     },
     {
       id: 'bd_cpa_5546977',
-      title: 'ফ্রি রিওয়ার্ড ও গিফট কার্ড সাইন-আপ 🎁',
+      title: 'স্পন্সর ব্লগ আর্টিকেল পড়ুন ও ২০ সেকেন্ড স্ক্রোল 📰',
       category: 'bd',
       country: 'BD',
-      icon: '🎁',
-      provider: 'CPALead BD #3',
-      time: '৩ মিনিট',
-      reward: 180,
-      estPayoutBDT: '৳২.৭০',
-      difficulty: 'সহজ',
+      icon: '📰',
+      provider: 'CPALead Article View',
+      time: '২০ সেকেন্ড',
+      reward: 90,
+      estPayoutBDT: '৳১.৩৫',
+      difficulty: '১০০% ফ্রি ভিজিট',
       link: 'https://www.cdnflyer.com/view.php?id=5546977&pub=3364429'
     },
     {
       id: 'bd_cpa_5546987',
-      title: 'অনলাইন ড্রামা ও শপিং টেস্ট রিওয়ার্ড 🛍️',
+      title: 'অনলাইন শর্ট স্পন্সর ভিডিও দেখুন ও রিওয়ার্ড নিন 🎬',
+      category: 'bd',
+      country: 'BD',
+      icon: '🎬',
+      provider: 'CPALead Video Watch',
+      time: '৩০ সেকেন্ড',
+      reward: 110,
+      estPayoutBDT: '৳১.৬৫',
+      difficulty: '১০০% ফ্রি ভিডিও',
+      link: 'https://www.lnksforyou.com/view.php?id=5546987&pub=3364429'
+    },
+    {
+      id: 'bd_cpa_free_game_trial',
+      title: 'ফ্রি অনলাইন ব্রাউজার গেম টেস্ট ও ৩০ সেকেন্ড প্লে 🎮',
+      category: 'bd',
+      country: 'BD',
+      icon: '🕹️',
+      provider: 'CPALead Mini Game',
+      time: '৩০ সেকেন্ড',
+      reward: 100,
+      estPayoutBDT: '৳১.৫০',
+      difficulty: '১০০% ফ্রি গেম',
+      link: 'https://www.fastrsrvr.com/view.php?id=5547037&pub=3364429'
+    },
+    {
+      id: 'bd_cpa_coupon_deals',
+      title: 'দারাজ ও ফুডপান্ডা ফ্রি ডিসকাউন্ট কুপন ব্রাউজ 🛍️',
       category: 'bd',
       country: 'BD',
       icon: '🛍️',
-      provider: 'CPALead BD #4',
-      time: '৩ মিনিট',
-      reward: 200,
-      estPayoutBDT: '৳৩.০০',
-      difficulty: 'মাঝারি',
-      link: 'https://www.lnksforyou.com/view.php?id=5546987&pub=3364429'
+      provider: 'CPALead Deals',
+      time: '২০ সেকেন্ড',
+      reward: 85,
+      estPayoutBDT: '৳১.২৮',
+      difficulty: '১০০% ফ্রি ব্রাউজ',
+      link: 'https://www.fastsvr.com/view.php?id=5547038&pub=3364429'
     },
 
-    // 🇺🇸 USA & GLOBAL MEGA HIGH-PAYING OFFERS (Pub ID: 3364429)
+    // 🇺🇸 USA & GLOBAL 100% FREE TASKS (High-Reward)
     {
       id: 'usa_cpa_5544943',
-      title: 'Airwallex: Global Sign Up & Transfer 💰',
+      title: 'গ্লোবাল স্পন্সর ওয়েবসাইট ভিজিট ও ফ্রি অফার ভিউ 🌍',
       category: 'usa',
       country: 'GLOBAL',
       icon: '💎',
-      provider: 'Airwallex Global #46',
-      time: '৫ মিনিট',
-      reward: 2500,
-      estPayoutBDT: '৳৫০.০০+',
-      payoutUSD: '$58.50 Mega Payout 🔥',
-      difficulty: 'মেগা জ্যাকপট 🏆',
+      provider: 'Global Sponsor Visit',
+      time: '২৫ সেকেন্ড',
+      reward: 140,
+      estPayoutBDT: '৳২.১০',
+      difficulty: '১০০% ফ্রি',
       link: 'https://www.cdnflyer.com/view.php?id=5544943&pub=3364429'
     },
     {
       id: 'usa_cpa_5546165',
-      title: 'Kalshi: US Trading & Rewards Signup 📈',
+      title: 'অনলাইন সাধারণ জ্ঞান কুইজ ও ফ্রি গিফট কার্ড চেক 🎁',
       category: 'usa',
       country: 'USA',
-      icon: '📈',
-      provider: 'Kalshi USA #44',
-      time: '৪ মিনিট',
-      reward: 1800,
-      estPayoutBDT: '৳৩৫.০০+',
-      payoutUSD: '$27.30 High Payout 🔥',
-      difficulty: 'উচ্চ রিওয়ার্ড 🚀',
+      icon: '🎁',
+      provider: 'Free US Quiz',
+      time: '১.৫ মিনিট',
+      reward: 160,
+      estPayoutBDT: '৳২.৪০',
+      difficulty: '১০০% ফ্রি',
       link: 'https://www.cdnnd.com/view.php?id=5546165&pub=3364429'
     },
     {
       id: 'usa_cpa_5547038',
-      title: 'Super.com US Coupon & Cashback Rewards 💎',
+      title: 'ফ্রি ডিসকাউন্ট কুপন ও ক্যাশব্যাক পেজ ভিউ 🛍️',
       category: 'usa',
       country: 'USA',
-      icon: '💳',
-      provider: 'CPALead US High Payout',
-      time: '৪ মিনিট',
-      reward: 800,
-      estPayoutBDT: '৳১২.০০',
-      payoutUSD: '$16.22 Max',
-      difficulty: 'উচ্চ রিওয়ার্ড 🔥',
+      icon: '🛍️',
+      provider: 'Free Coupon View',
+      time: '২০ সেকেন্ড',
+      reward: 90,
+      estPayoutBDT: '৳১.৩৫',
+      difficulty: 'সহজ ভিজিট',
       link: 'https://www.fastsvr.com/view.php?id=5547038&pub=3364429'
     },
     {
       id: 'usa_cpa_5547037',
-      title: 'Secret World: AI Hidden Adventure Game 🎮',
+      title: 'ফ্রি অনলাইন ব্রাউজার মিনি গেম ট্রায়াল 🎮',
       category: 'usa',
       country: 'USA',
       icon: '🕹️',
-      provider: 'CPALead US Game',
-      time: '৩ মিনিট',
-      reward: 500,
-      estPayoutBDT: '৳৭.৫০',
-      payoutUSD: '$5.46 Max',
-      difficulty: 'সহজ গেম',
+      provider: 'Free Mini Game',
+      time: '১ মিনিট',
+      reward: 110,
+      estPayoutBDT: '৳১.৬৫',
+      difficulty: '১০০% ফ্রি গেম',
       link: 'https://www.fastrsrvr.com/view.php?id=5547037&pub=3364429'
-    },
-    {
-      id: 'usa_cpa_5545253',
-      title: 'Premium FastPay CPA Special Offer 🚀',
-      category: 'usa',
-      country: 'USA',
-      icon: '🚀',
-      provider: 'CPALead FastPay',
-      time: '৪ মিনিট',
-      reward: 900,
-      estPayoutBDT: '৳১৩.৫০',
-      difficulty: 'ভিআইপি রিওয়ার্ড',
-      link: 'https://www.fastsvr.com/view.php?id=5545253&pub=3364429'
-    },
-    {
-      id: 'usa_cpa_5544943',
-      title: 'DirectCPI Mobile Game Level Challenge 🏆',
-      category: 'usa',
-      country: 'USA',
-      icon: '🎯',
-      provider: 'DirectCPI Studio',
-      time: '৫ মিনিট',
-      reward: 750,
-      estPayoutBDT: '৳১১.২৫',
-      difficulty: 'মাঝারি',
-      link: 'https://www.directcpi.com/view.php?id=5544943&pub=3364429'
-    },
-    {
-      id: 'usa_cpa_5542950',
-      title: 'US Shopping Club & Deals Discovery 🛍️',
-      category: 'usa',
-      country: 'USA',
-      icon: '🛒',
-      provider: 'CDN Flyer US',
-      time: '৩ মিনিট',
-      reward: 650,
-      estPayoutBDT: '৳৯.৭৫',
-      difficulty: 'সহজ',
-      link: 'https://www.cdnflyer.com/view.php?id=5542950&pub=3364429'
-    },
-    {
-      id: 'usa_cpa_5546999',
-      title: 'AppStore Vault Premium Trial & Review 📱',
-      category: 'usa',
-      country: 'USA',
-      icon: '📲',
-      provider: 'AppVault Media',
-      time: '৩ মিনিট',
-      reward: 600,
-      estPayoutBDT: '৳৯.০০',
-      difficulty: 'সহজ',
-      link: 'https://www.appstorevault.mobi/view.php?id=5546999&pub=3364429'
-    },
-    {
-      id: 'usa_cpa_5542327',
-      title: 'QuickClick Express Opinion Survey ⚡',
-      category: 'usa',
-      country: 'USA',
-      icon: '⚡',
-      provider: 'QuickClick Hub',
-      time: '২.৫ মিনিট',
-      reward: 550,
-      estPayoutBDT: '৳৮.২৫',
-      difficulty: 'সহজ',
-      link: 'https://www.qckclk.com/view.php?id=5542327&pub=3364429'
-    },
-    {
-      id: 'usa_cpa_5547019',
-      title: 'Finance & Crypto Opinion Survey 2026 📈',
-      category: 'usa',
-      country: 'USA',
-      icon: '📊',
-      provider: 'FastServer Surveys',
-      time: '৩ মিনিট',
-      reward: 450,
-      estPayoutBDT: '৳৬.৭৫',
-      difficulty: 'সহজ',
-      link: 'https://www.fastrsrvr.com/view.php?id=5547019&pub=3364429'
     }
   ];
 
   const handleOpenProvider = (provider: OfferwallProvider) => {
+    soundService.playCoinReward();
     const userId = user?.uid || 'user_guest';
     let url = '';
 
@@ -322,47 +290,46 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       url = `https://monlix.com/offerwall/${monlixAppId}/${encodeURIComponent(userId)}`;
     } else if (provider.partnerType === 'TimeWall') {
       url = timewallBaseUrl.includes('?') 
-        ? `${timewallBaseUrl}&subid=${encodeURIComponent(userId)}` 
-        : `${timewallBaseUrl}?subid=${encodeURIComponent(userId)}`;
+        ? `${timewallBaseUrl}&userId=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}` 
+        : `${timewallBaseUrl}?userId=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}`;
     } else {
       url = `https://fastfile.click/direct/12345?subid=${encodeURIComponent(userId)}`;
     }
 
-    try {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } catch {
-      setActiveOfferwallUrl(url);
-      setActiveWallName(provider.name);
-    }
+    setCurrentTwoStepTask({
+      id: `wall_${provider.id}`,
+      title: `${provider.name} মাইক্রো-টাস্ক হাব ⚡`,
+      desc: `${provider.descBn}। প্রথমে ১ম স্পন্সর পেজ ভিজিট করুন, তারপর অফার সম্পন্ন করে শেষ বিজ্ঞাপনে কয়েন ক্লেইম করুন।`,
+      reward: provider.id === 'timewall' ? 150 : provider.id === 'monlix' ? 200 : 180,
+      timeSec: 15,
+      primaryLink: url,
+      step1AdLink: hilltopAdsDirectLink,
+      step2AdLink: adsterraDirectLink
+    });
+    setTwoStepModalOpen(true);
   };
 
   const handleStartTask = (task: CpaTask) => {
-    setVerifyingTaskId(task.id);
+    soundService.playCoinReward();
     const userId = user?.uid || 'user_guest';
     const separator = task.link.includes('?') ? '&' : '?';
     const finalUrl = `${task.link}${separator}subid=${encodeURIComponent(userId)}&taskId=${task.id}`;
 
-    try {
-      window.open(finalUrl, '_blank', 'noopener,noreferrer');
-    } catch {
-      setActiveOfferwallUrl(finalUrl);
-      setActiveWallName(task.title);
-    }
+    setCurrentTwoStepTask({
+      id: task.id,
+      title: task.title,
+      desc: `অফিসিয়াল স্পন্সর পেজ ভিজিট করুন এবং নির্ধারিত সময় স্ক্রোল করে পয়েন্ট ক্লেইম করুন।`,
+      reward: task.reward,
+      timeSec: 15,
+      primaryLink: finalUrl,
+      step1AdLink: hilltopAdsDirectLink,
+      step2AdLink: adsterraDirectLink
+    });
+    setTwoStepModalOpen(true);
+  };
 
-    // Auto-verify simulation & bonus reward on task visit
-    setTimeout(() => {
-      setVerifyingTaskId(null);
-      awardCoinsLocally(task.reward);
-      triggerConfetti();
-      soundService.playSuccessFanfare();
-      showToast(
-        language === 'bn' 
-          ? `🎉 অফার টাস্ক সফলভাবে ভিজিট হয়েছে! +${task.reward} কয়েন আপনার অ্যাকাউন্টে জমা হয়েছে!`
-          : `🎉 Offer visited! +${task.reward} coins credited to your wallet!`,
-        'success'
-      );
-      refreshUser();
-    }, 3500);
+  const handleTwoStepSuccess = (taskId: string, reward: number) => {
+    refreshUser();
   };
 
   const handleCopyLink = (task: CpaTask, e: React.MouseEvent) => {
@@ -415,6 +382,18 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 💡 Essential User Guideline for Bangladesh CPA Offers */}
+      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/60 via-slate-900 to-amber-950/60 border border-amber-500/40 text-xs space-y-1.5 shadow-lg">
+        <div className="flex items-center gap-2 text-amber-300 font-black">
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <span>কাজের জরুরি টিপস (১০০% ফ্রি কাজ করুন):</span>
+        </div>
+        <p className="text-slate-300 leading-relaxed text-[11px]">
+          ✅ <strong>যা করবেন:</strong> শুধুমাত্র ১০০% ফ্রি অ্যাপ ডাউনলোড, ফ্রি সাইন-আপ ও ফ্রি সার্ভে কাজগুলো করবেন।<br />
+          ❌ <strong>যা করবেন না:</strong> যেসকল অফারে টাকা ডিপোজিট করতে বা সিম থেকে এসএমএস দিয়ে টাকা কাটতে বলবে সেগুলো করবেন না, সেগুলো এড়িয়ে চলুন!
+        </p>
       </div>
 
       {/* 📝 Quick Action: Jump to General Tasks & Daily Quiz */}
@@ -672,6 +651,13 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
           />
         </div>
       )}
+      {/* 🚀 DOUBLE DIRECT LINK MODAL */}
+      <TwoStepAdTaskModal
+        isOpen={twoStepModalOpen}
+        task={currentTwoStepTask}
+        onClose={() => setTwoStepModalOpen(false)}
+        onSuccess={handleTwoStepSuccess}
+      />
     </div>
   );
 };
