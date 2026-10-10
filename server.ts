@@ -30,6 +30,12 @@ app.get('/5a6aa39ee3ae413ebcefceebfc1a31468855fd81*', (req, res) => {
   res.send('5a6aa39ee3ae413ebcefceebfc1a31468855fd81');
 });
 
+// TimeWall / Offerwall.me Ownership Verification Route
+app.get(['/6aca33472eaa6484016c37d7.html', '/6aca33472eaa6484016c37d7*'], (req, res) => {
+  res.type('text/html');
+  res.send('6aca33472eaa6484016c37d7');
+});
+
 // Explicit SEO & Health Routes for Verification & Monitoring Bots
 app.get(['/health', '/api/health', '/api/ping'], (req, res) => {
   res.status(200).json({
@@ -3077,6 +3083,59 @@ app.all(['/api/postback/cpx', '/api/postbacks/cpx'], (req, res) => {
   } catch (err) {
     console.error('[CPX Postback] Error:', err);
     return res.status(200).send('1');
+  }
+});
+
+// Offerwall.me Official Postback Webhook
+app.all(['/api/postback/offerwallme', '/api/postback/offerwall-me', '/api/postbacks/offerwallme'], (req, res) => {
+  try {
+    const params = { ...req.query, ...req.body };
+    const userId = (params.subId || params.subid || params.userId || params.user_id || params.uid || '').toString().trim();
+    const transId = (params.transId || params.txId || params.transaction_id || params.txid || 'owm_' + Date.now()).toString();
+    const status = (params.status || '1').toString().toLowerCase();
+    const amountCoins = parseInt(params.amount || params.reward || params.currency || params.coins || '0', 10) || Math.round(parseFloat(params.payout || params.revenue || '0') * 1000);
+
+    console.log(`[Offerwall.me Postback] Received: User=${userId}, TransID=${transId}, Status=${status}, Coins=${amountCoins}`);
+
+    if (userId) {
+      const targetUser = db.users.find(u => u.uid === userId || u.id === userId || u.phone === userId);
+      if (targetUser && (status === '1' || status === 'complete' || status === 'approved') && amountCoins > 0) {
+        const alreadyCredited = (db.transactions || []).some(t => t.id === `owm_${transId}`);
+        if (!alreadyCredited) {
+          targetUser.coins = (targetUser.coins || 0) + amountCoins;
+          targetUser.lifetimeCoins = (targetUser.lifetimeCoins || 0) + amountCoins;
+          targetUser.todayCoins = (targetUser.todayCoins || 0) + amountCoins;
+
+          db.transactions.unshift({
+            id: `owm_${transId}`,
+            userId: targetUser.uid,
+            type: 'CPA_OFFER_COMPLETED',
+            amount: amountCoins,
+            source: `🎯 Offerwall.me টাস্ক রিওয়ার্ড (+${amountCoins} কয়েন)`,
+            status: 'COMPLETED',
+            createdAt: new Date().toISOString()
+          });
+
+          db.notifications.unshift({
+            id: 'notif_owm_' + Date.now(),
+            userId: targetUser.uid,
+            title: '🎉 Offerwall.me রিওয়ার্ড সফল!',
+            message: `Offerwall.me থেকে টাস্ক সম্পন্ন করায় আপনার একাউন্টে ${amountCoins} কয়েন যোগ করা হয়েছে!`,
+            type: 'coin',
+            read: false,
+            createdAt: new Date().toISOString(),
+            linkTab: 'wallet'
+          });
+
+          saveDbToDisk();
+        }
+      }
+    }
+
+    return res.status(200).send('OK');
+  } catch (err) {
+    console.error('[Offerwall.me Postback] Error:', err);
+    return res.status(200).send('OK');
   }
 });
 
