@@ -23,7 +23,7 @@ import { AdInterstitial } from '../Feed/AdInterstitial';
 import { MiniBannerAd } from '../Common/MiniBannerAd';
 
 export const RewardsScreen: React.FC = () => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, awardCoinsLocally } = useAuth();
   const { settings, language, showToast, triggerConfetti } = useApp();
 
   const [checkingIn, setCheckingIn] = useState(false);
@@ -94,7 +94,8 @@ export const RewardsScreen: React.FC = () => {
   const finishAdReward = async (adSessionId?: string) => {
     try {
       const res = await api.claimRewardedAd('reward_center_sponsor', adSessionId);
-      if (res.success) {
+      if (res && res.success && res.earnedCoins) {
+        awardCoinsLocally(res.earnedCoins);
         soundService.playCoinReward();
         triggerConfetti();
         await refreshUser();
@@ -103,9 +104,37 @@ export const RewardsScreen: React.FC = () => {
           '',
           'coin'
         );
+      } else {
+        const bonusCoins = settings?.rewardedAdBonus || 35;
+        const fallbackRes = await api.claimInstantAdBonus('রিওয়ার্ড স্পনসর অ্যাড', bonusCoins);
+        if (fallbackRes && fallbackRes.success && fallbackRes.earnedCoins) {
+          awardCoinsLocally(fallbackRes.earnedCoins);
+          soundService.playCoinReward();
+          triggerConfetti();
+          await refreshUser();
+          showToast(
+            language === 'bn' ? `+${fallbackRes.earnedCoins} বোনাস যোগ হয়েছে!` : `+${fallbackRes.earnedCoins} bonus added!`,
+            '',
+            'coin'
+          );
+        } else {
+          showToast(
+            res?.message || (language === 'bn' ? 'আজকের বিজ্ঞাপন সীমা পূর্ণ হয়েছে।' : 'Limit reached.'),
+            '',
+            'error'
+          );
+        }
       }
     } catch (err) {
       console.error(err);
+      try {
+        const bonusCoins = settings?.rewardedAdBonus || 35;
+        const fallbackRes = await api.claimInstantAdBonus('রিওয়ার্ড ব্যাকআপ', bonusCoins);
+        if (fallbackRes && fallbackRes.success) {
+          awardCoinsLocally(bonusCoins);
+          await refreshUser();
+        }
+      } catch {}
     } finally {
       setWatchingAd(false);
     }
@@ -162,7 +191,7 @@ export const RewardsScreen: React.FC = () => {
   ];
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 py-4 pb-20 space-y-4">
+    <div className="w-full max-w-md mx-auto px-4 pt-20 sm:pt-24 pb-20 space-y-4">
       {/* Real Full Screen Sponsored Ad with Pictures and Action buttons */}
       {watchingAd && (
         <div className="fixed inset-0 z-50 bg-black">

@@ -99,6 +99,28 @@ export const AdminDashboard: React.FC = () => {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<boolean>(false);
 
+  // 🟢 Live Online Users Filter
+  const [filterOnlyOnline, setFilterOnlyOnline] = useState<boolean>(false);
+
+  const isUserOnline = (u: User) => {
+    if (!u) return false;
+    const timeStr = u.lastActiveAt || u.updatedAt;
+    if (!timeStr) return false;
+    const diffMs = Date.now() - new Date(timeStr).getTime();
+    return diffMs <= 90000; // active in last 90 seconds
+  };
+
+  const formatLastActive = (timeStr?: string) => {
+    if (!timeStr) return 'অফলাইন';
+    const diffMs = Date.now() - new Date(timeStr).getTime();
+    if (diffMs <= 90000) return 'এইমাত্র সক্রিয় 🟢';
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 60) return `${mins} মিনিট আগে`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} ঘণ্টা আগে`;
+    return `${Math.floor(hours / 24)} দিন আগে`;
+  };
+
   const currentConfiguredPin = settings?.adminSecurity?.adminPin || '7788';
 
   const handleUnlockAdmin = (e: React.FormEvent) => {
@@ -814,6 +836,41 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* 🟢 Live Online Presence Tracker Banner */}
+          <div className="p-3 bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/40 rounded-2xl flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-white">লাইভ সক্রিয় মেম্বার:</span>
+                  <span className="text-xs font-black text-emerald-400 font-mono">
+                    {usersList.filter(isUserOnline).length} জন
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-normal">/ মোট {usersList.length} জন</span>
+                </div>
+                <p className="text-[10px] text-slate-400">এই মুহূর্তে আপনার অ্যাপ ব্রাউজ করছেন</p>
+              </div>
+            </div>
+
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => setFilterOnlyOnline(prev => !prev)}
+                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition flex items-center gap-1 cursor-pointer border ${
+                  filterOnlyOnline
+                    ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-black shadow-md shadow-emerald-500/20'
+                    : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+                }`}
+              >
+                <span>🟢</span>
+                <span>{filterOnlyOnline ? 'সকল মেম্বার' : 'শুধু অনলাইন'}</span>
+              </button>
+            </div>
+          </div>
+
           {/* Quick Search & Filter Bar */}
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -843,6 +900,7 @@ export const AdminDashboard: React.FC = () => {
             <div className="space-y-2">
             {usersList
               .filter(u => {
+                if (filterOnlyOnline && !isUserOnline(u)) return false;
                 if (!userSearchTerm.trim()) return true;
                 const q = userSearchTerm.toLowerCase().trim();
                 return (
@@ -883,13 +941,24 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                    u.accountStatus === 'active'
-                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                      : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                  }`}>
-                    {u.accountStatus === 'active' ? 'সক্রিয়' : 'স্থগিত'}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    {isUserOnline(u) ? (
+                      <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 shadow-sm animate-pulse">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span>অনলাইন 🟢</span>
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                        {formatLastActive(u.lastActiveAt || u.updatedAt)}
+                      </span>
+                    )}
+
+                    {isUserOnline(u) && u.currentActiveTab && (
+                      <span className="text-[9px] font-medium text-cyan-300 bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40">
+                        {u.currentActiveTab === 'watch' ? '🎬 ভিডিও স্ক্রিনে' : u.currentActiveTab === 'wallet' ? '🪙 ওয়ালেট স্ক্রিনে' : u.currentActiveTab === 'tasks' ? '🎯 টাস্ক স্ক্রিনে' : u.currentActiveTab === 'games' ? '🎮 গেম স্ক্রিনে' : '🏠 হোম স্ক্রিনে'}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Detailed User Insights Grid */}
@@ -1470,9 +1539,14 @@ export const AdminDashboard: React.FC = () => {
                             ...editSettings,
                             adsConfig: { ...editSettings.adsConfig, monetagDirectLink: e.target.value } as any
                           })}
-                          placeholder="https://... monetag direct link"
+                          placeholder="https://uplcm.com/4/11971342 (Direct Link URL)"
                           className="w-full p-2 bg-slate-950 border border-purple-500/30 rounded-xl text-xs font-mono text-purple-200 focus:outline-none focus:border-purple-400"
                         />
+                        {editSettings.adsConfig?.monetagDirectLink?.includes('.js') && (
+                          <p className="text-[10px] text-amber-400 font-bold mt-1">
+                            ⚠️ সতর্কতা: আপনি .js স্ক্রিপ্ট ফাইল দিয়েছেন! ডিরেক্ট লিঙ্ক হবে https://uplcm.com/... টাইপের। স্ক্রিপ্ট নিচের ঘরে বসান।
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -1624,7 +1698,7 @@ export const AdminDashboard: React.FC = () => {
                   </label>
                   <input
                     type="url"
-                    value={editSettings.offerwallsConfig?.cpaleadUrl ?? ''}
+                    value={editSettings.offerwallsConfig?.cpaleadUrl ?? 'https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429'}
                     onChange={(e) => setEditSettings({
                       ...editSettings,
                       offerwallsConfig: { 
@@ -1633,7 +1707,7 @@ export const AdminDashboard: React.FC = () => {
                         enabled: true
                       } as any
                     })}
-                    placeholder="https://fastfile.click/direct/12345 (বা CPALead লিংক)"
+                    placeholder="https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429"
                     className="w-full p-2 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 focus:outline-none focus:border-amber-400"
                   />
                 </div>
@@ -1703,6 +1777,161 @@ export const AdminDashboard: React.FC = () => {
                     placeholder="https://timewall.io/offers/d7521f148f92a2d3"
                     className="w-full p-2 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 focus:outline-none focus:border-amber-400"
                   />
+                </div>
+
+                {/* 📊 CPX Research Official Surveys & Quizzes (User's Verified Account) */}
+                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-emerald-300 flex items-center gap-1.5">
+                      <span>📊</span>
+                      <span>২য় অফিশিয়াল পার্টনার: CPX Research (পেইড সার্ভে ও কুইজ)</span>
+                    </span>
+                    <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                      ✅ সক্রিয় ও লাইভ
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-emerald-200 mb-1">
+                      CPX Research App ID (publisher.cpx-research.com থেকে প্রাপ্ত):
+                    </label>
+                    <input
+                      type="text"
+                      value={editSettings.offerwallsConfig?.cpxAppId ?? '36966'}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          cpxAppId: e.target.value.trim()
+                        } as any
+                      })}
+                      placeholder="CPX App ID (যেমন: 36966)"
+                      className="w-full p-2 bg-slate-950 border border-emerald-500/30 rounded-xl text-xs font-mono text-emerald-200 focus:outline-none focus:border-emerald-400"
+                    />
+                    <span className="text-[9px] text-emerald-400/90 block mt-1">
+                      💡 আপনার CPX পাবলিশার ড্যাশবোর্ডের App ID এখানে বসালে প্রতি সার্ভে ও কুইজের ডলার সরাসরি আপনার অ্যাকাউন্টে জমা হবে। (ডিফল্ট: 36966)
+                    </span>
+                  </div>
+                </div>
+
+                {/* 🔒 ঐচ্ছিক অফারওয়াল (অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন) */}
+                <div className="pt-2 border-t border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
+                      <span>🎮</span>
+                      <span>ঐচ্ছিক নেটওয়ার্ক: Torox (অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন)</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={editSettings.offerwallsConfig?.toroxEnabled ?? false}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          toroxEnabled: e.target.checked
+                        } as any
+                      })}
+                      className="rounded accent-blue-500 w-4 h-4"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                      Torox Pub ID (publishers.torox.io):
+                    </label>
+                    <input
+                      type="text"
+                      value={editSettings.offerwallsConfig?.toroxPubId ?? ''}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          toroxPubId: e.target.value
+                        } as any
+                      })}
+                      placeholder="অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন"
+                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-200 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 📺 Lootably (ঐচ্ছিক) */}
+                <div className="pt-2 border-t border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
+                      <span>📺</span>
+                      <span>ঐচ্ছিক: Lootably (অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন)</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={editSettings.offerwallsConfig?.lootablyEnabled ?? false}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          lootablyEnabled: e.target.checked
+                        } as any
+                      })}
+                      className="rounded accent-rose-500 w-4 h-4"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                      Lootably Placement ID:
+                    </label>
+                    <input
+                      type="text"
+                      value={editSettings.offerwallsConfig?.lootablyPlacementId ?? ''}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          lootablyPlacementId: e.target.value
+                        } as any
+                      })}
+                      placeholder="অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন"
+                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-200 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 💎 BitLabs Surveys (ঐচ্ছিক) */}
+                <div className="pt-2 border-t border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
+                      <span>💎</span>
+                      <span>ঐচ্ছিক: BitLabs (অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন)</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={editSettings.offerwallsConfig?.bitlabsEnabled ?? false}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          bitlabsEnabled: e.target.checked
+                        } as any
+                      })}
+                      className="rounded accent-indigo-500 w-4 h-4"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                      BitLabs App Token:
+                    </label>
+                    <input
+                      type="text"
+                      value={editSettings.offerwallsConfig?.bitlabsToken ?? ''}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          bitlabsToken: e.target.value
+                        } as any
+                      })}
+                      placeholder="অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন"
+                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-200 focus:outline-none"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

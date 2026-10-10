@@ -73,6 +73,8 @@ export interface User {
     active: boolean;
     dismissed?: boolean;
   };
+  lastActiveAt?: string;
+  currentActiveTab?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -136,6 +138,7 @@ export interface AdminSettings {
   dailyMaxVideos: number; // e.g. 50
   rewardedAdBonus: number; // e.g. 30
   dailyRewardedAdLimit: number; // e.g. 10
+  maxDailyAdClicks?: number; // e.g. 15 paid clicks per user per day
   sponsorAdIntervalMinutes?: number; // e.g. 150 (2.5 hours) cooldown between sponsor ads
   spinIntervalMinutes?: number; // e.g. 150 (2.5 hours) cooldown between lucky spins
   referralBonus: number; // e.g. 50
@@ -180,6 +183,18 @@ export interface AdminSettings {
     timewallUrl?: string; // TimeWall publisher URL
     adgateEnabled?: boolean;
     adgateWallId?: string; // AdGate Media Wall ID
+    notikEnabled?: boolean;
+    notikApiKey?: string; // Notik.me publisher API / URL
+    notikUrl?: string; // Notik Direct Offerwall URL
+    toroxEnabled?: boolean;
+    toroxPubId?: string; // Torox / OfferToro Pub ID
+    toroxAppId?: string; // Torox App ID
+    cpxEnabled?: boolean;
+    cpxAppId?: string; // CPX Research App ID
+    lootablyEnabled?: boolean;
+    lootablyPlacementId?: string; // Lootably Placement ID
+    bitlabsEnabled?: boolean;
+    bitlabsToken?: string; // BitLabs App Token / API Token (web.bitlabs.ai)
     customTasksRewardMultiplier?: number;
   };
   activeNotice?: {

@@ -77,6 +77,16 @@ export const api = {
   },
 
   // Auth / Profile
+  sendUserHeartbeat: async (tab: string): Promise<void> => {
+    try {
+      await safeJsonFetch('/api/user/heartbeat', {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({ tab })
+      });
+    } catch {}
+  },
+
   getProfile: async (): Promise<User> => {
     const data = await safeJsonFetch<{ success: boolean; user: User }>('/api/auth/profile', { headers: headers() });
     return data?.user;

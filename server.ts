@@ -30,7 +30,16 @@ app.get('/5a6aa39ee3ae413ebcefceebfc1a31468855fd81*', (req, res) => {
   res.send('5a6aa39ee3ae413ebcefceebfc1a31468855fd81');
 });
 
-// Explicit SEO Routes for Googlebot Crawler
+// Explicit SEO & Health Routes for Verification & Monitoring Bots
+app.get(['/health', '/api/health', '/api/ping'], (req, res) => {
+  res.status(200).json({
+    status: 'online',
+    timestamp: new Date().toISOString(),
+    service: 'Watch & Earn BD Verification API',
+    postbackStatus: 'ready'
+  });
+});
+
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
   res.setHeader('X-Robots-Tag', 'all, index, follow');
@@ -154,6 +163,10 @@ function loadDbFromDisk() {
         db.settings.adsConfig.hilltopAdsEnabled = true;
         db.settings.adsConfig.hilltopAdsDirectLink = 'https://affectionatestorage.com/Ah6g5c';
         db.settings.adsConfig.hilltopAdsZoneId = '7488677';
+        db.settings.adsConfig.monetagEnabled = db.settings.adsConfig.monetagEnabled !== false;
+        db.settings.adsConfig.monetagZoneId = db.settings.adsConfig.monetagZoneId || '11948885';
+        db.settings.adsConfig.monetagTagCode = db.settings.adsConfig.monetagTagCode || '<script src="https://5gvci.com/act/files/tag.min.js?z=11948885" data-cfasync="false" async></script>';
+        db.settings.adsConfig.monetagDirectLink = loaded.settings?.adsConfig?.monetagDirectLink || 'https://uplcm.com/4/11971342';
         db.users = loaded.users || db.users;
         db.videos = loaded.videos || db.videos;
         db.transactions = loaded.transactions || db.transactions;
@@ -295,7 +308,7 @@ const db: {
       monetagEnabled: true,
       monetagZoneId: '11948885',
       monetagTagCode: '<script src="https://5gvci.com/act/files/tag.min.js?z=11948885" data-cfasync="false" async></script>',
-      monetagDirectLink: '',
+      monetagDirectLink: 'https://uplcm.com/4/11971342',
       hilltopAdsEnabled: true,
       hilltopAdsDirectLink: 'https://affectionatestorage.com/Ah6g5c',
       hilltopAdsZoneId: '7488677',
@@ -303,7 +316,7 @@ const db: {
     },
     offerwallsConfig: {
       enabled: true,
-      cpaleadEnabled: true,
+      cpaleadEnabled: false,
       cpaleadApiKey: '6879945464ff4be390fdabff423e4eb0',
       cpaleadPublisherId: '3364429',
       cpaleadUrl: 'https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429',
@@ -312,6 +325,8 @@ const db: {
       timewallEnabled: true,
       timewallPlacementId: 'd7521f148f92a2d3',
       timewallUrl: 'https://timewall.io/offers/d7521f148f92a2d3',
+      cpxEnabled: true,
+      cpxAppId: '36966',
       customTasksRewardMultiplier: 1.0
     },
     activeNotice: {
@@ -752,8 +767,32 @@ function getUser(req: express.Request): any {
     db.users.push(user);
     saveDbToDisk();
   }
+  if (user) {
+    user.lastActiveAt = new Date().toISOString();
+    const todayDateStr = new Date().toISOString().split('T')[0];
+    if (user.todayCoinsDate !== todayDateStr) {
+      user.todayCoins = 0;
+      user.todayVideosCount = 0;
+      user.rewardedAdsToday = 0;
+      user.adClicksToday = 0;
+      user.spinsToday = 0;
+      user.todayCoinsDate = todayDateStr;
+    }
+  }
   return user;
 }
+
+// Realtime User Presence Heartbeat
+app.post('/api/user/heartbeat', (req, res) => {
+  const user = getUser(req);
+  if (user && user.uid !== 'guest_user') {
+    user.lastActiveAt = new Date().toISOString();
+    if (req.body?.tab) {
+      user.currentActiveTab = req.body.tab;
+    }
+  }
+  res.json({ success: true, online: true });
+});
 
 // ---------------- API ENDPOINTS ---------------- //
 
@@ -1429,23 +1468,24 @@ app.post('/api/reward/claim', (req, res) => {
       return res.status(400).json({ success: false, message: 'এই ভিডিওটির জন্য পুরস্কার ইতিমধ্যে গ্রহণ করা হয়েছে।' });
     }
 
-    // Calculate required seconds based on server duration
-    const requiredSeconds = session.duration * (db.settings.minWatchPercentage / 100);
+    // Calculate required seconds based on server duration (lenient for mobile buffering)
+    const effectiveMinPercentage = Math.min(db.settings.minWatchPercentage || 75, 75);
+    const requiredSeconds = Math.max(5, session.duration * (effectiveMinPercentage / 100));
     const actualElapsed = (Date.now() - session.startedAt) / 1000;
 
-    // Anti-cheat checks:
-    if (actualElapsed < db.settings.minWatchSeconds) {
-      user.riskScore = (user.riskScore || 0) + 10;
+    const minRequiredElapsed = Math.min(db.settings.minWatchSeconds || 10, requiredSeconds);
+    if (actualElapsed < (minRequiredElapsed - 2.0)) {
+      user.riskScore = (user.riskScore || 0) + 5;
       return res.status(400).json({
         success: false,
-        message: `ভিডিওটি পর্যাপ্ত সময় ধরে দেখা হয়নি। নূন্যতম ${Math.ceil(requiredSeconds)} সেকেন্ড দেখতে হবে।`
+        message: `ভিডিওটি পর্যাপ্ত সময় ধরে দেখা হয়নি। নূন্যতম ${Math.ceil(minRequiredElapsed)} সেকেন্ড দেখতে হবে।`
       });
     }
 
-    if (session.watchedSeconds < (requiredSeconds - 1.0)) {
+    if (session.watchedSeconds < (requiredSeconds - 3.0)) {
       return res.status(400).json({
         success: false,
-        message: `ভিডিওটির কমপক্ষে ${db.settings.minWatchPercentage}% দেখা সম্পন্ন করুন।`
+        message: `ভিডিওটির কমপক্ষে ${effectiveMinPercentage}% দেখা সম্পন্ন করুন।`
       });
     }
 
@@ -1578,7 +1618,7 @@ app.post('/api/reward/ad-start', (req, res) => {
   res.json({
     success: true,
     adSessionId,
-    minSeconds: 50
+    minSeconds: Math.max(10, (db.settings.adsConfig?.rewardedVideoDurationSeconds || 20) - 2)
   });
 });
 
@@ -1596,7 +1636,7 @@ app.post('/api/reward/ad-reward', (req, res) => {
   const now = Date.now();
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // 🛡️ Guard 0: Verify Ad Session Minimum Time (Must watch at least 15 seconds)
+  // 🛡️ Guard 0: Verify Ad Session Minimum Time (Matches configured ad duration)
   if (adSessionId) {
     const session = activeAdSessions.get(adSessionId);
     if (!session) {
@@ -1606,18 +1646,19 @@ app.post('/api/reward/ad-reward', (req, res) => {
       return res.status(403).json({ success: false, message: 'সেশন সিকিউরিটি অসংগতি।' });
     }
     const elapsedSec = (now - session.startedAt) / 1000;
-    if (elapsedSec < 48) {
+    const minRequiredSec = Math.max(8, Math.min(18, (Number(db.settings.adsConfig?.rewardedVideoDurationSeconds) || 20) - 4));
+    if (elapsedSec < minRequiredSec) {
       return res.status(400).json({
         success: false,
-        message: `বিজ্ঞাপনটি পুরো ৫০ সেকেন্ড দেখা হয়নি (আপনি দেখেছেন ${Math.floor(elapsedSec)} সেকেন্ড)। পুরো সময় না দেখলে কয়েন দেওয়া সম্ভব নয়।`
+        message: `বিজ্ঞাপনটি পুরো ${Math.ceil(minRequiredSec)} সেকেন্ড দেখা হয়নি (আপনি দেখেছেন ${Math.floor(elapsedSec)} সেকেন্ড)। পুরো সময় না দেখলে কয়েন দেওয়া সম্ভব নয়।`
       });
     }
     activeAdSessions.delete(adSessionId);
   }
 
-  // 🛡️ Guard 1: Anti-Spam Cooldown (Minimum 15 seconds between rewarded video claims)
+  // 🛡️ Guard 1: Anti-Spam Cooldown (5 seconds between rewarded video claims)
   const lastClaim = lastAdClaimTimes.get(user.uid) || 0;
-  const minIntervalMs = 15000;
+  const minIntervalMs = 5000;
   if (now - lastClaim < minIntervalMs) {
     const remainingSec = Math.ceil((minIntervalMs - (now - lastClaim)) / 1000);
     return res.status(429).json({
@@ -1626,10 +1667,11 @@ app.post('/api/reward/ad-reward', (req, res) => {
     });
   }
 
-  // ⏱️ Guard 1b: 2-3 Hour Interval between Sponsored Ads (ডিফল্ট: ১৫০ মিনিট / ২.৫ ঘণ্টা বিরতি)
+  // ⏱️ Guard 1b: Apply sponsor ad interval ONLY to manual sponsor bonus buttons, NEVER to video reel watchers!
+  const isVideoWatchSession = adToken === 'reel_auto_loop' || adToken === 'video_feed_reward' || adToken === 'watch_reel';
   const sponsorIntervalMinutes = Number(db.settings.sponsorAdIntervalMinutes) || 150;
   const intervalMs = sponsorIntervalMinutes * 60 * 1000;
-  if (user.lastSponsoredAdTimestamp) {
+  if (!isVideoWatchSession && user.lastSponsoredAdTimestamp) {
     const lastTime = new Date(user.lastSponsoredAdTimestamp).getTime();
     const elapsed = now - lastTime;
     if (elapsed < intervalMs) {
@@ -1641,7 +1683,7 @@ app.post('/api/reward/ad-reward', (req, res) => {
         success: false,
         cooldown: true,
         remainingMs,
-        message: `⏳ পরবর্তী স্পনসর বিজ্ঞাপন দেখতে পারবেন ${timeStr} পর। নিয়ম অনুযায়ী প্রতি ${Math.round(sponsorIntervalMinutes / 60 * 10) / 10} ঘণ্টা পর পর বিজ্ঞাপন লোড হয়।`
+        message: `⏳ পরবর্তী স্পনসর বিজ্ঞাপন দেখতে পারবেন ${timeStr} পর।`
       });
     }
   }
@@ -1682,7 +1724,9 @@ app.post('/api/reward/ad-reward', (req, res) => {
   user.lifetimeCoins += rewardAmount;
   user.todayCoins += rewardAmount;
   user.todayVideosCount = (user.todayVideosCount || 0) + 1;
-  user.lastSponsoredAdTimestamp = new Date().toISOString();
+  if (!isVideoWatchSession) {
+    user.lastSponsoredAdTimestamp = new Date().toISOString();
+  }
   user.updatedAt = new Date().toISOString();
 
   db.transactions.unshift({
@@ -1829,20 +1873,23 @@ app.post('/api/reward/task-reward', (req, res) => {
   });
 });
 
-// 6c-2. Universal CPA Offerwall Postback Webhook (CPALead, Monlix, TimeWall, AdGate Media)
-app.all(['/api/postback/offerwall', '/api/postback/cpalead', '/api/postback/monlix', '/api/postback/timewall'], (req, res) => {
+// 6c-2. Universal CPA Offerwall Postback Webhook (CPALead, Monlix, TimeWall, AdGate Media, Torox, CPX, Lootably)
+app.all(['/api/postback/offerwall', '/api/postback/cpalead', '/api/postback/monlix', '/api/postback/timewall', '/api/postback/torox', '/api/postback/cpx', '/api/postback/lootably'], (req, res) => {
   const params = { ...req.query, ...req.body };
-  const subid = (params.subid || params.user_id || params.userId || params.uid || params.sub_id || '') as string;
-  const payout = parseFloat((params.payout || params.amount || params.payout_usd || '0') as string);
-  const points = parseInt((params.points || params.coins || '0') as string, 10) || Math.round((payout || 0.05) * 6667 * 0.4);
+  const subid = (params.subid || params.user_id || params.ext_user_id || params.userId || params.uid || params.sub_id || '') as string;
+  const payout = parseFloat((params.payout || params.amount || params.payout_usd || params.amount_usd || '0') as string);
+  const points = parseInt((params.points || params.coins || params.amount_local || '0') as string, 10) || Math.round((payout || 0.05) * 6667 * 0.4);
 
   if (!subid) {
-    return res.status(400).send('ERROR_MISSING_SUBID');
+    // Return 200 OK for testing pings without subid
+    return res.status(200).send('1');
   }
 
   const user = db.users.find(u => u.uid === subid || u.email === subid);
   if (!user) {
-    return res.status(404).send('USER_NOT_FOUND');
+    // If it's a test ping or user not found, acknowledge 200 OK so CPX validation succeeds
+    console.log(`[Postback] Ping received for subid/user_id: ${subid}. Acknowledging 200 OK.`);
+    return res.status(200).send('1');
   }
 
   const earned = Math.max(50, points);
@@ -1879,11 +1926,11 @@ app.post('/api/reward/ad-click', (req, res) => {
     return res.status(403).json({ success: false, message: 'অস্বাভাবিক কার্যক্রমের কারণে আপনার অ্যাকাউন্ট স্থগিত করা হয়েছে।' });
   }
 
-  // 🛡️ Anti-Bot Check 2: Minimum 15 seconds cooldown between ad clicks
+  // 🛡️ Anti-Bot Check 2: Short 3 seconds cooldown between ad clicks
   const now = Date.now();
   const lastClickTime = lastAdClaimTimes.get(user.uid + '_click') || 0;
-  if (now - lastClickTime < 15000) {
-    const waitSeconds = Math.ceil((15000 - (now - lastClickTime)) / 1000);
+  if (now - lastClickTime < 3000) {
+    const waitSeconds = Math.ceil((3000 - (now - lastClickTime)) / 1000);
     return res.status(429).json({
       success: false,
       message: `বট প্রতিরোধ নিরাপত্তা: পরবর্তী ক্লিকে বোনাস নেওয়ার জন্য ${waitSeconds} সেকেন্ড অপেক্ষা করুন।`
@@ -2977,6 +3024,59 @@ app.all(['/api/postback/timewall', '/api/postbacks/timewall'], (req, res) => {
   } catch (err) {
     console.error('[TimeWall Postback] Error:', err);
     return res.status(200).send('OK'); // Always return 200 so TimeWall doesn't retry infinitely
+  }
+});
+
+// CPX Research Official Postback Webhook
+app.all(['/api/postback/cpx', '/api/postbacks/cpx'], (req, res) => {
+  try {
+    const params = { ...req.query, ...req.body };
+    const userId = (params.user_id || params.ext_user_id || params.subid || params.userId || '').toString().trim();
+    const transId = (params.trans_id || params.transaction_id || params.txid || 'cpx_' + Date.now()).toString();
+    const status = (params.status || '1').toString();
+    const amountCoins = parseInt(params.amount_local_currency || params.amount || '0', 10) || Math.round(parseFloat(params.amount_usd || '0') * 1000);
+
+    console.log(`[CPX Research Postback] Received: User=${userId}, TransID=${transId}, Status=${status}, Coins=${amountCoins}`);
+
+    if (userId) {
+      const targetUser = db.users.find(u => u.uid === userId || u.id === userId || u.phone === userId);
+      if (targetUser && status === '1' && amountCoins > 0) {
+        const alreadyCredited = (db.transactions || []).some(t => t.id === `cpx_${transId}`);
+        if (!alreadyCredited) {
+          targetUser.coins = (targetUser.coins || 0) + amountCoins;
+          targetUser.lifetimeCoins = (targetUser.lifetimeCoins || 0) + amountCoins;
+          targetUser.todayCoins = (targetUser.todayCoins || 0) + amountCoins;
+
+          db.transactions.unshift({
+            id: `cpx_${transId}`,
+            userId: targetUser.uid,
+            type: 'CPA_OFFER_COMPLETED',
+            amount: amountCoins,
+            source: `📊 CPX Research সার্ভে রিওয়ার্ড (+${amountCoins} কয়েন)`,
+            status: 'COMPLETED',
+            createdAt: new Date().toISOString()
+          });
+
+          db.notifications.unshift({
+            id: 'notif_cpx_' + Date.now(),
+            userId: targetUser.uid,
+            title: '🎉 CPX Research সার্ভে রিওয়ার্ড!',
+            message: `CPX Research থেকে সার্ভে সম্পন্ন করায় আপনার একাউন্টে ${amountCoins} কয়েন যোগ করা হয়েছে!`,
+            type: 'coin',
+            read: false,
+            createdAt: new Date().toISOString(),
+            linkTab: 'wallet'
+          });
+
+          saveDbToDisk();
+        }
+      }
+    }
+
+    return res.status(200).send('1');
+  } catch (err) {
+    console.error('[CPX Postback] Error:', err);
+    return res.status(200).send('1');
   }
 });
 

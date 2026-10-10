@@ -12,13 +12,18 @@ import {
   Lock,
   Share2,
   Eye,
-  EyeOff
+  EyeOff,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { soundService } from '../../services/audio';
 
-export const AuthModal: React.FC = () => {
+interface AuthModalProps {
+  onClose?: () => void;
+}
+
+export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
   const { registerUser, loginUser, loginDemo, loginWithGoogle, sendPhoneOtp } = useAuth();
   const { language, showToast, triggerConfetti, setActiveTab, settings } = useApp();
 
@@ -257,11 +262,23 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div data-no-popunder="true" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in overflow-y-auto no-popunder">
+    <div data-no-popunder="true" className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in overflow-y-auto no-popunder">
       <div className="w-full max-w-sm rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#090D16] to-[#0A1A12] border border-emerald-500/40 p-5 sm:p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto my-auto no-popunder">
         {/* Glow ambient */}
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
+
+        {/* Close Button if opened as popup */}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition z-20 cursor-pointer"
+            title="বন্ধ করুন"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
 
         {/* Brand Header */}
         <div className="text-center mb-5 relative z-10">

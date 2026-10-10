@@ -205,7 +205,7 @@ export const ProfileScreen: React.FC = () => {
   ];
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 py-4 pb-24 space-y-4 font-sans">
+    <div className="w-full max-w-md mx-auto px-4 pt-20 sm:pt-24 pb-24 space-y-4 font-sans">
       
       {/* 1. HERO USER PROFILE CARD */}
       <div className="rounded-3xl bg-gradient-to-br from-[#0C1524] via-[#08101A] to-[#0A1713] border border-emerald-500/30 p-5 shadow-2xl space-y-4 relative overflow-hidden">

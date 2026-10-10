@@ -3,6 +3,7 @@ import { Sparkles, Zap, ExternalLink, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { openAdWithStrictTimer } from './AdVisitTimerModal';
+import { getRandomSafeDirectLink } from '../../utils/adLinkSanitizer';
 
 interface MiniBannerProps {
   slotId?: string;
@@ -17,23 +18,20 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', cl
 
   const todayStr = new Date().toISOString().split('T')[0];
   const clicksToday = user?.lastAdClickDate === todayStr ? (user?.adClicksToday || 0) : 0;
-  const maxClicks = 10;
+  const maxClicks = settings?.maxDailyAdClicks || 15;
   const isLimitReached = clicksToday >= maxClicks;
 
-  const adsterraLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
-  const hilltopAdsLink = settings?.adsConfig?.hilltopAdsDirectLink?.trim() || 'https://affectionatestorage.com/Ah6g5c';
-  
-  // Dynamic rotation: alternates between Adsterra & HilltopAds for double earnings
-  const directLink = (clicksToday % 2 === 0) ? hilltopAdsLink : adsterraLink;
+  // 🛡️ Verified rotation across Monetag, HilltopAds, and Adsterra
+  const directLink = getRandomSafeDirectLink(settings?.adsConfig);
 
   // Rich Authentic Bangladesh Sponsor Campaigns (Matches Image 2 exactly)
   const ADS = [
     {
       tag: 'SPONSORED CAMPAIGN',
       sponsor: 'Daraz Bangladesh 🛍️',
-      title: 'দারাজ গ্র্যান্ড বৈশাখী মেলা! ৮০% পর্যন্ত ক্যাশ ছাড়',
+      title: 'দারাজ গ্র্যান্ড মেগা মেলা! ৮০% পর্যন্ত ক্যাশ ছাড়',
       desc: 'ফ্রি হোম ডেলিভারিতে সেরা স্মার্টফোন ও গ্যাজেট কিনুন ঘরে বসেই।',
-      cta: 'শপ করুন (+১০ কয়েন)',
+      cta: 'শপ করুন (+১৫ কয়েন)',
       bgImg: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&auto=format&fit=crop&q=80'
     },
     {
@@ -41,7 +39,7 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', cl
       sponsor: 'Nagad Official Promo 🇧🇩',
       title: 'নগদ মেগা রিওয়ার্ড বোনাস! নিশ্চিত ক্যাশব্যাক অফার',
       desc: 'বিজ্ঞাপনে ক্লিক করে অফার দেখুন এবং জিতে নিন বিশেষ ক্যাশ রিওয়ার্ড।',
-      cta: 'অফার দেখুন (+১০ কয়েন)',
+      cta: 'অফার দেখুন (+১৫ কয়েন)',
       bgImg: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=80'
     },
     {
@@ -49,7 +47,7 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', cl
       sponsor: 'bKash Payments 📲',
       title: 'বিকাশ সেন্ড মানি সম্পূর্ণ ফ্রি ও পেমেন্ট বোনাস!',
       desc: 'প্রিয় নাম্বারে ফ্রিতে টাকা পাঠান ও জিতে নিন আকর্ষণীয় ভাউচার।',
-      cta: 'বিস্তারিত দেখুন (+১০ কয়েন)',
+      cta: 'বিস্তারিত দেখুন (+১৫ কয়েন)',
       bgImg: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop&q=80'
     }
   ];
@@ -63,14 +61,14 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', cl
     if (isLimitReached) {
       showToast(
         '🔒 আজকের সীমা পূর্ণ!',
-        'আপনি আজকে সর্বোচ্চ ১০টি বিজ্ঞাপনে ক্লিক করেছেন। অ্যাকাউন্ট সুরক্ষার জন্য আগামীকাল আবার চালু হবে।',
+        `আপনি আজকে সর্বোচ্চ ${maxClicks}টি বিজ্ঞাপনে ক্লিক করেছেন। অ্যাকাউন্ট সুরক্ষার জন্য আগামীকাল আবার চালু হবে।`,
         'info'
       );
       return;
     }
 
-    // Launch 20s strict countdown verification modal
-    openAdWithStrictTimer(directLink, `স্পন্সর ব্যানার (${currentAd.sponsor})`, 10, 20);
+    // Launch 20s strict countdown verification modal (+15 coins)
+    openAdWithStrictTimer(directLink, `স্পন্সর ব্যানার (${currentAd.sponsor})`, 15, 20);
   };
 
   if (isDismissed) {

@@ -8,6 +8,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { soundService } from '../../services/audio';
 import { api } from '../../services/api';
+import { sanitizeAdDirectLink } from '../../utils/adLinkSanitizer';
 
 interface AdInterstitialProps {
   onAdCompleted: (adSessionId?: string) => void;
@@ -152,12 +153,13 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       return;
     }
 
-    const adsterraLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
-    const hilltopAdsLink = settings?.adsConfig?.hilltopAdsDirectLink?.trim() || 'https://affectionatestorage.com/Ah6g5c';
-    const monetagLink = settings?.adsConfig?.monetagDirectLink?.trim() || 'https://5gvci.com/act/files/tag.min.js?z=11948885';
+    const adsterraLink = sanitizeAdDirectLink(settings?.adsConfig?.adsterraDirectLink, 'adsterra');
+    const hilltopAdsLink = sanitizeAdDirectLink(settings?.adsConfig?.hilltopAdsDirectLink, 'hilltop');
+    const monetagLink = sanitizeAdDirectLink(settings?.adsConfig?.monetagDirectLink, 'monetag');
     
     // Dynamic routing: Phase 1 goes to Adsterra, Phase 2 goes to HilltopAds ($ High CPM)
-    const targetUrl = isSecondPhase ? (hilltopAdsLink || monetagLink || adsterraLink) : (adsterraLink || hilltopAdsLink);
+    const rawTarget = isSecondPhase ? (hilltopAdsLink || monetagLink || adsterraLink) : (adsterraLink || hilltopAdsLink);
+    const targetUrl = sanitizeAdDirectLink(rawTarget, isSecondPhase ? 'hilltop' : 'adsterra');
 
     if (typeof window !== 'undefined') {
       try {

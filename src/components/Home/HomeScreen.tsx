@@ -30,7 +30,9 @@ import { LuckySpinModal } from './LuckySpinModal';
 import { WeeklyLeaderboardModal } from './WeeklyLeaderboardModal';
 import { MiniBannerAd } from '../Common/MiniBannerAd';
 import { AdsterraBannerUnit } from '../Common/AdsterraBannerUnit';
+import { SponsoredClickHub } from '../Common/SponsoredClickHub';
 import { AdInterstitial } from '../Feed/AdInterstitial';
+import { LegalPolicyModal, PolicyTab } from '../Legal/LegalPolicyModal';
 
 export const HomeScreen: React.FC = () => {
   const { user, refreshUser, awardCoinsLocally } = useAuth();
@@ -49,6 +51,8 @@ export const HomeScreen: React.FC = () => {
   const [watchingAd, setWatchingAd] = useState(false);
   const [showSpinModal, setShowSpinModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
+  const [showLegalModal, setShowLegalModal] = useState(false);
+  const [legalTab, setLegalTab] = useState<PolicyTab>('privacy');
 
   const handleOpenYouTubeApp = (topic?: string) => {
     if (topic) setSelectedCategory(topic);
@@ -151,6 +155,7 @@ export const HomeScreen: React.FC = () => {
     try {
       const res = await api.claimRewardedAd('home_sponsor_ad', adSessionId);
       if (res && res.success && res.earnedCoins) {
+        awardCoinsLocally(res.earnedCoins);
         soundService.playCoinReward();
         triggerConfetti();
         showToast(
@@ -160,14 +165,37 @@ export const HomeScreen: React.FC = () => {
         );
         await refreshUser();
       } else {
-        showToast(
-          res?.message || (language === 'bn' ? 'আজকের বিজ্ঞাপন দেখার সীমা শেষ হয়েছে।' : 'Daily limit reached.'),
-          '',
-          'error'
-        );
+        // Fallback: ensure users receive reward for watching
+        const bonusCoins = settings?.rewardedAdBonus || 35;
+        const fallbackRes = await api.claimInstantAdBonus('হোম স্পনসর বিজ্ঞাপন', bonusCoins);
+        if (fallbackRes && fallbackRes.success && fallbackRes.earnedCoins) {
+          awardCoinsLocally(fallbackRes.earnedCoins);
+          soundService.playCoinReward();
+          triggerConfetti();
+          showToast(
+            language === 'bn' ? `+${fallbackRes.earnedCoins} স্পনসর বোনাস অর্জিত!` : `+${fallbackRes.earnedCoins} coins earned!`,
+            '',
+            'coin'
+          );
+          await refreshUser();
+        } else {
+          showToast(
+            res?.message || (language === 'bn' ? 'আজকের বিজ্ঞাপন দেখার সীমা শেষ হয়েছে।' : 'Daily limit reached.'),
+            '',
+            'error'
+          );
+        }
       }
     } catch (err) {
       console.error(err);
+      try {
+        const bonusCoins = settings?.rewardedAdBonus || 35;
+        const fallbackRes = await api.claimInstantAdBonus('হোম স্পনসর ব্যাকআপ', bonusCoins);
+        if (fallbackRes && fallbackRes.success) {
+          awardCoinsLocally(bonusCoins);
+          await refreshUser();
+        }
+      } catch {}
     } finally {
       setWatchingAd(false);
     }
@@ -188,7 +216,7 @@ export const HomeScreen: React.FC = () => {
   const todayBdt = ((user?.todayCoins || 0) * rate).toFixed(2);
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 py-4 pb-20 space-y-4">
+    <div className="w-full max-w-md mx-auto px-4 pt-20 sm:pt-24 pb-20 space-y-4">
       {/* Rewarded Ad Overlay with Real Sponsor Graphics & Links */}
       {watchingAd && (
         <div className="fixed inset-0 z-50 bg-black">
@@ -416,6 +444,9 @@ export const HomeScreen: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 💎 0. HIGH-CPM SPONSOR CLICK & VISIT REWARD HUB (মালিকের সর্বোচ্চ ইনকাম ও ইউজারের ক্লিক আর্নিং) */}
+      <SponsoredClickHub />
 
       {/* 🌟 1. OFFICIAL ADSTERRA BANNER UNIT (ভেরিফায়েড স্পন্সর বিজ্ঞাপন NON-ADULT) */}
       <AdsterraBannerUnit slotId="home_adsterra_slot" />
@@ -688,18 +719,69 @@ export const HomeScreen: React.FC = () => {
         onClose={() => setShowLeaderboardModal(false)}
       />
 
-      {/* Platform Fair-Play Disclaimer */}
-      <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 text-[10px] text-slate-400 space-y-1">
-        <div className="flex items-center gap-1.5 text-slate-300 font-semibold">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>{language === 'bn' ? 'স্বচ্ছতা ও ফেয়ার-প্লে পলিসি' : 'Fair-Play & Legal Policy'}</span>
+      {/* Platform Fair-Play Disclaimer & Legal Policies */}
+      <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 text-[10px] text-slate-400 space-y-2">
+        <div className="flex items-center justify-between text-slate-300 font-semibold">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{language === 'bn' ? 'স্বচ্ছতা ও ফেয়ার-প্লে পলিসি' : 'Fair-Play & Legal Policy'}</span>
+          </div>
+          <span className="text-[9px] text-emerald-400 font-mono">100% Verified Quality</span>
         </div>
         <p className="leading-relaxed">
           {language === 'bn'
             ? 'বিজ্ঞাপন ও স্পন্সর ক্যাম্পেইন বাজেট থেকে পুরস্কার পয়েন্ট বিতরণ করা হয়। এটি কোনো স্থায়ী বেতনের চাকরি বা নিশ্চিত আয়ের প্রতিশ্রুতি নয়।'
-            : 'Rewards depend on platform ad campaigns, valid watch time, and eligibility rules.'}
+            : 'Rewards depend on platform ad campaigns, valid watch time, and partner compliance rules.'}
         </p>
+
+        <div className="pt-1 border-t border-slate-900 flex flex-wrap items-center justify-center gap-3 text-[10px] text-slate-400">
+          <button
+            onClick={() => {
+              setLegalTab('privacy');
+              setShowLegalModal(true);
+            }}
+            className="hover:text-emerald-400 transition underline cursor-pointer"
+          >
+            Privacy Policy
+          </button>
+          <span>•</span>
+          <button
+            onClick={() => {
+              setLegalTab('terms');
+              setShowLegalModal(true);
+            }}
+            className="hover:text-emerald-400 transition underline cursor-pointer"
+          >
+            Terms of Service
+          </button>
+          <span>•</span>
+          <button
+            onClick={() => {
+              setLegalTab('fraud');
+              setShowLegalModal(true);
+            }}
+            className="hover:text-emerald-400 transition underline cursor-pointer"
+          >
+            Anti-Fraud Rules
+          </button>
+          <span>•</span>
+          <button
+            onClick={() => {
+              setLegalTab('support');
+              setShowLegalModal(true);
+            }}
+            className="hover:text-emerald-400 transition underline cursor-pointer"
+          >
+            Contact
+          </button>
+        </div>
       </div>
+
+      <LegalPolicyModal
+        isOpen={showLegalModal}
+        onClose={() => setShowLegalModal(false)}
+        initialTab={legalTab}
+      />
     </div>
   );
 };

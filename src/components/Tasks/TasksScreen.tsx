@@ -30,8 +30,10 @@ import { api } from '../../services/api';
 import { soundService } from '../../services/audio';
 import { AdInterstitial } from '../Feed/AdInterstitial';
 import { MiniBannerAd } from '../Common/MiniBannerAd';
+import { sanitizeAdDirectLink } from '../../utils/adLinkSanitizer';
+import { SponsoredClickHub } from '../Common/SponsoredClickHub';
+import { openAdWithStrictTimer } from '../Common/AdVisitTimerModal';
 import { OfferwallHub } from './OfferwallHub';
-import { TwoStepAdTaskModal, TwoStepTaskData } from './TwoStepAdTaskModal';
 
 type TaskType = 'math' | 'gk' | 'captcha' | 'daily_checkin';
 type TaskTab = 'micro_tasks' | 'daily_tasks' | 'offerwall';
@@ -71,7 +73,7 @@ export const TasksScreen: React.FC = () => {
   const freeMicroTasksList: FreeMicroTask[] = [
     {
       id: 'free_task_hilltop_visit',
-      titleBn: 'স্পন্সর ওয়েবসাইট ভিজিট ও ১৫ সেকেন্ড স্ক্রোল 🚀',
+      titleBn: 'HilltopAds স্পন্সর সাইট ভিজিট ও ১৫ সেকেন্ড স্ক্রোল 🚀',
       category: 'web',
       icon: '⚡',
       badge: '১০০% ফ্রি',
@@ -82,18 +84,18 @@ export const TasksScreen: React.FC = () => {
     },
     {
       id: 'free_task_yt_sub',
-      titleBn: 'ইউটিউব ভিডিও দেখুন ও চ্যানেল সাবস্ক্রাইব করুন 📺',
+      titleBn: 'স্পন্সর ভিডিও ক্লিপ দেখুন ও ২০ সেকেন্ড অপেক্ষা করুন 🎬',
       category: 'youtube',
-      icon: '🔴',
-      badge: '১০০% ফ্রি',
+      icon: '🎬',
+      badge: 'ভিডিও স্পন্সর',
       timeSec: 20,
       reward: 30,
-      descBn: 'ইউটিউব ভিডিওটি ২০ সেকেন্ড দেখুন এবং চ্যানেলটি সাবস্ক্রাইব করে কয়েন নিন',
+      descBn: 'স্পন্সর ভিডিও পেজটি ২০ সেকেন্ড স্ক্রোল করে দেখুন—টাইমার শেষ হলে কয়েন যোগ হবে',
       link: adsterraDirectLink
     },
     {
       id: 'free_task_web_visit',
-      titleBn: 'স্পন্সর ওয়েবসাইট ভিজিট ও ২০ সেকেন্ড রিড 🌐',
+      titleBn: 'Adsterra স্পন্সর পেজ ভিজিট ও ২০ সেকেন্ড স্ক্রোল 🌐',
       category: 'web',
       icon: '🌐',
       badge: 'সহজ ভিজিট',
@@ -111,7 +113,7 @@ export const TasksScreen: React.FC = () => {
       timeSec: 30,
       reward: 50,
       descBn: 'প্লে-স্টোরের ১টি ছোট ফ্রি অ্যাপ বা গেম ১ মিনিট টেস্ট করে বড় কয়েন বোনাস নিন',
-      link: 'https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429'
+      link: hilltopAdsDirectLink
     },
     {
       id: 'free_task_telegram',
@@ -133,7 +135,7 @@ export const TasksScreen: React.FC = () => {
       timeSec: 20,
       reward: 35,
       descBn: 'ফ্রি রিওয়ার্ড ভাউচার ও গিফট কার্ড সাইট ২০ সেকেন্ড ভিউ করুন',
-      link: 'https://www.cdnflyer.com/view.php?id=5546977&pub=3364429'
+      link: hilltopAdsDirectLink
     },
     {
       id: 'free_task_quiz_portal',
@@ -144,32 +146,16 @@ export const TasksScreen: React.FC = () => {
       timeSec: 20,
       reward: 40,
       descBn: 'সহজ বাংলা কুইজে মতামত দিন ও ইনস্ট্যান্ট ওয়ালেট পয়েন্ট অর্জন করুন',
-      link: 'https://www.fastsvr.com/view.php?id=5547029&pub=3364429'
+      link: adsterraDirectLink
     }
   ];
 
-  // Two-Step Ad Task state
-  const [twoStepModalOpen, setTwoStepModalOpen] = useState(false);
-  const [currentTwoStepTask, setCurrentTwoStepTask] = useState<TwoStepTaskData | null>(null);
-
   const handleStartMicroTask = (task: FreeMicroTask) => {
     soundService.playCoinReward();
-    setCurrentTwoStepTask({
-      id: task.id,
-      title: task.titleBn,
-      desc: task.descBn,
-      reward: task.reward,
-      timeSec: task.timeSec,
-      primaryLink: task.link,
-      step1AdLink: hilltopAdsDirectLink,
-      step2AdLink: adsterraDirectLink
-    });
-    setTwoStepModalOpen(true);
-  };
-
-  const handleTwoStepSuccess = (taskId: string, reward: number) => {
-    if (!completedMicroTasks.includes(taskId)) {
-      const updated = [...completedMicroTasks, taskId];
+    // 🛡️ Open with strict 20-second engaged visit verification
+    openAdWithStrictTimer(task.link, task.titleBn, Math.min(task.reward, 20), 20);
+    if (!completedMicroTasks.includes(task.id)) {
+      const updated = [...completedMicroTasks, task.id];
       setCompletedMicroTasks(updated);
       try {
         localStorage.setItem('completed_free_micro_tasks', JSON.stringify(updated));
@@ -267,7 +253,7 @@ export const TasksScreen: React.FC = () => {
 
     // 🚀 Auto-trigger Adsterra Popunder / Direct link in background
     try {
-      const directLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+      const directLink = sanitizeAdDirectLink(settings?.adsConfig?.adsterraDirectLink, 'adsterra');
       window.open(directLink, '_blank', 'noopener,noreferrer');
     } catch {}
 
@@ -379,8 +365,8 @@ export const TasksScreen: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 pt-3 pb-24 space-y-4">
-      {/* 🚀 Main Navigation Tabs: Micro Tasks vs Daily Tasks vs Offerwall */}
+    <div className="w-full max-w-md mx-auto px-4 pt-24 sm:pt-28 pb-24 space-y-4">
+      {/* 🚀 Main Navigation Tabs: 100% Free Micro Tasks vs Daily Quiz & Captcha vs Offerwall */}
       <div className="p-1.5 rounded-2xl bg-slate-900/95 border border-slate-800 shadow-xl backdrop-blur-md">
         <div className="grid grid-cols-3 gap-1.5">
           <button
@@ -427,7 +413,7 @@ export const TasksScreen: React.FC = () => {
             }`}
           >
             <Flame className={`w-4 h-4 ${activeTab === 'offerwall' ? 'text-slate-950' : 'text-amber-400'}`} />
-            <span>CPA অফার ($)</span>
+            <span>অফারওয়াল হাব 🔥</span>
           </button>
         </div>
       </div>
@@ -435,6 +421,9 @@ export const TasksScreen: React.FC = () => {
       {/* TAB 1: 100% FREE MICRO TASKS (NO DEPOSIT / ZERO COST) */}
       {activeTab === 'micro_tasks' && (
         <div className="space-y-3 animate-in fade-in duration-200">
+          {/* 💎 HIGH-CPM SPONSOR CLICK & VISIT REWARD HUB */}
+          <SponsoredClickHub compact={true} />
+
           {/* Header Banner */}
           <div className="rounded-3xl bg-gradient-to-br from-[#06201B] via-[#0A2E26] to-[#041512] border border-emerald-500/40 p-4 shadow-2xl relative overflow-hidden">
             <div className="flex items-center justify-between mb-1.5">
@@ -541,7 +530,7 @@ export const TasksScreen: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: CPA OFFERWALL */}
+      {/* TAB 2: CPA OFFERWALL HUB */}
       {activeTab === 'offerwall' && (
         <OfferwallHub onSwitchToDailyTasks={() => setActiveTab('daily_tasks')} />
       )}
@@ -763,13 +752,6 @@ export const TasksScreen: React.FC = () => {
           </div>
         </div>
       )}
-      {/* 🚀 DOUBLE-DIRECT-LINK TWO STEP AD TASK MODAL */}
-      <TwoStepAdTaskModal
-        isOpen={twoStepModalOpen}
-        task={currentTwoStepTask}
-        onClose={() => setTwoStepModalOpen(false)}
-        onSuccess={handleTwoStepSuccess}
-      />
     </div>
   );
 };

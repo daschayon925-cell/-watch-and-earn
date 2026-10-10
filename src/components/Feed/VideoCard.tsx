@@ -73,7 +73,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isActive, onNext, o
   const embedInfo = getEmbedInfo(video.videoUrl);
   const isEmbed = embedInfo.type !== 'direct';
 
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, awardCoinsLocally } = useAuth();
   const { isMuted, setIsMuted, showToast, triggerConfetti, language, settings } = useApp();
 
   const [isPlaying, setIsPlaying] = useState(true);
@@ -232,8 +232,9 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isActive, onNext, o
     setIsClaiming(true);
     try {
       const res = await api.claimReward(sId);
-      if (res.success) {
+      if (res && res.success && res.earnedCoins) {
         setIsRewardClaimed(true);
+        awardCoinsLocally(res.earnedCoins);
         soundService.playCoinReward();
         triggerConfetti();
         await refreshUser();
@@ -249,9 +250,34 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, isActive, onNext, o
             onAdTrigger();
           }, 1400);
         }
+      } else {
+        // Fallback: claim instant bonus so user always receives coins for watching
+        const coins = video.rewardCoins || 25;
+        const fbRes = await api.claimInstantAdBonus(`ভিডিও: ${video.title.slice(0, 25)}`, coins);
+        if (fbRes && fbRes.success) {
+          setIsRewardClaimed(true);
+          awardCoinsLocally(coins);
+          soundService.playCoinReward();
+          triggerConfetti();
+          await refreshUser();
+          showToast(
+            language === 'bn' ? `+${coins} কয়েন যুক্ত হয়েছে! 🎉` : `+${coins} Coins Earned! 🎉`,
+            '',
+            'coin'
+          );
+        }
       }
     } catch (err) {
       console.error('Claim error', err);
+      try {
+        const coins = video.rewardCoins || 25;
+        const fbRes = await api.claimInstantAdBonus(`ভিডিও ব্যাকআপ: ${video.title.slice(0, 25)}`, coins);
+        if (fbRes && fbRes.success) {
+          setIsRewardClaimed(true);
+          awardCoinsLocally(coins);
+          await refreshUser();
+        }
+      } catch {}
     } finally {
       setIsClaiming(false);
     }

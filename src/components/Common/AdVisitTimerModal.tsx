@@ -5,6 +5,8 @@ import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { soundService } from '../../services/audio';
 import { triggerAdReward } from '../../services/adBonus';
+import { sanitizeAdDirectLink } from '../../utils/adLinkSanitizer';
+import { api } from '../../services/api';
 
 interface AdVisitTimerState {
   isOpen: boolean;
@@ -23,26 +25,46 @@ export const openAdWithStrictTimer = (
   coins: number = 10,
   durationSeconds: number = 20
 ) => {
+  const safeUrl = sanitizeAdDirectLink(adUrl, 'monetag');
+
+  // 🚀 Step 1: Open the ad immediately in the synchronous user gesture so mobile browsers never block it!
+  try {
+    const opened = window.open(safeUrl, '_blank', 'noopener,noreferrer');
+    if (!opened) {
+      const a = document.createElement('a');
+      a.href = safeUrl;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  } catch {
+    try {
+      const a = document.createElement('a');
+      a.href = safeUrl;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {}
+  }
+
+  // 🚀 Step 2: Trigger the countdown modal in the app
   if (triggerAdVisitTimerGlobal) {
     triggerAdVisitTimerGlobal({
-      adUrl,
+      adUrl: safeUrl,
       sourceTitle,
       coins,
       durationSeconds
     });
-  } else {
-    // Fallback: open URL directly
-    try {
-      window.open(adUrl, '_blank', 'noopener,noreferrer');
-    } catch {
-      window.location.href = adUrl;
-    }
   }
 };
 
 export const AdVisitTimerModal: React.FC = () => {
   const { showToast, triggerConfetti } = useApp();
-  const { awardCoinsLocally } = useAuth();
+  const { awardCoinsLocally, refreshUser } = useAuth();
 
   const [state, setState] = useState<AdVisitTimerState>({
     isOpen: false,
@@ -73,13 +95,6 @@ export const AdVisitTimerModal: React.FC = () => {
       setIsCompleted(false);
       setIsClaimed(false);
       setShowExitWarning(false);
-
-      // Open the ad in a new tab immediately
-      try {
-        window.open(data.adUrl, '_blank', 'noopener,noreferrer');
-      } catch {
-        // Popups might be blocked
-      }
     };
 
     return () => {
@@ -119,8 +134,14 @@ export const AdVisitTimerModal: React.FC = () => {
       } catch (e) {}
       triggerConfetti();
       triggerAdReward(state.sourceTitle, awardCoinsLocally, showToast);
+      // 🚀 Increment user's ad click counter and sync wallet
+      try {
+        api.claimAdClick().then(() => {
+          refreshUser();
+        }).catch(() => {});
+      } catch {}
     }
-  }, [isCompleted, isClaimed, state.sourceTitle, awardCoinsLocally, showToast, triggerConfetti]);
+  }, [isCompleted, isClaimed, state.sourceTitle, awardCoinsLocally, showToast, triggerConfetti, refreshUser]);
 
   // Prevent back navigation during countdown
   useEffect(() => {

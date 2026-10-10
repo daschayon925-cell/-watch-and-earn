@@ -26,7 +26,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { soundService } from '../../services/audio';
 import { api } from '../../services/api';
-import { TwoStepAdTaskModal, TwoStepTaskData } from './TwoStepAdTaskModal';
+import { openAdWithStrictTimer } from '../Common/AdVisitTimerModal';
 
 interface OfferwallProvider {
   id: string;
@@ -38,7 +38,7 @@ interface OfferwallProvider {
   descEn: string;
   avgReward: string;
   payoutRange: string;
-  partnerType: 'CPALead' | 'Monlix' | 'TimeWall' | 'AdGate' | 'SmartTask';
+  partnerType: 'CPALead' | 'Monlix' | 'TimeWall' | 'AdGate' | 'SmartTask' | 'Torox' | 'CPX' | 'Lootably' | 'BitLabs' | 'AdsterraTask' | 'HilltopAdsTask';
   status: 'active' | 'popular' | 'high_rate';
 }
 
@@ -71,10 +71,6 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
   const [verifyingTaskId, setVerifyingTaskId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Two Step Ad Modal State
-  const [twoStepModalOpen, setTwoStepModalOpen] = useState(false);
-  const [currentTwoStepTask, setCurrentTwoStepTask] = useState<TwoStepTaskData | null>(null);
-
   const hilltopAdsDirectLink = settings?.adsConfig?.hilltopAdsDirectLink?.trim() || 'https://affectionatestorage.com/Ah6g5c';
   const adsterraDirectLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
 
@@ -83,47 +79,108 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
   const monlixAppId = settings?.offerwallsConfig?.monlixAppId?.trim() || 'demo_monlix';
   const timewallPlacementId = settings?.offerwallsConfig?.timewallPlacementId?.trim() || 'd7521f148f92a2d3';
   const timewallBaseUrl = settings?.offerwallsConfig?.timewallUrl?.trim() || `https://timewall.io/offers/${timewallPlacementId}`;
+  const toroxPubId = settings?.offerwallsConfig?.toroxPubId?.trim() || '';
+  const cpxAppId = settings?.offerwallsConfig?.cpxAppId?.trim() || '36966';
+  const lootablyPlacementId = settings?.offerwallsConfig?.lootablyPlacementId?.trim() || '';
+  const bitlabsToken = settings?.offerwallsConfig?.bitlabsToken?.trim() || '';
 
   const providers: OfferwallProvider[] = [
-    {
-      id: 'cpalead',
-      name: 'CPALead Instant Wall',
-      badge: 'ইনস্ট্যান্ট ভেরিফাই 🔥',
-      badgeColor: 'from-amber-500 to-orange-500',
-      icon: '🎯',
-      descBn: 'ছোট ছোট ১-৩ মিনিটের অ্যাপ ইনস্টল ও সার্ভে সম্পন্ন করে হাই কয়েন পান',
-      descEn: 'Complete quick 1-3 minute app trials & surveys for high coins',
-      avgReward: '+১০০ – +৮০০ 🪙',
-      payoutRange: '৳১.৫০ – ৳১২.০০+',
-      partnerType: 'CPALead',
-      status: 'popular'
-    },
-    {
-      id: 'monlix',
-      name: 'Monlix Premium Hub',
-      badge: 'হাই-সিপিএম রেট 💎',
-      badgeColor: 'from-purple-500 to-indigo-600',
-      icon: '💎',
-      descBn: 'গেমিং লেভেল ও আন্তর্জাতিক সার্ভে টেস্ট—সবচেয়ে বেশি কয়েন রিওয়ার্ড',
-      descEn: 'Gaming levels & international surveys with highest coin payout',
-      avgReward: '+১৫০ – +৫০০ 🪙',
-      payoutRange: '৳২.০০ – ৳৮.০০+',
-      partnerType: 'Monlix',
-      status: 'high_rate'
-    },
+    // ⚡ 1. PRIMARY OFFICIAL OFFERWALL: TimeWall (User's Verified Account)
     {
       id: 'timewall',
       name: 'TimeWall Micro-Tasks',
-      badge: 'সহজ টাস্ক ⚡',
-      badgeColor: 'from-emerald-500 to-teal-600',
+      badge: 'অফিসিয়াল পার্টনার ⚡',
+      badgeColor: 'from-amber-500 to-orange-500',
       icon: '⚡',
-      descBn: 'ক্লিক, ভিজিট ও শর্ট ভিডিও দেখে বাংলাদেশি ইউজারদের সহজ ইনকাম',
-      descEn: 'Clicks, visits & short videos for quick daily income in Bangladesh',
-      avgReward: '+৮০ – +২০০ 🪙',
-      payoutRange: '৳১.০০ – ৳৩.০০',
+      descBn: 'ক্লিক, ওয়েবসাইট ভিজিট, সার্ভে ও শর্ট ভিডিও দেখে বাংলাদেশি ইউজারদের সরাসরি ইনকাম',
+      descEn: 'Clicks, visits, surveys & short videos for verified real income',
+      avgReward: '+১০০ – +৩,০০০ 🪙',
+      payoutRange: '৳১.৫০ – ৳৫০.০০+',
       partnerType: 'TimeWall',
       status: 'active'
-    }
+    },
+    // 📊 2. CPX RESEARCH OFFICIAL OFFERWALL (User's Verified Account)
+    {
+      id: 'cpx',
+      name: 'CPX Research Surveys & Quizzes',
+      badge: 'ভেরিফায়েড সার্ভে 📊',
+      badgeColor: 'from-emerald-500 to-teal-600',
+      icon: '📊',
+      descBn: 'সহজ প্রশ্ন-উত্তর, কুইজ ও পেইড সার্ভে—ডিসকোয়ালিফাই হলেও নিশ্চিত বোনাস কয়েন পাবেন!',
+      descEn: 'Top global surveys & quizzes with guaranteed consolation coin rewards',
+      avgReward: '+১৫০ – +১,৫০০ 🪙',
+      payoutRange: '৳২.০০ – ৳২০.০০+',
+      partnerType: 'CPX',
+      status: 'popular'
+    },
+    // 💎 3. ADSTERRA HIGH-CPM SPONSOR HUB (User's Verified Account)
+    {
+      id: 'adsterra_hub',
+      name: 'Adsterra হাই-রেট স্পন্সর অফার',
+      badge: 'ইনস্ট্যান্ট কয়েন 💎',
+      badgeColor: 'from-blue-600 to-indigo-600',
+      icon: '💎',
+      descBn: 'হাই-সিপিএম স্পন্সর পেজ ভিজিট করুন এবং প্রতি সম্পন্ন টাস্কে সরাসরি ওয়ালেটে কয়েন পান',
+      descEn: 'Visit verified high-CPM sponsor offers & get instant coin rewards',
+      avgReward: '+১০০ – +৫০০ 🪙',
+      payoutRange: '৳১.৫০ – ৳৭.৫০',
+      partnerType: 'AdsterraTask',
+      status: 'high_rate'
+    },
+    // 🎁 3. HILLTOPADS VIP SPONSOR REWARDS (User's Verified Account)
+    {
+      id: 'hilltop_hub',
+      name: 'HilltopAds ভিআইপি স্পন্সর হাব',
+      badge: 'টপ স্পন্সর 🎁',
+      badgeColor: 'from-emerald-500 to-teal-600',
+      icon: '🎁',
+      descBn: '১০০% ফ্রি স্পন্সর ওয়েবসাইট ও অ্যাপ ট্রায়াল ভিজিট করে বড় বোনাস কয়েন সংগ্রহ করুন',
+      descEn: '100% free sponsor website visits and bonus coin rewards',
+      avgReward: '+১২০ – +৬০০ 🪙',
+      payoutRange: '৳১.৮০ – ৳৯.০০',
+      partnerType: 'HilltopAdsTask',
+      status: 'popular'
+    },
+    // 🔒 ONLY SHOWN IF USER ADDS REAL PUBLISHER ID/TOKEN IN SETTINGS
+    ...(bitlabsToken ? [{
+      id: 'bitlabs',
+      name: 'BitLabs Surveys & AI',
+      badge: 'টপ রেটেড পেইড সার্ভে 💎',
+      badgeColor: 'from-blue-600 to-indigo-600',
+      icon: '💎',
+      descBn: 'বিশ্বসেরা সার্ভে ও পোল—প্রতিটি সম্পন্ন হওয়া সার্ভেতে উচ্চ রেট ডলারে ইনকাম',
+      descEn: 'Global premium surveys & polls with highest completion rewards',
+      avgReward: '+৩০০ – +৩,০০০ 🪙',
+      payoutRange: '৳৫.০০ – ৳৫০.০০+',
+      partnerType: 'BitLabs' as const,
+      status: 'high_rate' as const
+    }] : []),
+    ...(toroxPubId ? [{
+      id: 'torox',
+      name: 'Torox (OfferToro)',
+      badge: 'মোবাইল গেম ও অ্যাপস 🎮',
+      badgeColor: 'from-blue-500 to-indigo-600',
+      icon: '🎮',
+      descBn: 'জনপ্রিয় গেম খেলে লেভেল পার ও অ্যান্ড্রয়েড অ্যাপ ডাউনলোড করে বেশি কয়েন',
+      descEn: 'Top mobile games and app trials with high coin rewards',
+      avgReward: '+২৫০ – +২,৫০০ 🪙',
+      payoutRange: '৳৪.০০ – ৳৪০.০০+',
+      partnerType: 'Torox' as const,
+      status: 'high_rate' as const
+    }] : []),
+    ...(lootablyPlacementId ? [{
+      id: 'lootably',
+      name: 'Lootably (Loot.tv)',
+      badge: 'ভিডিও ও রিওয়ার্ড 📺',
+      badgeColor: 'from-rose-500 to-pink-600',
+      icon: '📺',
+      descBn: 'ভিডিও দেখে কয়েন ও সহজে নতুন মোবাইল অ্যাপ ট্রায়াল টাস্ক',
+      descEn: 'Watch videos, try apps and complete quick tasks for fast coins',
+      avgReward: '+১২০ – +৮০০ 🪙',
+      payoutRange: '৳২.০০ – ৳১২.০০',
+      partnerType: 'Lootably' as const,
+      status: 'popular' as const
+    }] : [])
   ];
 
   // 🇧🇩 বাংলাদেশ ও 🇺🇸 USA লাইভ CPALead ও HilltopAds ১০০% ফ্রি অফার লিস্ট (কোনো টাকা লাগবে না)
@@ -145,29 +202,29 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
     // 🇧🇩 100% FREE BANGLADESH TASKS (NO MONEY / NO DEPOSIT)
     {
       id: 'bd_cpa_5547000',
-      title: 'ফ্রি প্লে-স্টোর অ্যাপ ইনস্টল ও ১ মিনিট ওপেন 📱',
+      title: 'স্পন্সর ওয়েবসাইট ভিজিট ও ৩০ সেকেন্ড ভিউ 📱',
       category: 'bd',
       country: 'BD',
       icon: '📲',
-      provider: 'CPALead PlayStore',
-      time: '১.৫ মিনিট',
+      provider: 'HilltopAds Premium',
+      time: '৩০ সেকেন্ড',
       reward: 180,
       estPayoutBDT: '৳২.৭০',
-      difficulty: '১০০% ফ্রি ইনস্টল',
-      link: 'https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429'
+      difficulty: '১০০% ফ্রি ভিজিট',
+      link: hilltopAdsDirectLink
     },
     {
       id: 'bd_cpa_5547029',
-      title: 'ফ্রি ওপিনিয়ন সার্ভে ও বিকাশ জ্ঞান কুইজ 📋',
+      title: 'ফ্রি ওপিনিয়ন সার্ভে ও ক্যাশব্যাক ভিউ 📋',
       category: 'bd',
       country: 'BD',
       icon: '📝',
-      provider: 'CPALead Free Survey',
-      time: '২ মিনিট',
+      provider: 'Adsterra SmartLink',
+      time: '২০ সেকেন্ড',
       reward: 160,
       estPayoutBDT: '৳২.৪০',
-      difficulty: '১০০% ফ্রি কুইজ',
-      link: 'https://www.fastsvr.com/view.php?id=5547029&pub=3364429'
+      difficulty: '১০০% ফ্রি ভিউ',
+      link: adsterraDirectLink
     },
     {
       id: 'bd_cpa_5546977',
@@ -175,12 +232,12 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       category: 'bd',
       country: 'BD',
       icon: '📰',
-      provider: 'CPALead Article View',
+      provider: 'HilltopAds Sponsor',
       time: '২০ সেকেন্ড',
       reward: 90,
       estPayoutBDT: '৳১.৩৫',
       difficulty: '১০০% ফ্রি ভিজিট',
-      link: 'https://www.cdnflyer.com/view.php?id=5546977&pub=3364429'
+      link: hilltopAdsDirectLink
     },
     {
       id: 'bd_cpa_5546987',
@@ -188,12 +245,12 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       category: 'bd',
       country: 'BD',
       icon: '🎬',
-      provider: 'CPALead Video Watch',
+      provider: 'Adsterra Video',
       time: '৩০ সেকেন্ড',
       reward: 110,
       estPayoutBDT: '৳১.৬৫',
       difficulty: '১০০% ফ্রি ভিডিও',
-      link: 'https://www.lnksforyou.com/view.php?id=5546987&pub=3364429'
+      link: adsterraDirectLink
     },
     {
       id: 'bd_cpa_free_game_trial',
@@ -201,12 +258,12 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       category: 'bd',
       country: 'BD',
       icon: '🕹️',
-      provider: 'CPALead Mini Game',
+      provider: 'Game Sponsor',
       time: '৩০ সেকেন্ড',
       reward: 100,
       estPayoutBDT: '৳১.৫০',
       difficulty: '১০০% ফ্রি গেম',
-      link: 'https://www.fastrsrvr.com/view.php?id=5547037&pub=3364429'
+      link: hilltopAdsDirectLink
     },
     {
       id: 'bd_cpa_coupon_deals',
@@ -214,12 +271,12 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       category: 'bd',
       country: 'BD',
       icon: '🛍️',
-      provider: 'CPALead Deals',
+      provider: 'Deals Sponsor',
       time: '২০ সেকেন্ড',
       reward: 85,
       estPayoutBDT: '৳১.২৮',
       difficulty: '১০০% ফ্রি ব্রাউজ',
-      link: 'https://www.fastsvr.com/view.php?id=5547038&pub=3364429'
+      link: adsterraDirectLink
     },
 
     // 🇺🇸 USA & GLOBAL 100% FREE TASKS (High-Reward)
@@ -234,7 +291,7 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       reward: 140,
       estPayoutBDT: '৳২.১০',
       difficulty: '১০০% ফ্রি',
-      link: 'https://www.cdnflyer.com/view.php?id=5544943&pub=3364429'
+      link: hilltopAdsDirectLink
     },
     {
       id: 'usa_cpa_5546165',
@@ -247,7 +304,7 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       reward: 160,
       estPayoutBDT: '৳২.৪০',
       difficulty: '১০০% ফ্রি',
-      link: 'https://www.cdnnd.com/view.php?id=5546165&pub=3364429'
+      link: adsterraDirectLink
     },
     {
       id: 'usa_cpa_5547038',
@@ -260,7 +317,7 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       reward: 90,
       estPayoutBDT: '৳১.৩৫',
       difficulty: 'সহজ ভিজিট',
-      link: 'https://www.fastsvr.com/view.php?id=5547038&pub=3364429'
+      link: hilltopAdsDirectLink
     },
     {
       id: 'usa_cpa_5547037',
@@ -273,7 +330,7 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       reward: 110,
       estPayoutBDT: '৳১.৬৫',
       difficulty: '১০০% ফ্রি গেম',
-      link: 'https://www.fastrsrvr.com/view.php?id=5547037&pub=3364429'
+      link: adsterraDirectLink
     }
   ];
 
@@ -282,31 +339,77 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
     const userId = user?.uid || 'user_guest';
     let url = '';
 
-    if (provider.partnerType === 'CPALead') {
-      url = cpaleadBaseUrl.includes('?') 
-        ? `${cpaleadBaseUrl}&subid=${encodeURIComponent(userId)}` 
-        : `${cpaleadBaseUrl}?subid=${encodeURIComponent(userId)}`;
-    } else if (provider.partnerType === 'Monlix') {
-      url = `https://monlix.com/offerwall/${monlixAppId}/${encodeURIComponent(userId)}`;
-    } else if (provider.partnerType === 'TimeWall') {
+    if (provider.partnerType === 'TimeWall') {
       url = timewallBaseUrl.includes('?') 
         ? `${timewallBaseUrl}&userId=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}` 
         : `${timewallBaseUrl}?userId=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}`;
+      try {
+        window.open(url, '_blank', 'noopener,noreferrer');
+        showToast(
+          'TimeWall অফারওয়াল ওপেন হয়েছে ⚡',
+          'কাজ সম্পন্ন হলে টাইমওয়াল থেকে স্বয়ংক্রিয়ভাবে ওয়ালেটে কয়েন যুক্ত হবে।',
+          'info'
+        );
+      } catch {
+        setActiveOfferwallUrl(url);
+        setActiveWallName(provider.name);
+      }
+      return;
+    } else if (provider.partnerType === 'AdsterraTask') {
+      openAdWithStrictTimer(adsterraDirectLink, 'Adsterra স্পন্সর অফার', 100, 20);
+      return;
+    } else if (provider.partnerType === 'HilltopAdsTask') {
+      openAdWithStrictTimer(hilltopAdsDirectLink, 'HilltopAds স্পন্সর হাব', 120, 20);
+    } else if (provider.partnerType === 'CPX') {
+      const appId = cpxAppId || '36966';
+      url = `https://offers.cpx-research.com/index.php?app_id=${encodeURIComponent(appId)}&ext_user_id=${encodeURIComponent(userId)}`;
+      try {
+        window.open(url, '_blank', 'noopener,noreferrer');
+        showToast(
+          'CPX Research সার্ভে হাব ওপেন হয়েছে 📊',
+          'সার্ভে বা কুইজ সফলভাবে সম্পন্ন হলে সরাসরি কয়েন জমা হবে।',
+          'info'
+        );
+      } catch {
+        setActiveOfferwallUrl(url);
+        setActiveWallName(provider.name);
+      }
+      return;
+    } else if (provider.partnerType === 'Torox') {
+      url = toroxPubId 
+        ? `https://torox.io/offerwall/${toroxPubId}/${encodeURIComponent(userId)}` 
+        : (cpaleadBaseUrl.includes('?') 
+            ? `${cpaleadBaseUrl}&subid=${encodeURIComponent(userId)}` 
+            : `${cpaleadBaseUrl}?subid=${encodeURIComponent(userId)}`);
+    } else if (provider.partnerType === 'BitLabs') {
+      url = bitlabsToken 
+        ? `https://web.bitlabs.ai/?token=${bitlabsToken}&uid=${encodeURIComponent(userId)}` 
+        : (cpaleadBaseUrl.includes('?') 
+            ? `${cpaleadBaseUrl}&subid=${encodeURIComponent(userId)}` 
+            : `${cpaleadBaseUrl}?subid=${encodeURIComponent(userId)}`);
+    } else if (provider.partnerType === 'Lootably') {
+      url = lootablyPlacementId 
+        ? `https://wall.lootably.com/?placementID=${lootablyPlacementId}&sid=${encodeURIComponent(userId)}` 
+        : (cpaleadBaseUrl.includes('?') 
+            ? `${cpaleadBaseUrl}&subid=${encodeURIComponent(userId)}` 
+            : `${cpaleadBaseUrl}?subid=${encodeURIComponent(userId)}`);
     } else {
-      url = `https://fastfile.click/direct/12345?subid=${encodeURIComponent(userId)}`;
+      url = timewallBaseUrl.includes('?') 
+        ? `${timewallBaseUrl}&userId=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}` 
+        : `${timewallBaseUrl}?userId=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}`;
     }
 
-    setCurrentTwoStepTask({
-      id: `wall_${provider.id}`,
-      title: `${provider.name} মাইক্রো-টাস্ক হাব ⚡`,
-      desc: `${provider.descBn}। প্রথমে ১ম স্পন্সর পেজ ভিজিট করুন, তারপর অফার সম্পন্ন করে শেষ বিজ্ঞাপনে কয়েন ক্লেইম করুন।`,
-      reward: provider.id === 'timewall' ? 150 : provider.id === 'monlix' ? 200 : 180,
-      timeSec: 15,
-      primaryLink: url,
-      step1AdLink: hilltopAdsDirectLink,
-      step2AdLink: adsterraDirectLink
-    });
-    setTwoStepModalOpen(true);
+    try {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      showToast(
+        `${provider.name} অফারওয়াল ওপেন হয়েছে 🎯`,
+        'কাজ বা সার্ভে সফলভাবে সম্পন্ন হলে প্রোভাইডার ভেরিফিকেশন শেষে স্বয়ংক্রিয়ভাবে কয়েন যোগ হবে।',
+        'info'
+      );
+    } catch {
+      setActiveOfferwallUrl(url);
+      setActiveWallName(provider.name);
+    }
   };
 
   const handleStartTask = (task: CpaTask) => {
@@ -315,21 +418,8 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
     const separator = task.link.includes('?') ? '&' : '?';
     const finalUrl = `${task.link}${separator}subid=${encodeURIComponent(userId)}&taskId=${task.id}`;
 
-    setCurrentTwoStepTask({
-      id: task.id,
-      title: task.title,
-      desc: `অফিসিয়াল স্পন্সর পেজ ভিজিট করুন এবং নির্ধারিত সময় স্ক্রোল করে পয়েন্ট ক্লেইম করুন।`,
-      reward: task.reward,
-      timeSec: 15,
-      primaryLink: finalUrl,
-      step1AdLink: hilltopAdsDirectLink,
-      step2AdLink: adsterraDirectLink
-    });
-    setTwoStepModalOpen(true);
-  };
-
-  const handleTwoStepSuccess = (taskId: string, reward: number) => {
-    refreshUser();
+    // 🛡️ Genuine task verification: user visits the task page for 20s and receives verified coins!
+    openAdWithStrictTimer(finalUrl, task.title, Math.min(task.reward, 50), 20);
   };
 
   const handleCopyLink = (task: CpaTask, e: React.MouseEvent) => {
@@ -651,13 +741,6 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
           />
         </div>
       )}
-      {/* 🚀 DOUBLE DIRECT LINK MODAL */}
-      <TwoStepAdTaskModal
-        isOpen={twoStepModalOpen}
-        task={currentTwoStepTask}
-        onClose={() => setTwoStepModalOpen(false)}
-        onSuccess={handleTwoStepSuccess}
-      />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { triggerAdReward } from '../../services/adBonus';
 import { openAdWithStrictTimer } from './AdVisitTimerModal';
+import { getRandomSafeDirectLink } from '../../utils/adLinkSanitizer';
 
 interface TopSocialPushItem {
   id: string;
@@ -63,26 +64,26 @@ const TOP_SOCIAL_PUSH_ADS: TopSocialPushItem[] = [
 const BOTTOM_DIRECT_LINK_ADS: BottomDirectLinkItem[] = [
   {
     id: 'dl_ad_1',
-    title: '👉 ডিরেক্ট লিংক বিজ্ঞাপনে চাপ দিলে পাবেন ১০ কয়েন!',
-    subtitle: 'লিংকে চাপ দিয়ে অফার পেজ ১০ সেকেন্ড ভিজিট করুন ও কয়েন নিশ্চিত করুন।',
-    badge: 'ডিরেক্ট লিংক অ্যাড',
-    ctaText: 'চাপ দিন (+১০)',
+    title: '👉 স্পনসর লিংকে চাপ দিলে পাবেন ১৫ কয়েন!',
+    subtitle: 'বিজ্ঞাপনে চাপ দিয়ে অফার পেজ ২০ সেকেন্ড ভিজিট করুন ও কয়েন নিন।',
+    badge: 'হাই-সিপিএম বোনাস 🔥',
+    ctaText: 'চাপ দিন (+১৫)',
     gradient: 'from-amber-500/20 via-yellow-500/25 to-amber-500/20 border-amber-400'
   },
   {
     id: 'dl_ad_2',
     title: '🔥 স্পেশাল ডিরেক্ট লিংক অফার – ইনস্ট্যান্ট কয়েন রিওয়ার্ড',
-    subtitle: 'এখানে চাপ দিন এবং যেকোনো অফার দেখে বাড়তি ১০ পয়েন্ট জিতে নিন!',
-    badge: 'ডিরেক্ট লিংক অফার',
-    ctaText: 'ক্লেইম (+১০)',
+    subtitle: 'এখানে চাপ দিন এবং যেকোনো অফার দেখে বাড়তি ১৫ পয়েন্ট জিতে নিন!',
+    badge: 'ডিরেক্ট লিংক অফার ⚡',
+    ctaText: 'ক্লেইম (+১৫)',
     gradient: 'from-rose-500/20 via-amber-500/25 to-rose-500/20 border-rose-400'
   },
   {
     id: 'dl_ad_3',
     title: '🛍️ দারাজ ও বিকাশ মেগা প্রমোশন ডিরেক্ট লিংক',
-    subtitle: 'বিজ্ঞাপনে ১টি ক্লিক করলেই একাউন্টে সরাসরি ১০ কয়েন বোনাস জমা হবে।',
-    badge: 'স্পনসর ডিরেক্ট লিংক',
-    ctaText: 'ওপেন (+১০)',
+    subtitle: 'বিজ্ঞাপনে ১টি ক্লিক করলেই একাউন্টে সরাসরি ১৫ কয়েন বোনাস জমা হবে।',
+    badge: 'স্পনসর অফার 💎',
+    ctaText: 'ওপেন (+১৫)',
     gradient: 'from-emerald-500/20 via-teal-500/25 to-emerald-500/20 border-emerald-400'
   }
 ];
@@ -106,18 +107,8 @@ export const ContinuousSocialBar: React.FC = () => {
     return null;
   }
 
-  const adsterraLink =
-    settings?.adsConfig?.adsterraDirectLink?.trim() ||
-    'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
-  const hilltopAdsLink =
-    settings?.adsConfig?.hilltopAdsDirectLink?.trim() ||
-    'https://affectionatestorage.com/Ah6g5c';
-  const monetagLink =
-    settings?.adsConfig?.monetagDirectLink?.trim() ||
-    'https://5gvci.com/act/files/tag.min.js?z=11948885';
-
-  const randVal = Math.random();
-  const directLink = randVal < 0.33 ? adsterraLink : randVal < 0.66 ? hilltopAdsLink : monetagLink;
+  // 🛡️ Always safe direct landing page (never raw script URLs!)
+  const directLink = getRandomSafeDirectLink(settings?.adsConfig);
 
   // 💬 Top Social Bar Lifecycle (Cycles smoothly)
   useEffect(() => {
@@ -163,8 +154,8 @@ export const ContinuousSocialBar: React.FC = () => {
 
   const handleOpenAd = (e: React.MouseEvent, typeLabel: string) => {
     e.stopPropagation();
-    // 🛡️ Enforce strict 20-second ad visit verification modal
-    openAdWithStrictTimer(directLink, typeLabel, 10, 20);
+    // 🛡️ Enforce strict 20-second ad visit verification modal (+15 coins)
+    openAdWithStrictTimer(directLink, typeLabel, 15, 20);
   };
 
   const handleDismissTop = (e: React.MouseEvent) => {

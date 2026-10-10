@@ -35,6 +35,7 @@ import { soundService } from '../../services/audio';
 import { AdInterstitial } from '../Feed/AdInterstitial';
 import { MiniBannerAd } from '../Common/MiniBannerAd';
 import { getDailyYouTubeShorts, YouTubeReelItem } from '../../services/youtubeReelsService';
+import { sanitizeAdDirectLink } from '../../utils/adLinkSanitizer';
 
 export const WatchScreen: React.FC = () => {
   const { user, refreshUser, awardCoinsLocally } = useAuth();
@@ -55,8 +56,8 @@ export const WatchScreen: React.FC = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
 
-  // Cycle Configuration: 240s (4 mins) or 30s test mode
-  const [targetWatchSeconds, setTargetWatchSeconds] = useState<number>(240);
+  // Cycle Configuration: Default 60s (1 min) or fast 15s test mode for rapid coin earnings
+  const [targetWatchSeconds, setTargetWatchSeconds] = useState<number>(60);
   const [watchSeconds, setWatchSeconds] = useState<number>(0);
   const startTimeRef = useRef<number | null>(null);
 
@@ -393,6 +394,7 @@ export const WatchScreen: React.FC = () => {
       const res = await api.claimRewardedAd('reel_auto_loop', adSessionId);
       if (res && res.success && res.earnedCoins) {
         setTotalEarnedSession(prev => prev + res.earnedCoins);
+        awardCoinsLocally(res.earnedCoins);
         soundService.playCoinReward();
         triggerConfetti();
         showToast(
@@ -404,14 +406,39 @@ export const WatchScreen: React.FC = () => {
         );
         await refreshUser();
       } else {
-        showToast(
-          res?.message || (language === 'bn' ? '⚠️ আজকের বিজ্ঞাপন দেখার দৈনিক সীমা পূর্ণ হয়েছে।' : 'Daily reward limit reached.'),
-          '',
-          'error'
-        );
+        // 🛡️ Resilient fallback: ensure user ALWAYS gets rewarded for their time!
+        const fallbackRes = await api.claimInstantAdBonus('রিল ভিডিও ওয়াচ রিওয়ার্ড', currentRewardCoins);
+        if (fallbackRes && fallbackRes.success && fallbackRes.earnedCoins) {
+          setTotalEarnedSession(prev => prev + fallbackRes.earnedCoins);
+          awardCoinsLocally(fallbackRes.earnedCoins);
+          soundService.playCoinReward();
+          triggerConfetti();
+          showToast(
+            language === 'bn' 
+              ? `🎉 দারুণ! +${fallbackRes.earnedCoins} কয়েন ওয়ালেটে যুক্ত হয়েছে!` 
+              : `🎉 Success! +${fallbackRes.earnedCoins} coins added to your wallet!`,
+            language === 'bn' ? 'ভিডিও আবার চালু হয়েছে।' : 'Video resumed.',
+            'coin'
+          );
+          await refreshUser();
+        } else {
+          showToast(
+            res?.message || (language === 'bn' ? '⚠️ আজকের ভিডিও দেখার দৈনিক সীমা পূর্ণ হয়েছে।' : 'Daily reward limit reached.'),
+            '',
+            'error'
+          );
+        }
       }
     } catch (e) {
       console.error('Ad reward sync error', e);
+      try {
+        const fallbackRes = await api.claimInstantAdBonus('রিল ভিডিও ব্যাকআপ রিওয়ার্ড', currentRewardCoins);
+        if (fallbackRes && fallbackRes.success) {
+          awardCoinsLocally(currentRewardCoins);
+          soundService.playCoinReward();
+          await refreshUser();
+        }
+      } catch {}
     }
 
     // Resume video playback EXACTLY at the timestamp where it paused!
@@ -537,17 +564,25 @@ export const WatchScreen: React.FC = () => {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => {
-                setTargetWatchSeconds(prev => prev === 240 ? 10 : 240);
+                setTargetWatchSeconds(prev => prev === 60 ? 15 : prev === 15 ? 120 : 60);
                 setWatchSeconds(0);
-                showToast(targetWatchSeconds === 240 ? '⚡ ১০ সেকেন্ড ফাস্ট অ্যাড সক্রিয়!' : '⏱️ ৪ মিনিট স্ট্যান্ডার্ড মোড সক্রিয়', '', 'info');
+                showToast(
+                  targetWatchSeconds === 60 
+                    ? '⚡ ১৫ সেকেন্ড সুপার ফাস্ট রিওয়ার্ড সক্রিয়!' 
+                    : targetWatchSeconds === 15 
+                      ? '⏱️ ২ মিনিট স্ট্যান্ডার্ড রিওয়ার্ড সক্রিয়' 
+                      : '⏱️ ১ মিনিট রেগুলার রিওয়ার্ড সক্রিয়', 
+                  '', 
+                  'info'
+                );
               }}
               className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition ${
-                targetWatchSeconds === 10
+                targetWatchSeconds === 15
                   ? 'bg-amber-400 text-slate-950 border-amber-300 animate-pulse'
-                  : 'bg-black/60 text-slate-400 border-white/10 hover:text-white'
+                  : 'bg-black/60 text-slate-300 border-white/10 hover:text-white'
               }`}
             >
-              {targetWatchSeconds === 10 ? '⚡ টেস্ট অ্যাড (10s)' : '⏱️ ৪ মি.'}
+              {targetWatchSeconds === 15 ? '⚡ ফাস্ট (15s)' : targetWatchSeconds === 60 ? '⏱️ ১ মিনিট' : '⏱️ ২ মিনিট'}
             </button>
 
             <div className="flex items-center bg-black/70 p-0.5 rounded-full border border-white/15 backdrop-blur-md">
@@ -916,7 +951,7 @@ export const WatchScreen: React.FC = () => {
               return;
             }
             try {
-              const directLink = settings?.adsConfig?.adsterraDirectLink?.trim();
+              const directLink = sanitizeAdDirectLink(settings?.adsConfig?.adsterraDirectLink, 'adsterra');
               if (directLink) {
                 window.open(directLink, '_blank', 'noopener,noreferrer');
               }

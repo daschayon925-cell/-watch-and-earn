@@ -203,7 +203,7 @@ export const WalletScreen: React.FC = () => {
   const latestWithdrawal = withdrawals[0];
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 py-4 pb-20 space-y-4">
+    <div className="w-full max-w-md mx-auto px-4 pt-20 sm:pt-24 pb-20 space-y-4">
       {/* Wallet Balance Hero Header */}
       <div className="rounded-3xl bg-gradient-to-br from-[#09111D] via-[#0E1726] to-[#0A1A12] border border-emerald-500/30 p-5 shadow-2xl relative overflow-hidden">
         <div className="flex items-center justify-between mb-2">

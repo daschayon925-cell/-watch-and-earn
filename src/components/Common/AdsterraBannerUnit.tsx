@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, X, ExternalLink, Zap, ShieldCheck, TrendingUp, Gift, Play } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { openAdWithStrictTimer } from './AdVisitTimerModal';
+import { getRandomSafeDirectLink } from '../../utils/adLinkSanitizer';
 
 interface AdsterraBannerUnitProps {
   className?: string;
@@ -13,11 +14,7 @@ export const AdsterraBannerUnit: React.FC<AdsterraBannerUnitProps> = ({ classNam
   const [isDismissed, setIsDismissed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const adsterraLink =
-    settings?.adsConfig?.adsterraDirectLink?.trim() ||
-    'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
-  const monetagLink = settings?.adsConfig?.monetagDirectLink?.trim();
-  const directLink = (monetagLink && Math.random() > 0.5) ? monetagLink : adsterraLink;
+  const directLink = getRandomSafeDirectLink(settings?.adsConfig);
 
   const bannerKey = '026df0717402ab99e2cfeea66cbde373';
 

@@ -15,13 +15,26 @@ import { NotificationDrawer } from './components/Notifications/NotificationDrawe
 import { ToastContainer } from './components/UI/ToastContainer';
 import { InstallPrompt } from './components/PWA/InstallPrompt';
 import { AuthModal } from './components/Auth/AuthModal';
+import { LandingPage } from './components/Home/LandingPage';
 import { AdsterraScriptInjector } from './components/Common/AdsterraScriptInjector';
 import { ContinuousSocialBar } from './components/Common/ContinuousSocialBar';
 import { AdVisitTimerModal } from './components/Common/AdVisitTimerModal';
+import { api } from './services/api';
 
 const MainLayout: React.FC = () => {
   const { activeTab } = useApp();
   const { user, loading } = useAuth();
+  const [showAuthModal, setShowAuthModal] = React.useState(false);
+
+  React.useEffect(() => {
+    if (user?.uid) {
+      api.sendUserHeartbeat(activeTab);
+      const timer = setInterval(() => {
+        api.sendUserHeartbeat(activeTab);
+      }, 15000);
+      return () => clearInterval(timer);
+    }
+  }, [user?.uid, activeTab]);
 
   if (loading) {
     return (
@@ -36,13 +49,16 @@ const MainLayout: React.FC = () => {
     );
   }
 
-  // If user is not authenticated (logged out or fresh session), show the AuthModal registration/login screen directly
+  // If user is not authenticated: Show professional, policy-compliant LandingPage with Auditor & Guest Access
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#05070B] text-[#F8FAFC] flex flex-col justify-center items-center font-['Hind_Siliguri','Outfit',sans-serif] p-2">
-        <AuthModal />
+      <>
+        <LandingPage onOpenAuth={() => setShowAuthModal(true)} />
+        {showAuthModal && (
+          <AuthModal onClose={() => setShowAuthModal(false)} />
+        )}
         <ToastContainer />
-      </div>
+      </>
     );
   }
 

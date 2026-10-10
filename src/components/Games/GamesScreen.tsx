@@ -20,6 +20,7 @@ import { api } from '../../services/api';
 import { soundService } from '../../services/audio';
 import { AdInterstitial } from '../Feed/AdInterstitial';
 import { MiniBannerAd } from '../Common/MiniBannerAd';
+import { sanitizeAdDirectLink } from '../../utils/adLinkSanitizer';
 
 type GameId = 'ludo' | 'carrom' | 'spin' | 'tictactoe' | 'snake';
 
@@ -111,7 +112,7 @@ export const GamesScreen: React.FC = () => {
     
     // 🚀 Auto-trigger Adsterra Popunder / Direct link in background
     try {
-      const directLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+      const directLink = sanitizeAdDirectLink(settings?.adsConfig?.adsterraDirectLink, 'adsterra');
       window.open(directLink, '_blank', 'noopener,noreferrer');
     } catch {}
 
@@ -277,7 +278,7 @@ export const GamesScreen: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 py-4 pb-24 space-y-4">
+    <div className="w-full max-w-md mx-auto px-4 pt-20 sm:pt-24 pb-24 space-y-4">
       {/* Header Banner */}
       <div className="rounded-3xl bg-gradient-to-br from-[#0B1528] via-[#0E2038] to-[#0A1A1E] border border-blue-500/30 p-5 shadow-2xl relative overflow-hidden">
         <div className="flex items-center justify-between mb-2">
