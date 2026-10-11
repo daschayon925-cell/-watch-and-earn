@@ -49,7 +49,12 @@
       "timewallUrl": "",
       "cpxEnabled": true,
       "cpxAppId": "36966",
-      "customTasksRewardMultiplier": 1
+      "customTasksRewardMultiplier": 1,
+      "offerwallMeEnabled": true,
+      "offerwallMePlacementId": "6aca33472eaa6484016c37d7",
+      "offerwallMeApiKey": "6yHRmktW7Ouf75SHc826oSbiYGu06W",
+      "offerwallMeSecretKey": "QLKdoYwlLoHSWr52Nrsr9FHGKcqN2XXP",
+      "offerwallMeBearerToken": "KHXVsmp1ZdH1d21uLSehfnvXYMmrNLa2m16hZt7g"
     },
     "activeNotice": {
       "enabled": true,
@@ -132,8 +137,8 @@
       "uid": "usr_1790827850530",
       "displayName": "অর্পিতা নিচে নাম্বার দে",
       "phone": "01764128251",
-      "coins": 215,
-      "lifetimeCoins": 215,
+      "coins": 815,
+      "lifetimeCoins": 815,
       "referralCode": "BD6192",
       "referredBy": "CHAYON77",
       "role": "user",
@@ -144,7 +149,7 @@
       "password": "",
       "photoURL": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "pendingWithdrawalCoins": 0,
-      "todayCoins": 0,
+      "todayCoins": 600,
       "todayVideosCount": 0,
       "streakDays": 1,
       "lastCheckInDate": "2026-10-03",
@@ -231,10 +236,10 @@
       "password": "",
       "phoneVerified": true,
       "photoURL": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-      "coins": 160,
+      "coins": 180,
       "pendingWithdrawalCoins": 0,
-      "lifetimeCoins": 160,
-      "todayCoins": 10,
+      "lifetimeCoins": 180,
+      "todayCoins": 0,
       "todayVideosCount": 0,
       "streakDays": 1,
       "lastCheckInDate": "2026-10-10",
@@ -244,12 +249,12 @@
       "referralCode": "BD2341",
       "referralCount": 0,
       "createdAt": "2026-10-10T10:31:27.280Z",
-      "updatedAt": "2026-10-10T10:38:33.849Z",
-      "lastActiveAt": "2026-10-10T12:53:00.771Z",
+      "updatedAt": "2026-10-10T15:37:05.758Z",
+      "lastActiveAt": "2026-10-11T02:07:54.599Z",
       "rewardedAdsToday": 0,
       "adClicksToday": 0,
       "spinsToday": 0,
-      "todayCoinsDate": "2026-10-10",
+      "todayCoinsDate": "2026-10-11",
       "currentActiveTab": "home"
     }
   ],
@@ -633,6 +638,34 @@
     }
   ],
   "transactions": [
+    {
+      "id": "owm_loot_test_1",
+      "userId": "usr_1790827850530",
+      "type": "CPA_OFFER_COMPLETED",
+      "amount": 500,
+      "source": "🎯 Offerwall.me টাস্ক রিওয়ার্ড (+500 কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-11T02:12:18.646Z"
+    },
+    {
+      "id": "owm_test_123",
+      "userId": "usr_1790827850530",
+      "type": "CPA_OFFER_COMPLETED",
+      "amount": 100,
+      "source": "🎯 Offerwall.me টাস্ক রিওয়ার্ড (+100 কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-10T15:41:00.923Z"
+    },
+    {
+      "transactionId": "trx_bonus_1791646625758_451",
+      "userId": "usr_guest_1791612990730_623",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-10T15:37:05.758Z"
+    },
     {
       "transactionId": "trx_bonus_1791628713849_401",
       "userId": "usr_guest_1791612990730_623",
@@ -1076,6 +1109,26 @@
   "withdrawals": [],
   "reports": [],
   "notifications": [
+    {
+      "id": "notif_owm_1791684738646",
+      "userId": "usr_1790827850530",
+      "title": "🎉 Offerwall.me রিওয়ার্ড সফল!",
+      "message": "Offerwall.me থেকে টাস্ক সম্পন্ন করায় আপনার একাউন্টে 500 কয়েন যোগ করা হয়েছে!",
+      "type": "coin",
+      "read": false,
+      "createdAt": "2026-10-11T02:12:18.646Z",
+      "linkTab": "wallet"
+    },
+    {
+      "id": "notif_owm_1791646860923",
+      "userId": "usr_1790827850530",
+      "title": "🎉 Offerwall.me রিওয়ার্ড সফল!",
+      "message": "Offerwall.me থেকে টাস্ক সম্পন্ন করায় আপনার একাউন্টে 100 কয়েন যোগ করা হয়েছে!",
+      "type": "coin",
+      "read": false,
+      "createdAt": "2026-10-10T15:41:00.923Z",
+      "linkTab": "wallet"
+    },
     {
       "id": "notif_1791034204261",
       "userId": "usr_1790862737851",

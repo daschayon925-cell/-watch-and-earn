@@ -173,6 +173,16 @@ function loadDbFromDisk() {
         db.settings.adsConfig.monetagZoneId = db.settings.adsConfig.monetagZoneId || '11948885';
         db.settings.adsConfig.monetagTagCode = db.settings.adsConfig.monetagTagCode || '<script src="https://5gvci.com/act/files/tag.min.js?z=11948885" data-cfasync="false" async></script>';
         db.settings.adsConfig.monetagDirectLink = loaded.settings?.adsConfig?.monetagDirectLink || 'https://uplcm.com/4/11971342';
+        if (!db.settings.offerwallsConfig) db.settings.offerwallsConfig = {};
+        db.settings.offerwallsConfig.offerwallMeEnabled = true;
+        db.settings.offerwallsConfig.offerwallMePlacementId = db.settings.offerwallsConfig.offerwallMePlacementId || '6aca33472eaa6484016c37d7';
+        db.settings.offerwallsConfig.offerwallMeApiKey = db.settings.offerwallsConfig.offerwallMeApiKey || '6yHRmktW7Ouf75SHc826oSbiYGu06W';
+        db.settings.offerwallsConfig.offerwallMeSecretKey = db.settings.offerwallsConfig.offerwallMeSecretKey || 'QLKdoYwlLoHSWr52Nrsr9FHGKcqN2XXP';
+        db.settings.offerwallsConfig.offerwallMeBearerToken = db.settings.offerwallsConfig.offerwallMeBearerToken || 'KHXVsmp1ZdH1d21uLSehfnvXYMmrNLa2m16hZt7g';
+        db.settings.offerwallsConfig.lootlyEnabled = true;
+        db.settings.offerwallsConfig.lootlyApiKey = db.settings.offerwallsConfig.lootlyApiKey || 'pj9b1buxrh05dt8eito0x8jxei21c3';
+        db.settings.offerwallsConfig.lootlySecretKey = db.settings.offerwallsConfig.lootlySecretKey || '9e50c6992d8772324fdd53a48529f2d3';
+        db.settings.offerwallsConfig.lootlyAppId = db.settings.offerwallsConfig.lootlyAppId || '16';
         db.users = loaded.users || db.users;
         db.videos = loaded.videos || db.videos;
         db.transactions = loaded.transactions || db.transactions;
@@ -3086,8 +3096,12 @@ app.all(['/api/postback/cpx', '/api/postbacks/cpx'], (req, res) => {
   }
 });
 
-// Offerwall.me Official Postback Webhook
-app.all(['/api/postback/offerwallme', '/api/postback/offerwall-me', '/api/postbacks/offerwallme'], (req, res) => {
+// Offerwall.me, Lootly, Bitswall & Torox Official Postback Webhook
+app.all([
+  '/api/postback/offerwallme', '/api/postback/offerwall', '/api/postback/torox', 
+  '/api/postback/offerwall-me', '/api/postbacks/offerwallme', '/api/postbacks/offerwall',
+  '/api/postback/lootly', '/api/postback/lootably', '/api/postback/bitswall', '/api/postbacks/lootly'
+], (req, res) => {
   try {
     const params = { ...req.query, ...req.body };
     const userId = (params.subId || params.subid || params.userId || params.user_id || params.uid || '').toString().trim();
@@ -3132,10 +3146,37 @@ app.all(['/api/postback/offerwallme', '/api/postback/offerwall-me', '/api/postba
       }
     }
 
-    return res.status(200).send('OK');
+    return res.status(200).send('1');
   } catch (err) {
-    console.error('[Offerwall.me Postback] Error:', err);
-    return res.status(200).send('OK');
+    console.error('[Postback Webhook] Error:', err);
+    return res.status(200).send('1');
+  }
+});
+
+// Generate signed Offerwall.me URL with official HMAC-SHA256 signature
+app.get('/api/offerwall/get-signed-url', (req, res) => {
+  try {
+    const userId = (req.query.userId || req.query.uid || req.query.user_id || '').toString().trim() || 'user_guest';
+    const apiKey = (db.settings.offerwallsConfig?.offerwallMeApiKey || '6yHRmktW7Ouf75SHc826oSbiYGu06W').trim();
+    const secretKey = (db.settings.offerwallsConfig?.offerwallMeSecretKey || 'QLKdoYwlLoHSWr52Nrsr9FHGKcqN2XXP').trim();
+    
+    // Expires in 1 hour (Unix seconds)
+    const expires = Math.floor(Date.now() / 1000) + 3600;
+    const message = `offerwall-user-v1\n${apiKey}\n${userId}\n${expires}`;
+    const signature = crypto.createHmac('sha256', secretKey).update(message).digest('hex');
+
+    const signedUrl = `https://offerwall.me/offerwall/${encodeURIComponent(apiKey)}/${encodeURIComponent(userId)}?identityExpires=${expires}&identitySignature=${signature}`;
+    
+    return res.json({
+      success: true,
+      url: signedUrl,
+      userId,
+      expires,
+      signature
+    });
+  } catch (err: any) {
+    console.error('Error generating Offerwall.me signed URL:', err);
+    return res.status(500).json({ success: false, message: 'Failed to generate signed URL' });
   }
 });
 

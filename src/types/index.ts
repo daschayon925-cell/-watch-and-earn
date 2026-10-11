@@ -195,6 +195,15 @@ export interface AdminSettings {
     lootablyPlacementId?: string; // Lootably Placement ID
     bitlabsEnabled?: boolean;
     bitlabsToken?: string; // BitLabs App Token / API Token (web.bitlabs.ai)
+    offerwallMeEnabled?: boolean;
+    offerwallMeApiKey?: string; // Offerwall.me API Key (Public)
+    offerwallMeSecretKey?: string; // Offerwall.me Secret Key (Private)
+    offerwallMePlacementId?: string; // Offerwall.me Placement ID
+    offerwallMeUrl?: string; // Offerwall.me direct link
+    lootlyEnabled?: boolean;
+    lootlyApiKey?: string; // Lootly API Key (offerwall.lootly.fun)
+    lootlySecretKey?: string; // Lootly Secret Key
+    lootlyAppId?: string; // Lootly App ID (#16)
     customTasksRewardMultiplier?: number;
   };
   activeNotice?: {

@@ -38,7 +38,7 @@ interface OfferwallProvider {
   descEn: string;
   avgReward: string;
   payoutRange: string;
-  partnerType: 'CPALead' | 'Monlix' | 'TimeWall' | 'AdGate' | 'SmartTask' | 'Torox' | 'CPX' | 'Lootably' | 'BitLabs' | 'AdsterraTask' | 'HilltopAdsTask';
+  partnerType: 'CPALead' | 'Monlix' | 'TimeWall' | 'AdGate' | 'SmartTask' | 'Torox' | 'CPX' | 'Lootably' | 'BitLabs' | 'AdsterraTask' | 'HilltopAdsTask' | 'OfferwallMe' | 'Lootly';
   status: 'active' | 'popular' | 'high_rate';
 }
 
@@ -83,9 +83,41 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
   const cpxAppId = settings?.offerwallsConfig?.cpxAppId?.trim() || '36966';
   const lootablyPlacementId = settings?.offerwallsConfig?.lootablyPlacementId?.trim() || '';
   const bitlabsToken = settings?.offerwallsConfig?.bitlabsToken?.trim() || '';
+  const offerwallMeApiKey = settings?.offerwallsConfig?.offerwallMeApiKey?.trim() || '';
+  const offerwallMeUrl = settings?.offerwallsConfig?.offerwallMeUrl?.trim() || '';
+  const offerwallMePlacementId = settings?.offerwallsConfig?.offerwallMePlacementId?.trim() || '6aca33472eaa6484016c37d7';
+  const lootlyApiKey = settings?.offerwallsConfig?.lootlyApiKey?.trim() || 'pj9b1buxrh05dt8eito0x8jxei21c3';
 
   const providers: OfferwallProvider[] = [
-    // ⚡ 1. PRIMARY OFFICIAL OFFERWALL: TimeWall (User's Verified Account)
+    // 🎯 1. OFFICIAL OFFERWALL: Offerwall.me (User's Verified Account)
+    {
+      id: 'offerwall_me',
+      name: 'Offerwall.me স্পেশাল হাব',
+      badge: 'অফিসিয়াল পার্টনার 🎯',
+      badgeColor: 'from-amber-500 to-emerald-500',
+      icon: '🎯',
+      descBn: 'গেমিং, প্রিমিয়াম সার্ভে ও হাই-পেয়িং মোবাইল অফার—সফল টাস্কে সরাসরি নিশ্চিত কয়েন ও ডলার রিওয়ার্ড',
+      descEn: 'Mobile games, top surveys & high-payout offers with server-verified reward credits',
+      avgReward: '+২০০ – +৫,০০০ 🪙',
+      payoutRange: '৳৩.০০ – ৳৭৫.০০+',
+      partnerType: 'OfferwallMe',
+      status: 'active'
+    },
+    // 🎁 2. OFFICIAL OFFERWALL: Lootly (User's Verified Account)
+    {
+      id: 'lootly_hub',
+      name: 'Lootly Global Offerwall',
+      badge: 'অফিসিয়াল পার্টনার 🎁',
+      badgeColor: 'from-purple-600 to-indigo-600',
+      icon: '🎁',
+      descBn: 'গেমিং অফার, মোবাইল অ্যাপ ইনস্টল ও সার্ভে করে বড় কয়েন আর্ন করুন (পাসিং ভেরিফিকেশন)',
+      descEn: 'Mobile games, app trials, PTC tasks and top rewarding surveys',
+      avgReward: '+২০০ – +৪,০০০ 🪙',
+      payoutRange: '৳২.৫০ – ৳৬০.০০+',
+      partnerType: 'Lootly',
+      status: 'active'
+    },
+    // ⚡ 2. PRIMARY OFFICIAL OFFERWALL: TimeWall (User's Verified Account)
     {
       id: 'timewall',
       name: 'TimeWall Micro-Tasks',
@@ -393,6 +425,45 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
         : (cpaleadBaseUrl.includes('?') 
             ? `${cpaleadBaseUrl}&subid=${encodeURIComponent(userId)}` 
             : `${cpaleadBaseUrl}?subid=${encodeURIComponent(userId)}`);
+    } else if (provider.partnerType === 'OfferwallMe') {
+      const activeApiKey = offerwallMeApiKey || '6yHRmktW7Ouf75SHc826oSbiYGu06W';
+      
+      const openOfferwall = async () => {
+        try {
+          const res = await fetch(`/api/offerwall/get-signed-url?userId=${encodeURIComponent(userId)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.success && data?.url) {
+              window.open(data.url, '_blank', 'noopener,noreferrer');
+              return;
+            }
+          }
+        } catch {
+          // fallback to direct link
+        }
+
+        const fallbackUrl = offerwallMeUrl
+          ? (offerwallMeUrl.includes('?') ? `${offerwallMeUrl}&userId=${encodeURIComponent(userId)}` : `${offerwallMeUrl}?userId=${encodeURIComponent(userId)}`)
+          : `https://offerwall.me/offerwall/${encodeURIComponent(activeApiKey)}/${encodeURIComponent(userId)}`;
+
+        try {
+          window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+        } catch {
+          setActiveOfferwallUrl(fallbackUrl);
+          setActiveWallName(provider.name);
+        }
+      };
+
+      openOfferwall();
+      showToast(
+        'Offerwall.me অফারওয়াল ওপেন হচ্ছে 🎯',
+        'গেম, সার্ভে বা টাস্ক সম্পন্ন হলে সার্ভার ভেরিফিকেশনের মাধ্যমে স্বয়ংক্রিয়ভাবে ওয়ালেটে কয়েন যোগ হবে।',
+        'info'
+      );
+      return;
+    } else if (provider.partnerType === 'Lootly') {
+      const activeLootlyKey = lootlyApiKey || 'pj9b1buxrh05dt8eito0x8jxei21c3';
+      url = `https://offerwall.lootly.fun/offerwall/${encodeURIComponent(activeLootlyKey)}/${encodeURIComponent(userId)}`;
     } else {
       url = timewallBaseUrl.includes('?') 
         ? `${timewallBaseUrl}&userId=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}` 

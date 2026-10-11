@@ -1933,6 +1933,180 @@ export const AdminDashboard: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                {/* 🎯 Offerwall.me / Torox (অফিসিয়াল পার্টনার) */}
+                <div className="pt-2 border-t border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
+                      <span>🎯</span>
+                      <span>Offerwall.me পার্টনার (ভেরিফায়েড)</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={editSettings.offerwallsConfig?.offerwallMeEnabled ?? true}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          offerwallMeEnabled: e.target.checked
+                        } as any
+                      })}
+                      className="rounded accent-amber-500 w-4 h-4"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                        Placement ID:
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.offerwallMePlacementId ?? '6aca33472eaa6484016c37d7'}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            offerwallMePlacementId: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="6aca33472eaa6484016c37d7"
+                        className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-amber-200 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                        API Key (Public):
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.offerwallMeApiKey ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            offerwallMeApiKey: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="Offerwall.me Public API Key"
+                        className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-amber-200 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                        Secret Key (Private):
+                      </label>
+                      <input
+                        type="password"
+                        value={editSettings.offerwallsConfig?.offerwallMeSecretKey ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            offerwallMeSecretKey: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="Offerwall.me Private Secret Key"
+                        className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-amber-200 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                        Offerwall Link / Web Link (Modules থেকে):
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.offerwallMeUrl ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            offerwallMeUrl: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="https://..."
+                        className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-amber-200 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 🎁 Lootly (অফিসিয়াল পার্টনার - offerwall.lootly.fun) */}
+                <div className="pt-2 border-t border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-purple-400 flex items-center gap-1.5">
+                      <span>🎁</span>
+                      <span>Lootly Global Offerwall (অফিসিয়াল পার্টনার)</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={editSettings.offerwallsConfig?.lootlyEnabled ?? true}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          lootlyEnabled: e.target.checked
+                        } as any
+                      })}
+                      className="rounded accent-purple-500 w-4 h-4"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                        App ID:
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.lootlyAppId ?? '16'}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            lootlyAppId: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="16"
+                        className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-purple-200 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                        API Key:
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.lootlyApiKey ?? 'pj9b1buxrh05dt8eito0x8jxei21c3'}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            lootlyApiKey: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="pj9b1buxrh05dt8eito0x8jxei21c3"
+                        className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-purple-200 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                        Secret Key:
+                      </label>
+                      <input
+                        type="password"
+                        value={editSettings.offerwallsConfig?.lootlySecretKey ?? '9e50c6992d8772324fdd53a48529f2d3'}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            lootlySecretKey: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="Secret Key"
+                        className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-purple-200 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
