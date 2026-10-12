@@ -5,10 +5,17 @@ self.options = {
 };
 self.lary = "";
 
+self.addEventListener('error', (e) => {
+  if (e.preventDefault) e.preventDefault();
+});
+self.addEventListener('unhandledrejection', (e) => {
+  if (e.preventDefault) e.preventDefault();
+});
+
 try {
   importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw');
 } catch (e) {
-  console.log('Monetag sw import note:', e);
+  // Silent fallback
 }
 
 // Service Worker for Watch & Earn BD (Bypass & Network First)

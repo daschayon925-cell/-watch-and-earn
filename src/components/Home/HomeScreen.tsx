@@ -33,6 +33,11 @@ import { AdsterraBannerUnit } from '../Common/AdsterraBannerUnit';
 import { SponsoredClickHub } from '../Common/SponsoredClickHub';
 import { AdInterstitial } from '../Feed/AdInterstitial';
 import { LegalPolicyModal, PolicyTab } from '../Legal/LegalPolicyModal';
+import { LandingPage } from './LandingPage';
+import { WorkEngagementHub } from './WorkEngagementHub';
+import { ProVipBoosterHub } from './ProVipBoosterHub';
+import { SurpriseDailyBonus } from './SurpriseDailyBonus';
+import { openAdWithStrictTimer } from '../Common/AdVisitTimerModal';
 
 export const HomeScreen: React.FC = () => {
   const { user, refreshUser, awardCoinsLocally } = useAuth();
@@ -43,7 +48,9 @@ export const HomeScreen: React.FC = () => {
     setSelectedCategory,
     language, 
     showToast, 
-    triggerConfetti 
+    triggerConfetti,
+    selectedTaskSubTab,
+    setSelectedTaskSubTab
   } = useApp();
 
   const [trendingVideos, setTrendingVideos] = useState<Video[]>([]);
@@ -52,6 +59,7 @@ export const HomeScreen: React.FC = () => {
   const [showSpinModal, setShowSpinModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
+  const [showLandingPreview, setShowLandingPreview] = useState(false);
   const [legalTab, setLegalTab] = useState<PolicyTab>('privacy');
 
   const handleOpenYouTubeApp = (topic?: string) => {
@@ -442,8 +450,134 @@ export const HomeScreen: React.FC = () => {
               <span className="text-[10px] font-black text-purple-300 block mt-0.5">কুইজ/টাস্ক</span>
             </button>
           </div>
+
+          {/* Official Website Overview Button */}
+          <div className="mt-3 pt-2.5 border-t border-slate-800/80">
+            <button
+              onClick={() => setShowLandingPreview(true)}
+              className="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 hover:from-emerald-500/20 hover:to-cyan-500/20 border border-emerald-500/30 text-white font-bold text-xs flex items-center justify-between transition cursor-pointer group"
+            >
+              <div className="flex items-center gap-2">
+                <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition">🌐</span>
+                <span className="text-emerald-300 font-extrabold">অফিশিয়াল ওয়েবসাইট ও পলিসি ওভারভিউ</span>
+              </div>
+              <span className="text-[11px] text-slate-300 group-hover:text-emerald-400 font-bold flex items-center gap-0.5">
+                দেখুন →
+              </span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* 🔥 🚀 বেশি টাকা ইনকাম করার জন্য স্পেশাল অফারওয়াল হাব কার্ড (User Requested Feature) */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#200F05] via-[#170B04] to-[#0D0502] border-2 border-amber-500/80 p-4 sm:p-5 shadow-2xl shadow-amber-950/50 space-y-3.5 animate-in slide-in-from-top-2 duration-300">
+        {/* Glow ambient */}
+        <div className="absolute -top-12 -right-12 w-40 h-40 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-orange-600/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 space-y-3">
+          {/* Header Badge */}
+          <div className="flex items-center justify-between">
+            <span className="px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/50 text-[10px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+              <span>🔥 সর্বোচ্চ আয়ের অপশন · ১২০ - ১,০০০+ কয়েন</span>
+            </span>
+            <span className="text-[10px] font-extrabold text-amber-400 font-mono bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30">
+              হাই-পেইং টাস্ক
+            </span>
+          </div>
+
+          {/* Headline & Guidance */}
+          <div>
+            <h3 className="text-sm sm:text-base font-black text-white leading-snug flex items-center gap-1.5">
+              <span>🚀 বেশি টাকা ইনকাম করার জন্য এই অপশনে কাজ করুন!</span>
+            </h3>
+            <p className="text-xs text-amber-100/90 mt-1.5 leading-relaxed font-sans">
+              <strong>অফারওয়াল হাবে</strong> পছন্দের অ্যাপ ডাউনলোড, গেম খেলা, কুইজ বা সার্ভে পূরণ করে প্রতি টাস্কে <span className="text-amber-300 font-bold">১২০ থেকে ১,০০০ কয়েন</span> ইনস্ট্যান্ট আয় করুন! কাজ শেষ হলেই অটোমেটিক পয়েন্ট অ্যাকাউন্টে জমা হয়ে যাবে।
+            </p>
+          </div>
+
+          {/* Special Offer Badges (Matches screenshot format) */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="p-2.5 rounded-2xl bg-black/50 border border-amber-500/40 flex items-center gap-2 shadow-inner">
+              <span className="text-lg">🇧🇩</span>
+              <div>
+                <span className="text-[10px] text-slate-300 block font-medium">বাংলাদেশ স্পেশাল</span>
+                <span className="text-xs font-black text-amber-400">১২০ - ২০০ 🪙 / টাস্ক</span>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-2xl bg-black/50 border border-orange-500/40 flex items-center gap-2 shadow-inner">
+              <span className="text-lg">🇺🇸</span>
+              <div>
+                <span className="text-[10px] text-slate-300 block font-medium">USA ও গ্লোবাল টাস্ক</span>
+                <span className="text-xs font-black text-orange-400">৪৫০ - ১,০০০ 🪙 / টাস্ক</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Button: চাপ দিলে সরাসরি অফারওয়াল হাবে যাবে */}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedTaskSubTab('offerwall');
+              setActiveTab('tasks');
+              soundService.playSuccessFanfare();
+              triggerConfetti();
+              showToast(
+                '🔥 অফারওয়াল হাবে স্বাগতম!',
+                'পছন্দের অ্যাপ বা সার্ভে সম্পন্ন করে সর্বোচ্চ কয়েন ইনকাম করুন।',
+                'coin'
+              );
+            }}
+            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/30 flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer"
+          >
+            <Flame className="w-4 h-4 fill-slate-950 text-slate-950 animate-bounce" />
+            <span>👉 এখনই অফারওয়াল হাবে যান (কাজ শুরু করুন)</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+
+          {/* 📢 স্পনসরড অ্যাড ক্লিক বোনাস বাটন ("আর অ্যাড বসাবে") */}
+          <div className="pt-2 border-t border-amber-500/25 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 text-[11px] text-amber-200/90 font-medium">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>স্পনসর বিজ্ঞাপন ভিজিট বোনাস</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const directLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+                openAdWithStrictTimer(directLink, 'স্পনসরড হাই-সিপিএম অ্যাড ভিজিট', 10, 15);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/40 text-amber-300 font-black text-[11px] flex items-center gap-1.5 transition cursor-pointer active:scale-95 shadow-sm"
+            >
+              <span>বিজ্ঞাপন দেখুন (+১০ কয়েন)</span>
+              <span>⚡</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 🌟 সংযুক্ত অফারওয়াল হাই-সিপিএম স্পনসর ব্যানার ("আর অ্যাড বসাবে") */}
+      <MiniBannerAd slotId="home_offerwall_feature_spot" category="finance" />
+
+      {/* 🔰 কাজের নিয়ম, অফিশিয়াল টেলিগ্রাম চ্যানেল ও পেমেন্ট প্রুফ, আজকের ৩টি মিশন ও ট্রাস্ট গ্যারান্টি হাব */}
+      <WorkEngagementHub
+        onOpenOfferwall={() => {
+          setSelectedTaskSubTab('offerwall');
+          setActiveTab('tasks');
+          soundService.playSuccessFanfare();
+          triggerConfetti();
+        }}
+        onOpenWatch={() => handleOpenYouTubeApp()}
+        onOpenSpin={() => setShowSpinModal(true)}
+      />
+
+      {/* 👑 PRO VIP MEMBERSHIP & 2X EARNINGS TURBO BOOSTER HUB */}
+      <ProVipBoosterHub />
+
+      {/* 🎁 DAILY SURPRISE BONUS */}
+      <SurpriseDailyBonus />
 
       {/* 💎 0. HIGH-CPM SPONSOR CLICK & VISIT REWARD HUB (মালিকের সর্বোচ্চ ইনকাম ও ইউজারের ক্লিক আর্নিং) */}
       <SponsoredClickHub />
@@ -782,6 +916,27 @@ export const HomeScreen: React.FC = () => {
         onClose={() => setShowLegalModal(false)}
         initialTab={legalTab}
       />
+
+      {/* 🌐 Full Website Landing Page Live Preview for Logged-in Users */}
+      {showLandingPreview && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#05070B] animate-in fade-in duration-200">
+          <div className="sticky top-0 z-50 bg-[#070A11]/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs sm:text-sm font-extrabold text-white">
+                WATCH & EARN BD — অফিশিয়াল ওয়েবসাইট ওভারভিউ
+              </span>
+            </div>
+            <button 
+              onClick={() => setShowLandingPreview(false)}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-white font-bold transition flex items-center gap-1 cursor-pointer border border-slate-700"
+            >
+              ✕ প্রিভিউ বন্ধ করুন
+            </button>
+          </div>
+          <LandingPage onOpenAuth={() => setShowLandingPreview(false)} />
+        </div>
+      )}
     </div>
   );
 };

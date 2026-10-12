@@ -287,21 +287,21 @@ const db: {
   comments: any[];
 } = {
   settings: {
-    coinToBDTRate: 0.015, // ১০০০ কয়েন = ১৫ টাকা (১ কয়েন = ০.০১৫ টাকা)
-    minWithdrawalCoins: 2000, // ২০০০ কয়েন = ৩০ টাকা রিচার্জ
-    minRechargeBDT: 30, // সর্বনিম্ন ৩০ টাকা মোবাইল রিচার্জ
-    minBkashNagadBDT: 100, // সর্বনিম্ন ১০০ টাকা বিকাশ/নগদ (৬৬৬৭ কয়েন)
-    userRevenueSharePercent: 35, // ৬৫% মালিকের নিট প্রফিট
-    videoReward: 50, // ভিডিও ওয়াচ রিওয়ার্ড ৫০ কয়েন
+    coinToBDTRate: 0.008, // ১০০০ কয়েন = ৮ টাকা
+    minWithdrawalCoins: 5000, // ৫০০০ কয়েন মিনিমাম উইথড্র
+    minRechargeBDT: 50, 
+    minBkashNagadBDT: 100, 
+    userRevenueSharePercent: 20, 
+    videoReward: 10, // ভিডিও প্রতি ১০ কয়েন
     minWatchPercentage: 90,
     minWatchSeconds: 15,
-    dailyRewardLimit: 1200, // দৈনিক সর্বোচ্চ ১২০০ কয়েন রিওয়ার্ড ক্যাপ
-    dailyMaxVideos: 40, // দিনে সর্বোচ্চ ৪০টি ভিডিও
-    rewardedAdBonus: 50, // ২০-৩০ সেকেন্ড স্পনসর অ্যাড দেখা (+৫০ কয়েন)
-    dailyRewardedAdLimit: 25, // দিনে সর্বোচ্চ ২৫টি বিজ্ঞাপন
-    sponsorAdIntervalMinutes: 150, // ২.৫ ঘণ্টা পর পর একটি স্পনসর বিজ্ঞাপন
-    spinIntervalMinutes: 150, // ২.৫ ঘণ্টা পর পর লাকি স্পিন
-    referralBonus: 50, // রেফারেল বোনাস ৫০ কয়েন
+    dailyRewardLimit: 250, // দৈনিক সর্বোচ্চ ২৫০ কয়েন রিওয়ার্ড ক্যাপ
+    dailyMaxVideos: 15, // দিনে সর্বোচ্চ ১৫টি ভিডিও
+    rewardedAdBonus: 15, // বিজ্ঞাপন দেখলে ১৫ কয়েন
+    dailyRewardedAdLimit: 10, // দিনে সর্বোচ্চ ১০টি বিজ্ঞাপন
+    sponsorAdIntervalMinutes: 180, 
+    spinIntervalMinutes: 180, 
+    referralBonus: 20, 
     isDemoMode: false,
     adsConfig: {
       feedAdsEnabled: true,
@@ -2992,7 +2992,7 @@ app.get('/api/admin/reports', (req, res) => {
 app.all(['/api/postback/timewall', '/api/postbacks/timewall'], (req, res) => {
   try {
     const params = { ...req.query, ...req.body };
-    const userId = (params.userId || params.userid || params.subid || '').toString().trim();
+    const userId = (params.userID || params.userId || params.userid || params.subid || '').toString().trim();
     const txid = (params.txid || params.transactionID || params.transactionId || 'tx_' + Date.now()).toString();
     const revenue = parseFloat(params.revenue || '0');
     const currencyAmount = parseInt(params.currencyAmount || params.currency || '0', 10) || Math.round(revenue * 1000);

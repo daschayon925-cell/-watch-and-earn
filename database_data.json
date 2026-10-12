@@ -54,7 +54,11 @@
       "offerwallMePlacementId": "6aca33472eaa6484016c37d7",
       "offerwallMeApiKey": "6yHRmktW7Ouf75SHc826oSbiYGu06W",
       "offerwallMeSecretKey": "QLKdoYwlLoHSWr52Nrsr9FHGKcqN2XXP",
-      "offerwallMeBearerToken": "KHXVsmp1ZdH1d21uLSehfnvXYMmrNLa2m16hZt7g"
+      "offerwallMeBearerToken": "KHXVsmp1ZdH1d21uLSehfnvXYMmrNLa2m16hZt7g",
+      "lootlyEnabled": true,
+      "lootlyApiKey": "pj9b1buxrh05dt8eito0x8jxei21c3",
+      "lootlySecretKey": "9e50c6992d8772324fdd53a48529f2d3",
+      "lootlyAppId": "16"
     },
     "activeNotice": {
       "enabled": true,
@@ -236,10 +240,10 @@
       "password": "",
       "phoneVerified": true,
       "photoURL": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-      "coins": 180,
+      "coins": 200,
       "pendingWithdrawalCoins": 0,
-      "lifetimeCoins": 180,
-      "todayCoins": 0,
+      "lifetimeCoins": 200,
+      "todayCoins": 10,
       "todayVideosCount": 0,
       "streakDays": 1,
       "lastCheckInDate": "2026-10-10",
@@ -249,8 +253,8 @@
       "referralCode": "BD2341",
       "referralCount": 0,
       "createdAt": "2026-10-10T10:31:27.280Z",
-      "updatedAt": "2026-10-10T15:37:05.758Z",
-      "lastActiveAt": "2026-10-11T02:07:54.599Z",
+      "updatedAt": "2026-10-11T02:32:03.877Z",
+      "lastActiveAt": "2026-10-11T02:32:36.547Z",
       "rewardedAdsToday": 0,
       "adClicksToday": 0,
       "spinsToday": 0,
@@ -638,6 +642,16 @@
     }
   ],
   "transactions": [
+    {
+      "transactionId": "trx_bonus_1791685923877_623",
+      "userId": "usr_guest_1791612990730_623",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-11T02:32:03.877Z"
+    },
     {
       "id": "owm_loot_test_1",
       "userId": "usr_1790827850530",

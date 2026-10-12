@@ -50,28 +50,34 @@ export const api = {
   getSettings: async (): Promise<AdminSettings> => {
     const data = await safeJsonFetch<{ success: boolean; settings: AdminSettings }>('/api/settings');
     return data?.settings || {
-      coinToBDTRate: 0.015,
-      minWithdrawalCoins: 2000,
-      minRechargeBDT: 30,
+      coinToBDTRate: 0.008,
+      minWithdrawalCoins: 5000,
+      minRechargeBDT: 50,
       minBkashNagadBDT: 100,
-      userRevenueSharePercent: 35,
-      videoReward: 50,
+      userRevenueSharePercent: 20,
+      videoReward: 10,
       minWatchPercentage: 90,
-      minWatchSeconds: 12,
-      dailyRewardLimit: 1200,
-      dailyMaxVideos: 40,
-      rewardedAdBonus: 50,
-      dailyRewardedAdLimit: 25,
-      sponsorAdIntervalMinutes: 150,
-      spinIntervalMinutes: 150,
-      referralBonus: 50,
+      minWatchSeconds: 15,
+      dailyRewardLimit: 250,
+      dailyMaxVideos: 15,
+      rewardedAdBonus: 15,
+      dailyRewardedAdLimit: 10,
+      sponsorAdIntervalMinutes: 180,
+      spinIntervalMinutes: 180,
+      referralBonus: 20,
       isDemoMode: false,
       adsConfig: {
         feedAdsEnabled: true,
         bannerEnabled: true,
         rewardedAdsEnabled: true,
         interstitialEnabled: true,
-        feedAdFrequency: 2
+        feedAdFrequency: 2,
+        adsterraDirectLink: 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4',
+        hilltopAdsDirectLink: 'https://affectionatestorage.com/Ah6g5c',
+        monetagDirectLink: 'https://uplcm.com/4/11971342',
+        popunderEnabled: true,
+        popunderIntervalMinutes: 120,
+        popunderDailyCap: 8
       }
     };
   },

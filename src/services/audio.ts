@@ -79,6 +79,11 @@ class SoundService {
     }
   }
 
+  public playTap() {
+    this.playLikePop();
+  }
+
+
   private alarmInterval: any = null;
 
   public ensureUnlocked() {

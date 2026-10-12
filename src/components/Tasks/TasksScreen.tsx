@@ -52,10 +52,16 @@ interface FreeMicroTask {
 
 export const TasksScreen: React.FC = () => {
   const { user, refreshUser, awardCoinsLocally } = useAuth();
-  const { language, showToast, triggerConfetti, settings } = useApp();
+  const { language, showToast, triggerConfetti, settings, selectedTaskSubTab, setSelectedTaskSubTab } = useApp();
 
-  const [activeTab, setActiveTab] = useState<TaskTab>('micro_tasks');
+  const [activeTab, setActiveTab] = useState<TaskTab>(selectedTaskSubTab || 'micro_tasks');
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
+
+  React.useEffect(() => {
+    if (selectedTaskSubTab) {
+      setActiveTab(selectedTaskSubTab);
+    }
+  }, [selectedTaskSubTab]);
 
   // Free Micro-task state
   const [completedMicroTasks, setCompletedMicroTasks] = useState<string[]>(() => {
@@ -373,6 +379,7 @@ export const TasksScreen: React.FC = () => {
             type="button"
             onClick={() => {
               setActiveTab('micro_tasks');
+              setSelectedTaskSubTab('micro_tasks');
               setActiveTask(null);
             }}
             className={`flex flex-col items-center justify-center gap-1 py-2.5 px-2 rounded-xl font-black text-[11px] transition-all cursor-pointer ${
@@ -389,6 +396,7 @@ export const TasksScreen: React.FC = () => {
             type="button"
             onClick={() => {
               setActiveTab('daily_tasks');
+              setSelectedTaskSubTab('daily_tasks');
             }}
             className={`flex flex-col items-center justify-center gap-1 py-2.5 px-2 rounded-xl font-black text-[11px] transition-all cursor-pointer ${
               activeTab === 'daily_tasks'
@@ -404,6 +412,7 @@ export const TasksScreen: React.FC = () => {
             type="button"
             onClick={() => {
               setActiveTab('offerwall');
+              setSelectedTaskSubTab('offerwall');
               setActiveTask(null);
             }}
             className={`flex flex-col items-center justify-center gap-1 py-2.5 px-2 rounded-xl font-black text-[11px] transition-all cursor-pointer ${

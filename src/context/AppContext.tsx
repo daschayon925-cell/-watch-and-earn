@@ -36,6 +36,8 @@ interface AppContextType {
   setTargetVideoId: (id: string | null) => void;
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
+  selectedTaskSubTab: 'micro_tasks' | 'daily_tasks' | 'offerwall';
+  setSelectedTaskSubTab: (tab: 'micro_tasks' | 'daily_tasks' | 'offerwall') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -50,6 +52,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [targetVideoId, setTargetVideoId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedTaskSubTab, setSelectedTaskSubTab] = useState<'micro_tasks' | 'daily_tasks' | 'offerwall'>('micro_tasks');
 
   const setIsMuted = (muted: boolean) => {
     setIsMutedState(muted);
@@ -172,7 +175,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         targetVideoId,
         setTargetVideoId,
         selectedCategory,
-        setSelectedCategory
+        setSelectedCategory,
+        selectedTaskSubTab,
+        setSelectedTaskSubTab
       }}
     >
       {children}

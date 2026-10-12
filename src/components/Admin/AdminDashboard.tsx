@@ -1732,52 +1732,7 @@ export const AdminDashboard: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-300 mb-1">
-                    ⚡ TimeWall Placement ID (প্লেসমেন্ট আইডি):
-                  </label>
-                  <input
-                    type="text"
-                    value={editSettings.offerwallsConfig?.timewallPlacementId ?? 'd7521f148f92a2d3'}
-                    onChange={(e) => {
-                      const id = e.target.value.trim();
-                      setEditSettings({
-                        ...editSettings,
-                        offerwallsConfig: { 
-                          ...editSettings.offerwallsConfig, 
-                          timewallPlacementId: id,
-                          timewallUrl: id ? `https://timewall.io/offers/${id}` : '',
-                          enabled: true
-                        } as any
-                      });
-                    }}
-                    placeholder="d7521f148f92a2d3"
-                    className="w-full p-2 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 focus:outline-none focus:border-amber-400"
-                  />
-                  <span className="text-[9px] text-amber-400/80 block mt-0.5">
-                    💡 Placement ID: <strong>d7521f148f92a2d3</strong> (WatchEarnBD)
-                  </span>
-                </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-300 mb-1">
-                    ⚡ TimeWall Offerwall URL:
-                  </label>
-                  <input
-                    type="url"
-                    value={editSettings.offerwallsConfig?.timewallUrl ?? 'https://timewall.io/offers/d7521f148f92a2d3'}
-                    onChange={(e) => setEditSettings({
-                      ...editSettings,
-                      offerwallsConfig: { 
-                        ...editSettings.offerwallsConfig, 
-                        timewallUrl: e.target.value,
-                        enabled: true
-                      } as any
-                    })}
-                    placeholder="https://timewall.io/offers/d7521f148f92a2d3"
-                    className="w-full p-2 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 focus:outline-none focus:border-amber-400"
-                  />
-                </div>
 
                 {/* 📊 CPX Research Official Surveys & Quizzes (User's Verified Account) */}
                 <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2.5">
@@ -2105,6 +2060,86 @@ export const AdminDashboard: React.FC = () => {
                         className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-purple-200 focus:outline-none"
                       />
                     </div>
+                  </div>
+                </div>
+
+                {/* 🚀 AdscendMedia Offerwall (adscendmedia.com) */}
+                <div className="pt-2 border-t border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-sky-400 flex items-center gap-1.5">
+                      <span>🚀</span>
+                      <span>AdscendMedia Offerwall (adscendmedia.com)</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={editSettings.offerwallsConfig?.adscendEnabled ?? true}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          adscendEnabled: e.target.checked
+                        } as any
+                      })}
+                      className="rounded accent-sky-500 w-4 h-4"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                      AdscendMedia Wall URL / Direct Link:
+                    </label>
+                    <input
+                      type="text"
+                      value={editSettings.offerwallsConfig?.adscendUrl ?? 'https://adscendmedia.com/wall'}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          adscendUrl: e.target.value.trim()
+                        } as any
+                      })}
+                      placeholder="https://adscendmedia.com/wall?publisher_id=..."
+                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-sky-200 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* ⚡ Offerwall.com Network */}
+                <div className="pt-2 border-t border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1.5">
+                      <span>⚡</span>
+                      <span>Offerwall.com Network</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={editSettings.offerwallsConfig?.offerwallDotComEnabled ?? true}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          offerwallDotComEnabled: e.target.checked
+                        } as any
+                      })}
+                      className="rounded accent-emerald-500 w-4 h-4"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                      Offerwall.com Direct Link / URL:
+                    </label>
+                    <input
+                      type="text"
+                      value={editSettings.offerwallsConfig?.offerwallDotComUrl ?? 'https://offerwall.com'}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          offerwallDotComUrl: e.target.value.trim()
+                        } as any
+                      })}
+                      placeholder="https://offerwall.com/..."
+                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-emerald-200 focus:outline-none"
+                    />
                   </div>
                 </div>
               </div>
@@ -2909,7 +2944,7 @@ export const AdminDashboard: React.FC = () => {
                 placeholder="যেমন: 2000"
               />
               <div className="grid grid-cols-4 gap-1.5 mt-2">
-                {['+50', '+100', '+500', '+2000'].map(preset => (
+                {['+50', '+250', '+1000', '+2000'].map(preset => (
                   <button
                     key={preset}
                     type="button"

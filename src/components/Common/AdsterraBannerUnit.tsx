@@ -66,6 +66,7 @@ export const AdsterraBannerUnit: React.FC<AdsterraBannerUnitProps> = ({ classNam
       script.type = 'text/javascript';
       script.src = `https://www.highrevenueformat.com/${bannerKey}/invoke.js`;
       script.async = true;
+      script.onerror = () => { /* Suppress ad network cross-origin script error */ };
 
       containerRef.current.innerHTML = '';
       containerRef.current.appendChild(script);

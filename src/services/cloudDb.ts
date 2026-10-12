@@ -21,17 +21,7 @@ const getTodayStr = () => new Date().toISOString().split('T')[0];
 let isBackendTemporarilyUnavailable = false;
 
 const isCloudDisabled = (): boolean => {
-  if (isBackendTemporarilyUnavailable) return true;
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const recordedDate = localStorage.getItem('we_fs_quota_exceeded_date');
-      // Today (2026-10-03) free tier write quota is currently exhausted
-      if (recordedDate === getTodayStr() || (!recordedDate && getTodayStr() === '2026-10-03')) {
-        return true;
-      }
-    }
-  } catch {}
-  return getTodayStr() === '2026-10-03';
+  return false; // Always enabled for permanent persistence in Firestore
 };
 
 const markQuotaExceeded = (err: any) => {

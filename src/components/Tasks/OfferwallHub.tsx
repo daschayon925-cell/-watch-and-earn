@@ -38,7 +38,7 @@ interface OfferwallProvider {
   descEn: string;
   avgReward: string;
   payoutRange: string;
-  partnerType: 'CPALead' | 'Monlix' | 'TimeWall' | 'AdGate' | 'SmartTask' | 'Torox' | 'CPX' | 'Lootably' | 'BitLabs' | 'AdsterraTask' | 'HilltopAdsTask' | 'OfferwallMe' | 'Lootly';
+  partnerType: 'CPALead' | 'Monlix' | 'TimeWall' | 'AdGate' | 'SmartTask' | 'Torox' | 'CPX' | 'Lootably' | 'BitLabs' | 'AdsterraTask' | 'HilltopAdsTask' | 'OfferwallMe' | 'Lootly' | 'Adscend' | 'OfferwallDotCom';
   status: 'active' | 'popular' | 'high_rate';
 }
 
@@ -87,8 +87,38 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
   const offerwallMeUrl = settings?.offerwallsConfig?.offerwallMeUrl?.trim() || '';
   const offerwallMePlacementId = settings?.offerwallsConfig?.offerwallMePlacementId?.trim() || '6aca33472eaa6484016c37d7';
   const lootlyApiKey = settings?.offerwallsConfig?.lootlyApiKey?.trim() || 'pj9b1buxrh05dt8eito0x8jxei21c3';
+  const adscendUrl = settings?.offerwallsConfig?.adscendUrl?.trim() || 'https://adscendmedia.com/wall';
+  const offerwallDotComUrl = settings?.offerwallsConfig?.offerwallDotComUrl?.trim() || 'https://offerwall.com';
 
   const providers: OfferwallProvider[] = [
+    // 🚀 0. ADSCEND MEDIA OFFERWALL (adscendmedia.com)
+    {
+      id: 'adscend',
+      name: 'AdscendMedia Global Wall',
+      badge: 'অফিসিয়াল পার্টনার 🚀',
+      badgeColor: 'from-sky-500 to-blue-600',
+      icon: '🚀',
+      descBn: 'গেমিং অফার, মোবাইল অ্যাপ টেস্ট ও প্রিমিয়াম সার্ভে করে ইনস্ট্যান্ট কয়েন আয় করুন',
+      descEn: 'Mobile games, app trials and top rewarding surveys',
+      avgReward: '+১৫০ – +৪,০০০ 🪙',
+      payoutRange: '৳২.০০ – ৳৫০.০০+',
+      partnerType: 'Adscend',
+      status: 'active'
+    },
+    // ⚡ 0. OFFERWALL.COM NETWORK
+    {
+      id: 'offerwall_dot_com',
+      name: 'Offerwall.com Network',
+      badge: 'প্রিমিয়াম নেটওয়ার্ক ⚡',
+      badgeColor: 'from-emerald-500 to-teal-600',
+      icon: '⚡',
+      descBn: 'গ্লোবাল অফারওয়াল ও সার্ভে পূরণ করে সর্বোচ্চ কয়েন রিওয়ার্ড নিন',
+      descEn: 'Global offerwall and survey completion rewards',
+      avgReward: '+২০০ – +৫,০০০ 🪙',
+      payoutRange: '৳২.৫০ – ৳৭০.০০+',
+      partnerType: 'OfferwallDotCom',
+      status: 'active'
+    },
     // 🎯 1. OFFICIAL OFFERWALL: Offerwall.me (User's Verified Account)
     {
       id: 'offerwall_me',
@@ -115,20 +145,6 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       avgReward: '+২০০ – +৪,০০০ 🪙',
       payoutRange: '৳২.৫০ – ৳৬০.০০+',
       partnerType: 'Lootly',
-      status: 'active'
-    },
-    // ⚡ 2. PRIMARY OFFICIAL OFFERWALL: TimeWall (User's Verified Account)
-    {
-      id: 'timewall',
-      name: 'TimeWall Micro-Tasks',
-      badge: 'অফিসিয়াল পার্টনার ⚡',
-      badgeColor: 'from-amber-500 to-orange-500',
-      icon: '⚡',
-      descBn: 'ক্লিক, ওয়েবসাইট ভিজিট, সার্ভে ও শর্ট ভিডিও দেখে বাংলাদেশি ইউজারদের সরাসরি ইনকাম',
-      descEn: 'Clicks, visits, surveys & short videos for verified real income',
-      avgReward: '+১০০ – +৩,০০০ 🪙',
-      payoutRange: '৳১.৫০ – ৳৫০.০০+',
-      partnerType: 'TimeWall',
       status: 'active'
     },
     // 📊 2. CPX RESEARCH OFFICIAL OFFERWALL (User's Verified Account)
@@ -371,23 +387,7 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
     const userId = user?.uid || 'user_guest';
     let url = '';
 
-    if (provider.partnerType === 'TimeWall') {
-      url = timewallBaseUrl.includes('?') 
-        ? `${timewallBaseUrl}&userId=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}` 
-        : `${timewallBaseUrl}?userId=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}`;
-      try {
-        window.open(url, '_blank', 'noopener,noreferrer');
-        showToast(
-          'TimeWall অফারওয়াল ওপেন হয়েছে ⚡',
-          'কাজ সম্পন্ন হলে টাইমওয়াল থেকে স্বয়ংক্রিয়ভাবে ওয়ালেটে কয়েন যুক্ত হবে।',
-          'info'
-        );
-      } catch {
-        setActiveOfferwallUrl(url);
-        setActiveWallName(provider.name);
-      }
-      return;
-    } else if (provider.partnerType === 'AdsterraTask') {
+    if (provider.partnerType === 'AdsterraTask') {
       openAdWithStrictTimer(adsterraDirectLink, 'Adsterra স্পন্সর অফার', 100, 20);
       return;
     } else if (provider.partnerType === 'HilltopAdsTask') {
@@ -464,6 +464,16 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
     } else if (provider.partnerType === 'Lootly') {
       const activeLootlyKey = lootlyApiKey || 'pj9b1buxrh05dt8eito0x8jxei21c3';
       url = `https://offerwall.lootly.fun/offerwall/${encodeURIComponent(activeLootlyKey)}/${encodeURIComponent(userId)}`;
+    } else if (provider.partnerType === 'Adscend') {
+      const baseAdscend = adscendUrl || 'https://adscendmedia.com/wall';
+      url = baseAdscend.includes('?')
+        ? `${baseAdscend}&subId=${encodeURIComponent(userId)}&user_id=${encodeURIComponent(userId)}`
+        : `${baseAdscend}?subId=${encodeURIComponent(userId)}&user_id=${encodeURIComponent(userId)}`;
+    } else if (provider.partnerType === 'OfferwallDotCom') {
+      const baseOfferwall = offerwallDotComUrl || 'https://offerwall.com';
+      url = baseOfferwall.includes('?')
+        ? `${baseOfferwall}&subId=${encodeURIComponent(userId)}&user_id=${encodeURIComponent(userId)}`
+        : `${baseOfferwall}?subId=${encodeURIComponent(userId)}&user_id=${encodeURIComponent(userId)}`;
     } else {
       url = timewallBaseUrl.includes('?') 
         ? `${timewallBaseUrl}&userId=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}` 

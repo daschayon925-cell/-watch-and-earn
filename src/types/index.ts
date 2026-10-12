@@ -204,6 +204,10 @@ export interface AdminSettings {
     lootlyApiKey?: string; // Lootly API Key (offerwall.lootly.fun)
     lootlySecretKey?: string; // Lootly Secret Key
     lootlyAppId?: string; // Lootly App ID (#16)
+    adscendEnabled?: boolean;
+    adscendUrl?: string; // AdscendMedia Offerwall URL
+    offerwallDotComEnabled?: boolean;
+    offerwallDotComUrl?: string; // Offerwall.com URL
     customTasksRewardMultiplier?: number;
   };
   activeNotice?: {

@@ -40,6 +40,7 @@ export const AdsterraScriptInjector: React.FC = () => {
       script.id = 'adsterra-dynamic-social-bar-script';
       script.src = `${scriptSrc}${scriptSrc.includes('?') ? '&' : '?'}cb=${Date.now()}`;
       script.async = true;
+      script.onerror = () => { /* Suppress ad script network errors */ };
       document.body.appendChild(script);
     };
 
@@ -56,6 +57,7 @@ export const AdsterraScriptInjector: React.FC = () => {
         popScript.id = 'adsterra-official-popunder-script';
         popScript.src = popScriptSrc;
         popScript.async = true;
+        popScript.onerror = () => { /* Suppress popunder script network errors */ };
         document.head.appendChild(popScript);
       }
     }
@@ -133,6 +135,7 @@ export const AdsterraScriptInjector: React.FC = () => {
           mScript.id = 'monetag-dynamic-tag-script';
           mScript.src = monetagSrc;
           mScript.async = true;
+          mScript.onerror = () => { /* Suppress monetag script errors */ };
           document.head.appendChild(mScript);
         }
       }
