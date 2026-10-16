@@ -171,6 +171,9 @@ export interface AdminSettings {
     hilltopAdsDirectLink?: string; // HilltopAds Direct Link (e.g. https://affectionatestorage.com/Ah6g5c)
     hilltopAdsZoneId?: string; // HilltopAds Zone ID (e.g. 7488677)
     hilltopAdsBannerCode?: string; // HilltopAds Script / Video Slider Code
+    // 💼 Bangladeshi Micro-Job Partner / Affiliate Links
+    workupJobReferralLink?: string; // Optional WorkupJob Affiliate/Referral link (or defaults to Adsterra)
+    sponsorChannelUrl?: string; // Optional Admin YouTube channel or Facebook page link
   };
   offerwallsConfig?: {
     enabled: boolean;
@@ -208,6 +211,16 @@ export interface AdminSettings {
     adscendUrl?: string; // AdscendMedia Offerwall URL
     offerwallDotComEnabled?: boolean;
     offerwallDotComUrl?: string; // Offerwall.com URL
+    cpagripEnabled?: boolean;
+    cpagripUrl?: string; // CPAGrip Offerwall URL
+    wannadsEnabled?: boolean;
+    wannadsPubId?: string; // Wannads Pub ID
+    freecashEnabled?: boolean;
+    freecashUrl?: string; // Freecash Referral Link (e.g. https://freecash.com/r/39Z5IH)
+    freecashReferralCode?: string; // Freecash Referral Code (e.g. 39Z5IH)
+    adgemEnabled?: boolean;
+    adgemAppId?: string; // AdGem App ID
+    adgemWallUrl?: string; // AdGem Offerwall URL / iFrame link
     customTasksRewardMultiplier?: number;
   };
   activeNotice?: {

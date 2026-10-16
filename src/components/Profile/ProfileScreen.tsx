@@ -33,11 +33,14 @@ import {
   Camera,
   UserPlus,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { MiniBannerAd } from '../Common/MiniBannerAd';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 export const ProfileScreen: React.FC = () => {
   const { user, updateProfile, toggleAdminRole, logout } = useAuth();
@@ -47,8 +50,11 @@ export const ProfileScreen: React.FC = () => {
     isMuted, 
     setIsMuted, 
     setActiveTab, 
-    showToast 
+    showToast,
+    floatingAdsEnabled,
+    setFloatingAdsEnabled
   } = useApp();
+  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
 
   const [copiedUid, setCopiedUid] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -366,6 +372,32 @@ export const ProfileScreen: React.FC = () => {
           {language === 'bn' ? 'সেটিংস ও পছন্দসমূহ' : 'Settings & Preferences'}
         </h3>
 
+        {/* PWA Home Screen Install Card */}
+        {!isInstalled && (isInstallable || isIOS) && (
+          <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-[#0A1713] border border-emerald-500/40 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+                <Smartphone className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="block text-xs font-bold text-white truncate">
+                  {language === 'bn' ? 'অফিসিয়াল অ্যাপ ইনস্টল করুন' : 'Install Official App'}
+                </span>
+                <span className="text-[10px] text-emerald-400 block truncate">
+                  {language === 'bn' ? 'হোম স্ক্রিন থেকে ১-ক্লিকে ওপেন ও ফাস্ট আর্নিং' : 'Add to Home Screen for fast access'}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={install}
+              className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 flex items-center gap-1 shrink-0 active:scale-95 transition"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>{language === 'bn' ? 'ইনস্টল' : 'Install'}</span>
+            </button>
+          </div>
+        )}
+
         {/* Language Switch */}
         <div className="flex items-center justify-between py-2 border-b border-slate-800/80">
           <div className="flex items-center gap-2 text-xs text-slate-200">
@@ -410,25 +442,71 @@ export const ProfileScreen: React.FC = () => {
           </button>
         </div>
 
-        {/* Admin Dashboard Switch */}
+        {/* Floating Ads & Clean View Switch */}
+        <div className="flex items-center justify-between py-2 border-b border-slate-800/80">
+          <div className="flex items-center gap-2 text-xs text-slate-200">
+            {floatingAdsEnabled ? <Eye className="w-4 h-4 text-amber-400" /> : <EyeOff className="w-4 h-4 text-emerald-400" />}
+            <div>
+              <span className="block font-bold">
+                {language === 'bn' ? 'বিজ্ঞাপন ওভারলে ও ব্যানার' : 'Floating Ad Overlays'}
+              </span>
+              <span className="text-[10px] text-slate-400">
+                {language === 'bn' 
+                  ? (floatingAdsEnabled ? 'সক্রিয় (+বোনাস কয়েন পাবেন)' : 'বন্ধ (স্ক্রিন সম্পূর্ণ পরিষ্কার ও উন্মুক্ত)')
+                  : (floatingAdsEnabled ? 'Active (+Bonus coins)' : 'Clean view: Screen unobstructed')}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const nextState = !floatingAdsEnabled;
+              setFloatingAdsEnabled(nextState);
+              showToast(
+                nextState 
+                  ? (language === 'bn' ? '🪙 ফ্লোটিং অ্যাড সক্রিয়' : 'Floating ads enabled')
+                  : (language === 'bn' ? '✨ ক্লিন ভিউ: বিজ্ঞাপন লুকানো হয়েছে' : 'Clean view enabled'),
+                '',
+                nextState ? 'coin' : 'info'
+              );
+            }}
+            className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
+              floatingAdsEnabled ? 'bg-amber-500' : 'bg-slate-700'
+            }`}
+            title="টগল করুন"
+          >
+            <div className={`w-5 h-5 rounded-full bg-white transition-transform ${
+              floatingAdsEnabled ? 'translate-x-5' : 'translate-x-0'
+            }`} />
+          </button>
+        </div>
+
+        {/* Admin Dashboard Switch & Direct Portal */}
         <div className="flex items-center justify-between py-2">
           <div className="flex items-center gap-2 text-xs text-slate-200">
             <ShieldAlert className="w-4 h-4 text-amber-400" />
             <div>
-              <span className="block font-bold">{language === 'bn' ? 'অ্যাডমিন মোড সুইচ' : 'Admin Role Switch'}</span>
-              <span className="text-[10px] text-slate-400">ম্যানেজমেন্ট কন্ট্রোল প্যানেল</span>
+              <span className="block font-bold">{language === 'bn' ? 'মালিক অ্যাডমিন প্যানেল' : 'Admin Portal'}</span>
+              <span className="text-[10px] text-slate-400">বিজ্ঞাপন ও ইনকাম নিয়ন্ত্রণ (পিন: 7788)</span>
             </div>
           </div>
-          <button
-            onClick={toggleAdminRole}
-            className={`px-3.5 py-1.5 text-xs font-bold rounded-xl border transition ${
-              user?.role === 'admin'
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm'
-                : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
-            }`}
-          >
-            {user?.role === 'admin' ? 'Admin Active ✓' : 'Enable Admin'}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setActiveTab('admin')}
+              className="px-3 py-1.5 text-xs font-black rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 transition active:scale-95 shadow-md flex items-center gap-1"
+            >
+              <span>👑 প্রবেশ</span>
+            </button>
+            <button
+              onClick={toggleAdminRole}
+              className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition ${
+                user?.role === 'admin'
+                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+              }`}
+            >
+              {user?.role === 'admin' ? 'Admin ✓' : 'Role'}
+            </button>
+          </div>
         </div>
       </div>
 

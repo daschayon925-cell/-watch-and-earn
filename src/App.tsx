@@ -68,7 +68,7 @@ const MainLayout: React.FC = () => {
       <Navbar />
 
       {/* Main Tab Content Viewport */}
-      <main className="flex-1 w-full max-w-md mx-auto relative overflow-x-hidden">
+      <main className="flex-1 w-full max-w-md mx-auto relative overflow-x-hidden pb-44">
         {activeTab === 'home' && <HomeScreen />}
         {activeTab === 'watch' && <WatchScreen />}
         {activeTab === 'games' && <GamesScreen />}

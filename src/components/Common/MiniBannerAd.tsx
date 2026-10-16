@@ -89,23 +89,23 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', cl
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-[#0b101c]/90 to-black/80" />
 
-        {/* Banner Content Container */}
-        <div className="relative z-10 p-3 sm:p-3.5 flex flex-col justify-between space-y-2">
-          {/* Top Row: Sponsor Badges & Completed Count */}
+        {/* Banner Content Container (Compact Sleek Layout) */}
+        <div className="relative z-10 px-3 py-2 flex flex-col justify-between space-y-1.5">
+          {/* Top Row: Sponsor Badges & Controls */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-[9px] tracking-wider uppercase flex items-center gap-1 shadow">
+            <div className="flex items-center gap-1.5">
+              <span className="px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-[9px] tracking-wider uppercase flex items-center gap-0.5 shadow">
                 <Sparkles className="w-2.5 h-2.5 fill-slate-950 text-slate-950" />
-                {currentAd.tag}
+                <span>স্পনসর</span>
               </span>
-              <span className="text-[11px] font-bold text-slate-200">
+              <span className="text-[11px] font-bold text-slate-200 truncate max-w-[150px]">
                 {currentAd.sponsor}
               </span>
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/40">
-                +{clicksToday}/{maxClicks} সম্পন্ন
+              <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30">
+                +১৫ কয়েন 🪙
               </span>
               <button
                 type="button"
@@ -121,30 +121,19 @@ export const MiniBannerAd: React.FC<MiniBannerProps> = ({ slotId = 'default', cl
             </div>
           </div>
 
-          {/* Title & Description */}
-          <div>
-            <h4 className="text-xs sm:text-sm font-black text-white leading-tight">
+          {/* Bottom Row: Title + Action Button */}
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="text-xs font-black text-white truncate flex-1 min-w-0">
               {currentAd.title}
             </h4>
-            <p className="text-[10px] sm:text-[11px] text-slate-300 line-clamp-1 mt-0.5">
-              {currentAd.desc}
-            </p>
-          </div>
-
-          {/* Bottom Action Row */}
-          <div className="flex items-center justify-between pt-1.5 border-t border-white/10">
-            <div className="flex items-center gap-1 text-xs font-black text-amber-300 animate-pulse">
-              <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-              <span>👉 ক্লিক করে অফার দেখুন ও ১০ কয়েন নিন</span>
-            </div>
 
             <button
               type="button"
               onClick={handleAdClick}
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition border border-white shrink-0 cursor-pointer"
+              className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black text-[11px] shadow flex items-center gap-1 active:scale-95 transition shrink-0 cursor-pointer"
             >
               <span>{currentAd.cta}</span>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-950" />
+              <ExternalLink className="w-3 h-3 text-slate-950" />
             </button>
           </div>
         </div>

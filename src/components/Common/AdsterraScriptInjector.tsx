@@ -5,7 +5,7 @@ import { triggerAdReward } from '../../services/adBonus';
 import { getRandomSafeDirectLink } from '../../utils/adLinkSanitizer';
 
 export const AdsterraScriptInjector: React.FC = () => {
-  const { settings, showToast, activeTab } = useApp();
+  const { settings, showToast, activeTab, floatingAdsEnabled } = useApp();
   const { user, awardCoinsLocally } = useAuth();
   const isExecutingRef = useRef(false);
 
@@ -25,8 +25,14 @@ export const AdsterraScriptInjector: React.FC = () => {
     const customSocialBar = adsConfig?.adsterraSocialBarCode?.trim();
     const customPopunder = adsConfig?.adsterraPopunderCode?.trim();
 
-    // 💬 1. SOCIAL BAR SCRIPT INJECTOR & PERIODIC REFRESHER
-    // This ensures Adsterra's social bar ads refresh continuously one after another!
+    // 🛡️ When clean view is active, cleanup any floating ad script and overlays immediately
+    if (!floatingAdsEnabled) {
+      const socialScript = document.getElementById('adsterra-dynamic-social-bar-script');
+      if (socialScript) socialScript.remove();
+      return;
+    }
+
+    // 💬 1. SOCIAL BAR SCRIPT INJECTOR (Single clean injection to prevent duplicate scripts & popups)
     const injectSocialBar = () => {
       if (!customSocialBar) return;
       const match = customSocialBar.match(/src=['"]([^'"]+)['"]/);
@@ -34,19 +40,58 @@ export const AdsterraScriptInjector: React.FC = () => {
       if (!scriptSrc) return;
 
       const existing = document.getElementById('adsterra-dynamic-social-bar-script');
-      if (existing) existing.remove();
+      if (existing) return; // Already injected, do not duplicate
 
       const script = document.createElement('script');
       script.id = 'adsterra-dynamic-social-bar-script';
-      script.src = `${scriptSrc}${scriptSrc.includes('?') ? '&' : '?'}cb=${Date.now()}`;
+      script.src = scriptSrc;
       script.async = true;
       script.onerror = () => { /* Suppress ad script network errors */ };
       document.body.appendChild(script);
     };
 
     injectSocialBar();
-    // Re-trigger social bar script every 35 seconds to cycle ads
-    const socialInterval = setInterval(injectSocialBar, 35000);
+
+    // 🛡️ Ensure 3rd-party floating ad elements do not overlap top navbar or bottom navigation
+    const rescaleAdsterraSocialBar = () => {
+      try {
+        const allElements = document.querySelectorAll('body > div, body > iframe');
+
+        allElements.forEach((el) => {
+          const htmlEl = el as HTMLElement;
+          if (htmlEl.id === 'root' || htmlEl.tagName === 'SCRIPT' || htmlEl.id === 'bottom-nav-bar') return;
+          
+          const style = window.getComputedStyle(htmlEl);
+          if (style.position === 'fixed' || style.position === 'absolute') {
+            const topVal = parseInt(style.top, 10);
+            const bottomVal = parseInt(style.bottom, 10);
+
+            htmlEl.style.zIndex = '35'; // Keep below header (z-50) and bottom-nav (z-50)
+            htmlEl.setAttribute('data-scaled-social-bar', 'true');
+
+            // If placed near top, keep right below status bar / header
+            if (!isNaN(topVal) && topVal < 60) {
+              htmlEl.style.top = '60px';
+            }
+
+            // If placed near bottom, raise slightly above BottomNav so buttons are clickable
+            if (!isNaN(bottomVal) && bottomVal < 65) {
+              htmlEl.style.bottom = '70px';
+            }
+          }
+        });
+      } catch {}
+    };
+
+    const observer = new MutationObserver(() => {
+      rescaleAdsterraSocialBar();
+    });
+
+    try {
+      observer.observe(document.body, { childList: true, subtree: true });
+    } catch {}
+
+    const scaleTimer = setInterval(rescaleAdsterraSocialBar, 1500);
 
     // 🌐 2. OFFICIAL ADSTERRA POPUNDER CODE INJECTOR (IF PROVIDED)
     if (customPopunder) {
@@ -160,10 +205,11 @@ export const AdsterraScriptInjector: React.FC = () => {
     window.addEventListener('click', triggerSmartPopunder, { capture: true });
 
     return () => {
-      clearInterval(socialInterval);
+      clearInterval(scaleTimer);
+      try { observer.disconnect(); } catch {}
       window.removeEventListener('click', triggerSmartPopunder, { capture: true });
     };
-  }, [settings?.adsConfig, activeTab, user]);
+  }, [settings?.adsConfig, activeTab, user, floatingAdsEnabled]);
 
   return null;
 };

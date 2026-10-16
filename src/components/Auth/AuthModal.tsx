@@ -366,6 +366,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
               <span>{loading ? 'গুগল সংযোগ হচ্ছে...' : 'গুগল দিয়ে সরাসরি লগইন করুন (Google Sign-In)'}</span>
             </button>
 
+            {/* 🚀 1-Click Fast Guest Entry */}
+            <button
+              type="button"
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await loginDemo();
+                  soundService.playSuccessFanfare();
+                  triggerConfetti();
+                  showToast('স্বাগতম! কাজ শুরু হয়েছে 🚀', 'ভিডিও দেখুন ও কয়েন জিতুন।', 'success');
+                  if (onClose) onClose();
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="w-full mt-2 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-cyan-500/20 hover:from-emerald-500/30 text-emerald-300 font-bold text-xs flex items-center justify-center gap-2 border border-emerald-500/40 transition cursor-pointer active:scale-[0.98]"
+            >
+              <span>🚀 ১ ক্লিকে সরাসরি কাজ শুরু করুন (গেস্ট মোড)</span>
+            </button>
+
             <div className="flex items-center gap-2 my-3">
               <div className="flex-1 h-[1px] bg-slate-800" />
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">অথবা ফোন নম্বর দিয়ে</span>

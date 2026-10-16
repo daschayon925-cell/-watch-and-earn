@@ -49,7 +49,11 @@ export const BottomNav: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto bg-[#070B11]/95 backdrop-blur-lg border-t border-slate-800/80 px-2 py-2">
+    <nav 
+      id="bottom-nav-bar"
+      data-bottom-nav="true"
+      className="fixed bottom-0 left-0 right-0 z-[99999999] max-w-md mx-auto bg-[#070B11]/98 backdrop-blur-xl border-t-2 border-slate-800 shadow-[0_-8px_30px_rgba(0,0,0,0.95)] px-2 pt-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]"
+    >
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
@@ -57,8 +61,8 @@ export const BottomNav: React.FC = () => {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`relative flex flex-col items-center justify-center flex-1 py-1 transition-all duration-200 group ${
-                isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
+              className={`relative flex flex-col items-center justify-center flex-1 py-1 transition-all duration-200 group active:scale-95 ${
+                isActive ? 'text-emerald-400 font-extrabold' : 'text-slate-300 hover:text-white'
               }`}
             >
               {/* Active subtle pill background */}

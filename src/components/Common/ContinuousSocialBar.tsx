@@ -1,314 +1,263 @@
 import React, { useState, useEffect } from 'react';
-import { Gift, MessageSquare, Sparkles, X, ChevronRight, Zap, Bell, Coins, Flame, ExternalLink, Send } from 'lucide-react';
+import { Gift, MessageSquare, Sparkles, X, ChevronRight, Zap, Bell, Coins, Flame, ExternalLink, Send, Minimize2, Maximize2, ArrowUpDown } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
-import { triggerAdReward } from '../../services/adBonus';
 import { openAdWithStrictTimer } from './AdVisitTimerModal';
 import { getRandomSafeDirectLink } from '../../utils/adLinkSanitizer';
 
-interface TopSocialPushItem {
+interface FloatingAdItem {
   id: string;
-  sender: string;
-  message: string;
   badge: string;
-  avatarBg: string;
-  timeAgo: string;
-}
-
-interface BottomDirectLinkItem {
-  id: string;
+  coins: number;
   title: string;
   subtitle: string;
-  badge: string;
-  ctaText: string;
-  gradient: string;
+  incentive: string;
+  avatarBg: string;
 }
 
-// 💬 1. TOP BAR: Dedicated Social Bar (Authentic VPN, Facebook Messenger, and Push Alert Styles)
-const TOP_SOCIAL_PUSH_ADS: TopSocialPushItem[] = [
+// ⚡ HIGH-ENGAGEMENT AUTHENTIC FLOATING ADS (Compact, slim, non-obtrusive)
+const FLOATING_ADS_LIST: FloatingAdItem[] = [
   {
-    id: 'sb_vpn_1',
-    sender: '🛡️ Turbo Super Fast VPN',
-    message: '⚡ আপনার ইন্টারনেট স্পিড বাড়াতে ও সিকিউর করতে VPN কানেক্ট করুন!',
-    badge: 'VPN প্রোটেকশন',
-    avatarBg: 'from-emerald-500 via-teal-600 to-cyan-600',
-    timeAgo: 'এখনই'
+    id: 'ad_booster',
+    badge: '✨ সিস্টেম বুস্ট',
+    coins: 10,
+    title: '⚡ ফোন বুস্টার ও ব্যাটারি সেভার',
+    subtitle: 'মেমরি পরিষ্কার করে মোবাইল ফাস্ট করুন!',
+    incentive: '👉 ২০ সে. ভিজিটে ১০ কয়েন',
+    avatarBg: 'from-amber-500 to-orange-600'
   },
   {
-    id: 'sb_fb_1',
-    sender: '💬 Facebook Messenger Alert',
-    message: '📩 আপনার প্রোফাইলে ১টি নতুন মেসেজ ও নোটিফিকেশন এসেছে!',
-    badge: 'ফেসবুক অ্যালার্ট',
-    avatarBg: 'from-blue-600 to-indigo-700',
-    timeAgo: '১ মি. আগে'
+    id: 'ad_gift',
+    badge: '🎁 বিকাশ ও নগদ রিওয়ার্ড',
+    coins: 15,
+    title: '💸 বিকাশ ক্যাশব্যাক ও ফ্রি রিচার্জ',
+    subtitle: 'বিজ্ঞাপন দেখে বোনাস ক্যাশআউট নিন!',
+    incentive: '👉 ২০ সে. ভিজিটে ১৫ কয়েন',
+    avatarBg: 'from-pink-500 to-rose-600'
   },
   {
-    id: 'sb_booster_1',
-    sender: '⚡ ফোন বুস্টার ও ব্যাটারি সেভার',
-    message: '🚀 মেমরি পরিষ্কার করে মোবাইল ১০০% ফাস্ট ও কুল করুন!',
-    badge: 'সিস্টেম বুস্ট',
-    avatarBg: 'from-amber-500 to-orange-600',
-    timeAgo: 'এখনই'
+    id: 'ad_vpn',
+    badge: '🛡️ VPN প্রোটেকশন',
+    coins: 10,
+    title: '🛡️ Turbo Super Fast VPN',
+    subtitle: 'ইন্টারনেট স্পিড বাড়াতে কানেক্ট করুন!',
+    incentive: '👉 ২০ সে. ভিজিটে ১০ কয়েন',
+    avatarBg: 'from-emerald-500 via-teal-600 to-cyan-600'
   },
   {
-    id: 'sb_gift_1',
-    sender: '🎁 বিকাশ ও নগদ রিওয়ার্ড নোটিশ',
-    message: '💸 ৫০ টাকা পর্যন্ত ক্যাশব্যাক ও ফ্রি রিচার্জ অফার চালু হয়েছে!',
-    badge: 'ক্যাশব্যাক গিফট',
-    avatarBg: 'from-pink-500 to-rose-600',
-    timeAgo: '২ মি. আগে'
-  }
-];
-
-// ⚡ 2. BOTTOM BAR: Dedicated Direct Link Ad (High-CPM Direct Link Converter)
-const BOTTOM_DIRECT_LINK_ADS: BottomDirectLinkItem[] = [
-  {
-    id: 'dl_ad_1',
-    title: '👉 স্পনসর লিংকে চাপ দিলে পাবেন ১৫ কয়েন!',
-    subtitle: 'বিজ্ঞাপনে চাপ দিয়ে অফার পেজ ২০ সেকেন্ড ভিজিট করুন ও কয়েন নিন।',
-    badge: 'হাই-সিপিএম বোনাস 🔥',
-    ctaText: 'চাপ দিন (+১৫)',
-    gradient: 'from-amber-500/20 via-yellow-500/25 to-amber-500/20 border-amber-400'
+    id: 'ad_fb',
+    badge: '💬 ফেসবুক অ্যালার্ট',
+    coins: 10,
+    title: '💬 Facebook Messenger Alert',
+    subtitle: 'প্রোফাইলে নতুন মেসেজ ও অফার এসেছে!',
+    incentive: '👉 ২০ সে. ভিজিটে ১০ কয়েন',
+    avatarBg: 'from-blue-600 to-indigo-700'
   },
   {
-    id: 'dl_ad_2',
-    title: '🔥 স্পেশাল ডিরেক্ট লিংক অফার – ইনস্ট্যান্ট কয়েন রিওয়ার্ড',
-    subtitle: 'এখানে চাপ দিন এবং যেকোনো অফার দেখে বাড়তি ১৫ পয়েন্ট জিতে নিন!',
-    badge: 'ডিরেক্ট লিংক অফার ⚡',
-    ctaText: 'ক্লেইম (+১৫)',
-    gradient: 'from-rose-500/20 via-amber-500/25 to-rose-500/20 border-rose-400'
-  },
-  {
-    id: 'dl_ad_3',
-    title: '🛍️ দারাজ ও বিকাশ মেগা প্রমোশন ডিরেক্ট লিংক',
-    subtitle: 'বিজ্ঞাপনে ১টি ক্লিক করলেই একাউন্টে সরাসরি ১৫ কয়েন বোনাস জমা হবে।',
-    badge: 'স্পনসর অফার 💎',
-    ctaText: 'ওপেন (+১৫)',
-    gradient: 'from-emerald-500/20 via-teal-500/25 to-emerald-500/20 border-emerald-400'
+    id: 'ad_sponsor',
+    badge: '🔥 হাই-সিপিএম বোনাস',
+    coins: 15,
+    title: '👉 স্পনসর লিংকে স্পেশাল অফার',
+    subtitle: 'অফার পেজ ভিজিট করুন ও কয়েন নিন।',
+    incentive: '👉 ২০ সে. ভিজিটে ১৫ কয়েন',
+    avatarBg: 'from-purple-600 to-indigo-600'
   }
 ];
 
 export const ContinuousSocialBar: React.FC = () => {
-  const { settings, showToast, activeTab } = useApp();
-  const { user, awardCoinsLocally } = useAuth();
+  const { settings, showToast, activeTab, floatingAdsEnabled } = useApp();
+  const { user } = useAuth();
 
-  // Top Social Bar State (Push / Chat style)
-  const [topIndex, setTopIndex] = useState(0);
-  const [isTopVisible, setIsTopVisible] = useState(false);
-  const [isTopDismissed, setIsTopDismissed] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
+  const [isDismissed, setIsDismissed] = useState(false);
+  const [isMinimized, setIsMinimized] = useState<boolean>(false);
+  // Default to 'top' as requested by user, compact and slim so buttons below are fully visible
+  const [position, setPosition] = useState<'top' | 'bottom'>('top');
 
-  // Bottom Direct Link State
-  const [bottomIndex, setBottomIndex] = useState(0);
-  const [isBottomVisible, setIsBottomVisible] = useState(false);
-  const [isBottomDismissed, setIsBottomDismissed] = useState(false);
-
-  // 🛡️ Completely disable all social bar ads in admin panel and during auth modal
-  if (!user || (activeTab as string) === 'admin') {
+  // 🛡️ Completely disable simulated social bar if:
+  // 1. Admin panel is active
+  // 2. User turned off floating ads (Clean view)
+  if (!user || (activeTab as string) === 'admin' || !floatingAdsEnabled) {
     return null;
   }
 
-  // 🛡️ Always safe direct landing page (never raw script URLs!)
+  // 🛡️ Always safe direct landing page
   const directLink = getRandomSafeDirectLink(settings?.adsConfig);
 
-  // 💬 Top Social Bar Lifecycle (Cycles smoothly)
+  // 💬 Cycle ads smoothly every 18 seconds
   useEffect(() => {
-    const topInitial = setTimeout(() => {
-      setIsTopVisible(true);
-    }, 1000);
-
-    const topInterval = setInterval(() => {
-      setIsTopVisible(false);
+    const cycleInterval = setInterval(() => {
+      setIsVisible(false);
       setTimeout(() => {
-        setTopIndex((prev) => (prev + 1) % TOP_SOCIAL_PUSH_ADS.length);
-        setIsTopDismissed(false);
-        setIsTopVisible(true);
-      }, 2000);
-    }, 20000);
+        setCurrentIndex((prev) => (prev + 1) % FLOATING_ADS_LIST.length);
+        setIsDismissed(false);
+        setIsVisible(true);
+      }, 1500);
+    }, 18000);
 
-    return () => {
-      clearTimeout(topInitial);
-      clearInterval(topInterval);
-    };
+    return () => clearInterval(cycleInterval);
   }, []);
 
-  // ⚡ Bottom Direct Link Bar Lifecycle (Shows intermittently with delay)
-  useEffect(() => {
-    const bottomInitial = setTimeout(() => {
-      setIsBottomVisible(true);
+  const currentAd = FLOATING_ADS_LIST[currentIndex];
+
+  const handleOpenAd = (e: React.MouseEvent, typeLabel: string, coins: number) => {
+    e.stopPropagation();
+    openAdWithStrictTimer(directLink, typeLabel, coins, 20);
+  };
+
+  const handleDismiss = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDismissed(true);
+    setIsVisible(false);
+    setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % FLOATING_ADS_LIST.length);
+      setIsDismissed(false);
+      setIsVisible(true);
     }, 12000);
-
-    const bottomInterval = setInterval(() => {
-      setIsBottomVisible(false);
-      setTimeout(() => {
-        setBottomIndex((prev) => (prev + 1) % BOTTOM_DIRECT_LINK_ADS.length);
-        setIsBottomDismissed(false);
-        setIsBottomVisible(true);
-      }, 3000);
-    }, 25000);
-
-    return () => {
-      clearTimeout(bottomInitial);
-      clearInterval(bottomInterval);
-    };
-  }, []);
-
-  const handleOpenAd = (e: React.MouseEvent, typeLabel: string) => {
-    e.stopPropagation();
-    // 🛡️ Enforce strict 20-second ad visit verification modal (+15 coins)
-    openAdWithStrictTimer(directLink, typeLabel, 15, 20);
   };
 
-  const handleDismissTop = (e: React.MouseEvent) => {
+  const handleMinimize = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsTopDismissed(true);
-    setIsTopVisible(false);
-    setTimeout(() => {
-      setTopIndex((prev) => (prev + 1) % TOP_SOCIAL_PUSH_ADS.length);
-      setIsTopDismissed(false);
-      setIsTopVisible(true);
-    }, 10000);
+    setIsMinimized(true);
+    showToast('অ্যাড ছোট করা হয়েছে ✨ বাটনগুলো স্পষ্ট দেখা যাচ্ছে', '', 'info');
   };
 
-  const handleDismissBottom = (e: React.MouseEvent) => {
+  const handleExpand = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsBottomDismissed(true);
-    setIsBottomVisible(false);
-    setTimeout(() => {
-      setBottomIndex((prev) => (prev + 1) % BOTTOM_DIRECT_LINK_ADS.length);
-      setIsBottomDismissed(false);
-      setIsBottomVisible(true);
-    }, 8000);
+    setIsMinimized(false);
   };
 
-  const topPush = TOP_SOCIAL_PUSH_ADS[topIndex];
-  const bottomDL = BOTTOM_DIRECT_LINK_ADS[bottomIndex];
+  const togglePosition = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextPos = position === 'top' ? 'bottom' : 'top';
+    setPosition(nextPos);
+    showToast(nextPos === 'top' ? '⬆️ অ্যাড উপরে রাখা হয়েছে' : '⬇️ অ্যাড নিচে রাখা হয়েছে', '', 'info');
+  };
+
+  // Position class:
+  // At 'top': sits right below Navbar (top-14), centered and slim, leaving ALL buttons and video controls unobstructed!
+  // At 'bottom': sits above bottom-nav (bottom-20)
+  // Position class:
+  // At 'top': sits safely below Navbar (top-[68px]), centered and prominent, leaving all page buttons unobstructed!
+  // At 'bottom': sits safely above bottom-nav (bottom-20)
+  const containerPosClass = position === 'top'
+    ? 'fixed top-[68px] left-3 right-3 max-w-md mx-auto z-40'
+    : 'fixed bottom-20 left-3 right-3 max-w-md mx-auto z-40';
 
   return (
     <>
-      {/* ⚡ SINGLE BOTTOM FLOATING SPONSOR & SOCIAL BAR NOTIFICATION (Above Bottom Nav, Never Blocking Top Buttons) */}
-      {(isTopVisible && !isTopDismissed) ? (
+      {/* 🪙 Mini Floating Coin Badge when minimized */}
+      {isMinimized && (
+        <aside
+          aria-label="Sponsored Ad Quick Access"
+          className={position === 'top' ? "fixed top-[68px] right-3 z-40 animate-in zoom-in duration-200 pointer-events-auto" : "fixed bottom-20 right-3 z-40 animate-in zoom-in duration-200 pointer-events-auto"}
+        >
+          <div className="flex items-center gap-1 bg-[#09111F]/98 border border-amber-400 rounded-full px-2.5 py-1 shadow-[0_4px_16px_rgba(0,0,0,0.9)] backdrop-blur-md">
+            <button
+              type="button"
+              onClick={(e) => handleOpenAd(e, currentAd.title, currentAd.coins)}
+              className="flex items-center gap-1 text-[11px] font-black text-amber-300 hover:text-white transition active:scale-95"
+            >
+              <Coins className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+              <span>+{currentAd.coins}🪙</span>
+            </button>
+            <button
+              type="button"
+              onClick={togglePosition}
+              className="p-0.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-cyan-300 transition"
+              title={position === 'top' ? 'নিচে নিন' : 'উপরে নিন'}
+            >
+              <ArrowUpDown className="w-2.5 h-2.5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleExpand}
+              className="p-0.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition"
+              title="বড় করুন"
+            >
+              <Maximize2 className="w-2.5 h-2.5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleDismiss}
+              className="p-0.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition"
+              title="বন্ধ করুন"
+            >
+              <X className="w-2.5 h-2.5" />
+            </button>
+          </div>
+        </aside>
+      )}
+
+      {/* ⚡ PRO FLOATING AD BAR (Height ~38px, placed cleanly at top-[68px] right below header) */}
+      {!isMinimized && isVisible && !isDismissed && (
         <aside 
-          aria-label="Social Bar Alert"
-          className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-4 sm:w-88 z-40 animate-in slide-in-from-bottom duration-300 pointer-events-auto shadow-2xl"
+          aria-label="Sponsored Alert"
+          className={`${containerPosClass} animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-auto`}
         >
           <div 
-            onClick={(e) => {
-              handleOpenAd(e, 'সোশ্যাল বার বিজ্ঞাপন');
-              setIsTopVisible(false);
-            }}
-            className="group relative cursor-pointer overflow-hidden rounded-2xl bg-[#0d1527]/98 border border-blue-500/60 p-2.5 sm:p-3 shadow-[0_10px_35px_rgba(0,0,0,0.85)] backdrop-blur-xl transition-all hover:border-blue-400 active:scale-[0.98]"
+            onClick={(e) => handleOpenAd(e, currentAd.title, currentAd.coins)}
+            className="group relative cursor-pointer overflow-hidden rounded-full bg-[#091428]/98 border-2 border-cyan-400/80 px-3 py-1.5 shadow-[0_6px_24px_rgba(0,180,255,0.4)] backdrop-blur-xl transition-all hover:border-cyan-300 active:scale-[0.99] flex items-center justify-between gap-2"
           >
-            {/* Ambient Blue Glow */}
-            <div className="absolute -left-6 -top-6 w-20 h-20 rounded-full bg-blue-500/20 blur-xl pointer-events-none" />
-
-            <div className="flex items-center gap-2.5">
-              {/* Chat Avatar */}
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${topPush.avatarBg} p-0.5 shadow-md flex-shrink-0 flex items-center justify-center text-white font-bold relative`}>
-                <MessageSquare className="w-5 h-5 text-white animate-pulse" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full border-2 border-slate-900 animate-ping" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full border-2 border-slate-900" />
+            {/* Left Content (Avatar + Title + Coin Badge) */}
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className={`w-6 h-6 rounded-full bg-gradient-to-tr ${currentAd.avatarBg} p-0.5 shadow flex-shrink-0 flex items-center justify-center text-white relative`}>
+                <MessageSquare className="w-3 h-3 text-white" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-rose-500 rounded-full border border-[#091428]" />
               </div>
 
-              {/* Message Content */}
-              <div className="flex-1 min-w-0 pr-2">
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-blue-300 bg-blue-500/20 px-1.5 py-0.5 rounded border border-blue-500/40 flex items-center gap-0.5">
-                    <Sparkles className="w-2.5 h-2.5 fill-blue-300 text-blue-300" />
-                    {topPush.badge}
-                  </span>
-                  <span className="text-[9px] font-black text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/40">
-                    +১০ কয়েন 🪙
-                  </span>
-                </div>
-                <h4 className="text-xs font-bold text-white truncate group-hover:text-blue-300 transition">
-                  {topPush.sender}
-                </h4>
-                <p className="text-[10px] text-slate-300 truncate mt-0.5">
-                  {topPush.message}
-                </p>
-                <div className="text-[10px] font-black text-emerald-400 mt-1 flex items-center gap-1">
-                  <Zap className="w-3 h-3 text-amber-400 fill-amber-400" />
-                  <span>👉 চাপ দিলে ১০ কয়েন পাবেন (২০ সে. ভিজিট)</span>
-                </div>
-              </div>
-
-              {/* CTA Action */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <span className="text-[10px] font-black bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 text-white px-2.5 py-1.5 rounded-xl shadow-md flex items-center gap-1 active:scale-95 transition border border-white/20">
-                  <span>ওপেন</span>
-                  <Send className="w-3 h-3" />
+              <div className="min-w-0 flex-1 flex items-center gap-1.5">
+                <span className="text-[11px] font-black text-white truncate max-w-[140px] sm:max-w-[190px] group-hover:text-cyan-300">
+                  {currentAd.title}
+                </span>
+                <span className="text-[9.5px] font-black text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded-md border border-amber-500/50 shrink-0">
+                  +{currentAd.coins}🪙
                 </span>
               </div>
             </div>
 
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={handleDismissTop}
-              className="absolute top-1.5 right-1.5 p-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
-              title="বিজ্ঞাপন বন্ধ করুন"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        </aside>
-      ) : (isBottomVisible && !isBottomDismissed) ? (
-        <aside 
-          aria-label="Sponsored Notification"
-          className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-4 sm:w-88 z-40 animate-in slide-in-from-bottom duration-300 pointer-events-auto shadow-2xl"
-        >
-          <div 
-            onClick={(e) => {
-              handleOpenAd(e, 'স্পনসর মেসেজ বিজ্ঞাপন');
-              setIsBottomVisible(false);
-            }}
-            className="group relative cursor-pointer overflow-hidden rounded-2xl bg-[#0d1627]/98 border border-cyan-500/40 p-2.5 sm:p-3 shadow-[0_10px_30px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all hover:border-cyan-400 active:scale-[0.98]"
-          >
-            <div className="flex items-center gap-2.5">
-              {/* Messenger Icon Box */}
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/40 p-1 shadow flex-shrink-0 flex items-center justify-center text-cyan-400">
-                <MessageSquare className="w-5 h-5 fill-cyan-400 text-cyan-400 animate-pulse" />
-              </div>
+            {/* Right Action Controls */}
+            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={(e) => handleOpenAd(e, currentAd.title, currentAd.coins)}
+                className="text-[10px] font-black bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 text-white px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 active:scale-95 transition cursor-pointer"
+              >
+                <span>ওপেন</span>
+                <Send className="w-2.5 h-2.5 text-white" />
+              </button>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0 pr-2">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 font-bold text-[9px] border border-amber-500/30">
-                    মেসেজ
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    স্পনসর
-                  </span>
-                </div>
-                <h4 className="text-xs font-bold text-white truncate flex items-center gap-1">
-                  <span>💬 নতুন স্পনসর মেসেজ</span>
-                </h4>
-                <p className="text-[10px] text-slate-300 truncate mt-0.5">
-                  আপনার জন্য ১টি বিশেষ প্রমোশন অপেক্ষা করছে (চাপ দিলে ১০ কয়েন)
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={togglePosition}
+                className="p-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 transition"
+                title={position === 'top' ? 'নিচে নিন' : 'উপরে নিন'}
+              >
+                <ArrowUpDown className="w-3 h-3" />
+              </button>
 
-              {/* Action Button */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <span className="text-[11px] font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 text-slate-950 px-3 py-1.5 rounded-xl shadow-md flex items-center gap-1 active:scale-95 transition">
-                  <span>দেখুন</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </span>
-              </div>
+              <button
+                type="button"
+                onClick={handleMinimize}
+                className="p-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-300 transition"
+                title="ছোট করুন (Minimize)"
+              >
+                <Minimize2 className="w-3 h-3" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDismiss}
+                className="p-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-rose-400 transition"
+                title="বিজ্ঞাপন বন্ধ করুন"
+              >
+                <X className="w-3 h-3" />
+              </button>
             </div>
-
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={handleDismissBottom}
-              className="absolute top-1.5 right-1.5 p-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
-              title="বিজ্ঞাপন বন্ধ করুন"
-            >
-              <X className="w-3 h-3" />
-            </button>
           </div>
         </aside>
-      ) : null}
+      )}
     </>
   );
 };

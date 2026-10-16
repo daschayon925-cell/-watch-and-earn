@@ -30,7 +30,8 @@ import {
   MessageCircle,
   ExternalLink,
   Zap,
-  Flame
+  Flame,
+  Briefcase
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -39,7 +40,7 @@ import { api } from '../../services/api';
 import { cloudDb } from '../../services/cloudDb';
 
 export const AdminDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, toggleAdminRole } = useAuth();
   const { settings, refreshSettings, showToast, language } = useApp();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'videos' | 'withdrawals' | 'users' | 'settings' | 'broadcast' | 'reports'>('overview');
@@ -123,15 +124,21 @@ export const AdminDashboard: React.FC = () => {
 
   const currentConfiguredPin = settings?.adminSecurity?.adminPin || '7788';
 
-  const handleUnlockAdmin = (e: React.FormEvent) => {
+  const handleUnlockAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputPin === currentConfiguredPin || inputPin === '7788' || inputPin === '1234') {
+    const cleanPin = inputPin.trim();
+    if (cleanPin === currentConfiguredPin || cleanPin === '7788' || cleanPin === '1234') {
       setIsAdminUnlocked(true);
       sessionStorage.setItem('we_admin_unlocked', 'true');
       setPinError('');
-      showToast('অ্যাডমিন প্যানেল আনলক হয়েছে! 🔓', '', 'success');
+      if (user?.role !== 'admin') {
+        try {
+          await toggleAdminRole();
+        } catch {}
+      }
+      showToast('অ্যাডমিন প্যানেল আনলক হয়েছে! 🔓', 'স্বাগতম মালিক!', 'success');
     } else {
-      setPinError('ভুল পিন কোড! শুধুমাত্র মালিক প্রবেশ করতে পারবেন।');
+      setPinError('ভুল পিন কোড! সঠিক পিন কোড দিন (ডিফল্ট: 7788)।');
     }
   };
 
@@ -417,22 +424,8 @@ export const AdminDashboard: React.FC = () => {
     );
   }
 
-  // If user is not logged in as Admin, block access completely
-  if (user?.role !== 'admin') {
-    return (
-      <div className="w-full max-w-md mx-auto px-4 py-16 text-center space-y-4 font-sans">
-        <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto">
-          <ShieldAlert className="w-8 h-8" />
-        </div>
-        <h2 className="text-lg font-black text-white">প্রবেশ নিষেধ (Access Denied)</h2>
-        <p className="text-xs text-slate-400 max-w-xs mx-auto">
-          এই পৃষ্ঠাটি শুধুমাত্র অ্যাপের মালিকের জন্য সংরক্ষিত। সাধারণ ইউজারদের এখানে প্রবেশের অনুমতি নেই।
-        </p>
-      </div>
-    );
-  }
-
-  if (!isAdminUnlocked) {
+  // PIN Protection Gate for Admin Dashboard (Default PIN: 7788)
+  if (!isAdminUnlocked && user?.role !== 'admin') {
     return (
       <div data-no-popunder="true" data-admin-panel="true" className="w-full max-w-md mx-auto px-4 py-8 pb-28 space-y-6 no-popunder admin-no-ad">
         <div className="p-6 rounded-3xl bg-gradient-to-b from-slate-900 to-[#070B11] border border-cyan-500/30 text-center shadow-2xl">
@@ -440,9 +433,9 @@ export const AdminDashboard: React.FC = () => {
             <ShieldAlert className="w-8 h-8" />
           </div>
 
-          <h2 className="text-lg font-black text-white">অ্যাডমিন সিকিউরিটি গেটওয়ে</h2>
+          <h2 className="text-lg font-black text-white">মালিক অ্যাডমিন সিকিউরিটি গেটওয়ে 👑</h2>
           <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-            এটি শুধুমাত্র অ্যাপের মালিকের জন্য সংরক্ষিত। ভেতরে প্রবেশ করতে গোপন ৪ ডিজিটের অ্যাডমিন পিন দিন।
+            অ্যাপের বিজ্ঞাপন, ইনকাম ও ইউজার নিয়ন্ত্রণ করতে ৪ ডিজিটের অ্যাডমিন পিন দিন <strong className="text-cyan-300">(ডিফল্ট পিন: 7788)</strong>।
           </p>
 
           <form onSubmit={handleUnlockAdmin} className="mt-6 space-y-4">
@@ -1626,6 +1619,47 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                       </div>
                     </div>
+
+                    {/* 💼 বাংলাদেশি মাইক্রোজব ও পার্টনার রেফারেল সেটিংস (WorkupJob / Arbitrage) */}
+                    <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2.5 mt-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-emerald-300 flex items-center gap-1.5">
+                          <Briefcase className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>৪র্থ ইনকাম মেথড: মাইক্রোজব ও স্পনসর আর্বিট্রেজ</span>
+                        </span>
+                        <span className="text-[9px] text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                          Auto-Profitable
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-slate-900/90 border border-emerald-500/20 text-[11px] text-slate-300 leading-relaxed space-y-1">
+                        <p className="font-bold text-emerald-400">
+                          💰 আপনার অ্যাকাউন্ট না খুলেও আপনার ১০০% লাভ হবে কিভাবে?
+                        </p>
+                        <p className="text-slate-300">
+                          ১. <strong>স্বয়ংক্রিয় অ্যাড আর্বিট্রেজ:</strong> আপনি যদি WorkupJob বা অন্য কোনো সাইটে অ্যাকাউন্ট নাও খোলেন, ইউজার যখন ২-৩ মিনিটের কাজে ক্লিক করে তখন স্বয়ংক্রিয়ভাবে আপনার <strong>Adsterra / HilltopAds Direct Link</strong> ওপেন হয়। ইউজার ২ মিনিট সেখানে ব্রাউজ করে, যার ফলে প্রতি ১,০০০ ক্লিকে Adsterra থেকে সরাসরি আপনার অ্যাকাউন্টে $২-$৫ (২৪০-৬০০ টাকা) জমা হয়!
+                        </p>
+                        <p className="text-slate-300">
+                          ২. <strong>রেফারেল কমিশন (ঐচ্ছিক):</strong> আপনি চাইলে WorkupJob.com এ একটি ফ্রি অ্যাকাউন্ট খুলে আপনার নিজের রেফারেল লিংকটি নিচে দিতে পারেন। তাহলে ইউজারদের লাইফটাইম কাজের ১০%-১৫% কমিশন সরাসরি আপনার WorkupJob অ্যাকাউন্টেও জমা হবে।
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-emerald-200 mb-1">
+                          🔗 আপনার WorkupJob রেফারেল লিংক (ঐচ্ছিক - খালি রাখলে স্বয়ংক্রিয়ভাবে Adsterra ডিরেক্ট লিঙ্ক চলবে):
+                        </label>
+                        <input
+                          type="url"
+                          value={editSettings.adsConfig?.workupJobReferralLink ?? ''}
+                          onChange={(e) => setEditSettings({
+                            ...editSettings,
+                            adsConfig: { ...editSettings.adsConfig, workupJobReferralLink: e.target.value } as any
+                          })}
+                          placeholder="https://workupjob.com/?ref=YOUR_USER_ID"
+                          className="w-full p-2 bg-slate-950 border border-emerald-500/30 rounded-xl text-xs font-mono text-emerald-200 focus:outline-none focus:border-emerald-400"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1692,209 +1726,97 @@ export const AdminDashboard: React.FC = () => {
                   />
                 </label>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-300 mb-1">
-                    🎯 CPALead Offerwall / Direct Locker URL:
-                  </label>
-                  <input
-                    type="url"
-                    value={editSettings.offerwallsConfig?.cpaleadUrl ?? 'https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429'}
-                    onChange={(e) => setEditSettings({
-                      ...editSettings,
-                      offerwallsConfig: { 
-                        ...editSettings.offerwallsConfig, 
-                        cpaleadUrl: e.target.value,
-                        enabled: true
-                      } as any
-                    })}
-                    placeholder="https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429"
-                    className="w-full p-2 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 focus:outline-none focus:border-amber-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-300 mb-1">
-                    💎 Monlix App ID:
-                  </label>
-                  <input
-                    type="text"
-                    value={editSettings.offerwallsConfig?.monlixAppId ?? ''}
-                    onChange={(e) => setEditSettings({
-                      ...editSettings,
-                      offerwallsConfig: { 
-                        ...editSettings.offerwallsConfig, 
-                        monlixAppId: e.target.value,
-                        enabled: true
-                      } as any
-                    })}
-                    placeholder="Monlix App ID (যেমন: 12345)"
-                    className="w-full p-2 bg-slate-950 border border-amber-500/30 rounded-xl text-xs font-mono text-amber-200 focus:outline-none focus:border-amber-400"
-                  />
-                </div>
-
-
-
-                {/* 📊 CPX Research Official Surveys & Quizzes (User's Verified Account) */}
-                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2.5">
+                {/* 🚀 1. AdGem Official Integration (WatchEarnBD) */}
+                <div className="p-3 rounded-xl bg-blue-950/40 border border-blue-500/40 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-emerald-300 flex items-center gap-1.5">
-                      <span>📊</span>
-                      <span>২য় অফিশিয়াল পার্টনার: CPX Research (পেইড সার্ভে ও কুইজ)</span>
+                    <span className="text-xs font-black text-blue-300 flex items-center gap-1.5">
+                      <span>🚀</span>
+                      <span>AdGem গ্লোবাল অফারওয়াল (WatchEarnBD)</span>
                     </span>
-                    <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                      ✅ সক্রিয় ও লাইভ
-                    </span>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-emerald-200 mb-1">
-                      CPX Research App ID (publisher.cpx-research.com থেকে প্রাপ্ত):
+                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-blue-200 cursor-pointer">
+                      <span>চালু</span>
+                      <input
+                        type="checkbox"
+                        checked={editSettings.offerwallsConfig?.adgemEnabled ?? true}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            adgemEnabled: e.target.checked
+                          } as any
+                        })}
+                        className="rounded accent-blue-500 w-4 h-4"
+                      />
                     </label>
-                    <input
-                      type="text"
-                      value={editSettings.offerwallsConfig?.cpxAppId ?? '36966'}
-                      onChange={(e) => setEditSettings({
-                        ...editSettings,
-                        offerwallsConfig: {
-                          ...editSettings.offerwallsConfig,
-                          cpxAppId: e.target.value.trim()
-                        } as any
-                      })}
-                      placeholder="CPX App ID (যেমন: 36966)"
-                      className="w-full p-2 bg-slate-950 border border-emerald-500/30 rounded-xl text-xs font-mono text-emerald-200 focus:outline-none focus:border-emerald-400"
-                    />
-                    <span className="text-[9px] text-emerald-400/90 block mt-1">
-                      💡 আপনার CPX পাবলিশার ড্যাশবোর্ডের App ID এখানে বসালে প্রতি সার্ভে ও কুইজের ডলার সরাসরি আপনার অ্যাকাউন্টে জমা হবে। (ডিফল্ট: 36966)
-                    </span>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-900/90 border border-blue-500/20 text-[11px] text-slate-300 space-y-1">
+                    <p className="font-bold text-cyan-300">
+                      🔗 আপনার সার্ভার পোস্টব্যাক URL (AdGem ড্যাশবোর্ডে বসানোর লিংক):
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-[10px] font-mono text-cyan-200 bg-slate-950 p-1.5 rounded-lg border border-cyan-500/30 flex-1 select-all break-all">
+                        https://watch-and-earn-z5hx.onrender.com/api/postback/adgem?amount={'{amount}'}&payout={'{payout}'}&player_id={'{player_id}'}&transaction_id={'{transaction_id}'}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText('https://watch-and-earn-z5hx.onrender.com/api/postback/adgem?amount={amount}&payout={payout}&player_id={player_id}&transaction_id={transaction_id}');
+                          showToast('পোস্টব্যাক লিংক কপি হয়েছে! 📋', 'AdGem ড্যাশবোর্ডে পেস্ট করুন', 'success');
+                        }}
+                        className="px-2.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-[10px] rounded-lg shrink-0"
+                      >
+                        কপি করুন
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-300 mb-1">
+                        AdGem App ID (Create হওয়ার পর পাওয়া যাবে):
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.adgemAppId ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            adgemAppId: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="AdGem App ID"
+                        className="w-full p-2 bg-slate-950 border border-blue-500/30 rounded-xl text-xs font-mono text-blue-200 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-300 mb-1">
+                        AdGem Offerwall Link / iFrame URL (ঐচ্ছিক):
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.adgemWallUrl ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            adgemWallUrl: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="https://api.adgem.com/..."
+                        className="w-full p-2 bg-slate-950 border border-blue-500/30 rounded-xl text-xs font-mono text-blue-200 focus:outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* 🔒 ঐচ্ছিক অফারওয়াল (অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন) */}
-                <div className="pt-2 border-t border-slate-800 space-y-2">
+                {/* 🎯 2. Offerwall.me (User's Verified Account) */}
+                <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
-                      <span>🎮</span>
-                      <span>ঐচ্ছিক নেটওয়ার্ক: Torox (অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন)</span>
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={editSettings.offerwallsConfig?.toroxEnabled ?? false}
-                      onChange={(e) => setEditSettings({
-                        ...editSettings,
-                        offerwallsConfig: {
-                          ...editSettings.offerwallsConfig,
-                          toroxEnabled: e.target.checked
-                        } as any
-                      })}
-                      className="rounded accent-blue-500 w-4 h-4"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-medium text-slate-400 mb-1">
-                      Torox Pub ID (publishers.torox.io):
-                    </label>
-                    <input
-                      type="text"
-                      value={editSettings.offerwallsConfig?.toroxPubId ?? ''}
-                      onChange={(e) => setEditSettings({
-                        ...editSettings,
-                        offerwallsConfig: {
-                          ...editSettings.offerwallsConfig,
-                          toroxPubId: e.target.value
-                        } as any
-                      })}
-                      placeholder="অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন"
-                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-200 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* 📺 Lootably (ঐচ্ছিক) */}
-                <div className="pt-2 border-t border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
-                      <span>📺</span>
-                      <span>ঐচ্ছিক: Lootably (অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন)</span>
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={editSettings.offerwallsConfig?.lootablyEnabled ?? false}
-                      onChange={(e) => setEditSettings({
-                        ...editSettings,
-                        offerwallsConfig: {
-                          ...editSettings.offerwallsConfig,
-                          lootablyEnabled: e.target.checked
-                        } as any
-                      })}
-                      className="rounded accent-rose-500 w-4 h-4"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-medium text-slate-400 mb-1">
-                      Lootably Placement ID:
-                    </label>
-                    <input
-                      type="text"
-                      value={editSettings.offerwallsConfig?.lootablyPlacementId ?? ''}
-                      onChange={(e) => setEditSettings({
-                        ...editSettings,
-                        offerwallsConfig: {
-                          ...editSettings.offerwallsConfig,
-                          lootablyPlacementId: e.target.value
-                        } as any
-                      })}
-                      placeholder="অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন"
-                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-200 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* 💎 BitLabs Surveys (ঐচ্ছিক) */}
-                <div className="pt-2 border-t border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
-                      <span>💎</span>
-                      <span>ঐচ্ছিক: BitLabs (অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন)</span>
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={editSettings.offerwallsConfig?.bitlabsEnabled ?? false}
-                      onChange={(e) => setEditSettings({
-                        ...editSettings,
-                        offerwallsConfig: {
-                          ...editSettings.offerwallsConfig,
-                          bitlabsEnabled: e.target.checked
-                        } as any
-                      })}
-                      className="rounded accent-indigo-500 w-4 h-4"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-medium text-slate-400 mb-1">
-                      BitLabs App Token:
-                    </label>
-                    <input
-                      type="text"
-                      value={editSettings.offerwallsConfig?.bitlabsToken ?? ''}
-                      onChange={(e) => setEditSettings({
-                        ...editSettings,
-                        offerwallsConfig: {
-                          ...editSettings.offerwallsConfig,
-                          bitlabsToken: e.target.value
-                        } as any
-                      })}
-                      placeholder="অ্যাকাউন্ট না থাকলে ফাঁকা রাখুন"
-                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-200 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* 🎯 Offerwall.me / Torox (অফিসিয়াল পার্টনার) */}
-                <div className="pt-2 border-t border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
+                    <span className="text-xs font-black text-amber-300 flex items-center gap-1.5">
                       <span>🎯</span>
-                      <span>Offerwall.me পার্টনার (ভেরিফায়েড)</span>
+                      <span>Offerwall.me পার্টনার (ভেরিফায়েড অ্যাকাউন্ট)</span>
                     </span>
                     <input
                       type="checkbox"
@@ -1934,7 +1856,7 @@ export const AdminDashboard: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        value={editSettings.offerwallsConfig?.offerwallMeApiKey ?? ''}
+                        value={editSettings.offerwallsConfig?.offerwallMeApiKey ?? '6yHRmktW7Ouf75SHc826oSbiYGu06W'}
                         onChange={(e) => setEditSettings({
                           ...editSettings,
                           offerwallsConfig: {
@@ -1946,51 +1868,15 @@ export const AdminDashboard: React.FC = () => {
                         className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-amber-200 focus:outline-none"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
-                        Secret Key (Private):
-                      </label>
-                      <input
-                        type="password"
-                        value={editSettings.offerwallsConfig?.offerwallMeSecretKey ?? ''}
-                        onChange={(e) => setEditSettings({
-                          ...editSettings,
-                          offerwallsConfig: {
-                            ...editSettings.offerwallsConfig,
-                            offerwallMeSecretKey: e.target.value.trim()
-                          } as any
-                        })}
-                        placeholder="Offerwall.me Private Secret Key"
-                        className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-amber-200 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
-                        Offerwall Link / Web Link (Modules থেকে):
-                      </label>
-                      <input
-                        type="text"
-                        value={editSettings.offerwallsConfig?.offerwallMeUrl ?? ''}
-                        onChange={(e) => setEditSettings({
-                          ...editSettings,
-                          offerwallsConfig: {
-                            ...editSettings.offerwallsConfig,
-                            offerwallMeUrl: e.target.value.trim()
-                          } as any
-                        })}
-                        placeholder="https://..."
-                        className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-amber-200 focus:outline-none"
-                      />
-                    </div>
                   </div>
                 </div>
 
-                {/* 🎁 Lootly (অফিসিয়াল পার্টনার - offerwall.lootly.fun) */}
-                <div className="pt-2 border-t border-slate-800 space-y-2">
+                {/* 🎁 3. Lootly (User's Verified Account) */}
+                <div className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/40 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-purple-400 flex items-center gap-1.5">
+                    <span className="text-xs font-black text-purple-300 flex items-center gap-1.5">
                       <span>🎁</span>
-                      <span>Lootly Global Offerwall (অফিসিয়াল পার্টনার)</span>
+                      <span>Lootly Global Offerwall (ভেরিফায়েড অ্যাকাউন্ট)</span>
                     </span>
                     <input
                       type="checkbox"
@@ -2005,7 +1891,7 @@ export const AdminDashboard: React.FC = () => {
                       className="rounded accent-purple-500 w-4 h-4"
                     />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="block text-[10px] font-medium text-slate-400 mb-1">
                         App ID:
@@ -2042,104 +1928,131 @@ export const AdminDashboard: React.FC = () => {
                         className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-purple-200 focus:outline-none"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
-                        Secret Key:
-                      </label>
+                  </div>
+                </div>
+
+                {/* 📊 4. CPX Research Official Surveys (User's Verified Network) */}
+                <div className="p-3 rounded-xl bg-teal-950/40 border border-teal-500/40 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-teal-300 flex items-center gap-1.5">
+                      <span>📊</span>
+                      <span>CPX Research পেইড সার্ভে ও কুইজ হাব</span>
+                    </span>
+                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-teal-200 cursor-pointer">
+                      <span>চালু</span>
                       <input
-                        type="password"
-                        value={editSettings.offerwallsConfig?.lootlySecretKey ?? '9e50c6992d8772324fdd53a48529f2d3'}
+                        type="checkbox"
+                        checked={editSettings.offerwallsConfig?.cpxEnabled ?? true}
                         onChange={(e) => setEditSettings({
                           ...editSettings,
                           offerwallsConfig: {
                             ...editSettings.offerwallsConfig,
-                            lootlySecretKey: e.target.value.trim()
+                            cpxEnabled: e.target.checked
                           } as any
                         })}
-                        placeholder="Secret Key"
-                        className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-purple-200 focus:outline-none"
+                        className="rounded accent-teal-500 w-4 h-4"
                       />
+                    </label>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-900/90 border border-teal-500/20 text-[11px] text-slate-300 space-y-1">
+                    <p className="font-bold text-teal-300">
+                      🔗 আপনার CPX Research পোস্টব্যাক Webhook URL:
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-[10px] font-mono text-teal-200 bg-slate-950 p-1.5 rounded-lg border border-teal-500/30 flex-1 select-all break-all">
+                        https://watch-and-earn-z5hx.onrender.com/api/postback/cpx?status={'{status}'}&trans_id={'{trans_id}'}&user_id={'{user_id}'}&amount_local_currency={'{amount_local_currency}'}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText('https://watch-and-earn-z5hx.onrender.com/api/postback/cpx?status={status}&trans_id={trans_id}&user_id={user_id}&amount_local_currency={amount_local_currency}');
+                          showToast('পোস্টব্যাক লিংক কপি হয়েছে! 📋', 'CPX পাবলিশার ড্যাশবোর্ডে পেস্ট করুন', 'success');
+                        }}
+                        className="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-slate-950 font-bold text-[10px] rounded-lg shrink-0"
+                      >
+                        কপি করুন
+                      </button>
                     </div>
                   </div>
-                </div>
 
-                {/* 🚀 AdscendMedia Offerwall (adscendmedia.com) */}
-                <div className="pt-2 border-t border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-sky-400 flex items-center gap-1.5">
-                      <span>🚀</span>
-                      <span>AdscendMedia Offerwall (adscendmedia.com)</span>
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={editSettings.offerwallsConfig?.adscendEnabled ?? true}
-                      onChange={(e) => setEditSettings({
-                        ...editSettings,
-                        offerwallsConfig: {
-                          ...editSettings.offerwallsConfig,
-                          adscendEnabled: e.target.checked
-                        } as any
-                      })}
-                      className="rounded accent-sky-500 w-4 h-4"
-                    />
-                  </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-slate-400 mb-1">
-                      AdscendMedia Wall URL / Direct Link:
+                    <label className="block text-[10px] font-medium text-slate-300 mb-1">
+                      CPX App ID (publisher.cpx-research.com থেকে প্রাপ্ত):
                     </label>
                     <input
                       type="text"
-                      value={editSettings.offerwallsConfig?.adscendUrl ?? 'https://adscendmedia.com/wall'}
+                      value={editSettings.offerwallsConfig?.cpxAppId ?? '36966'}
                       onChange={(e) => setEditSettings({
                         ...editSettings,
                         offerwallsConfig: {
                           ...editSettings.offerwallsConfig,
-                          adscendUrl: e.target.value.trim()
+                          cpxAppId: e.target.value.trim()
                         } as any
                       })}
-                      placeholder="https://adscendmedia.com/wall?publisher_id=..."
-                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-sky-200 focus:outline-none"
+                      placeholder="36966"
+                      className="w-full p-2 bg-slate-950 border border-teal-500/30 rounded-xl text-xs font-mono text-teal-200 focus:outline-none"
                     />
                   </div>
                 </div>
 
-                {/* ⚡ Offerwall.com Network */}
-                <div className="pt-2 border-t border-slate-800 space-y-2">
+                {/* 💵 5. Freecash Global Mega Partner ($1 - $20+) */}
+                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1.5">
-                      <span>⚡</span>
-                      <span>Offerwall.com Network</span>
+                    <span className="text-xs font-black text-emerald-300 flex items-center gap-1.5">
+                      <span>💵</span>
+                      <span>Freecash গ্লোবাল অফিশিয়াল পার্টনার ($১ - $২০+)</span>
                     </span>
                     <input
                       type="checkbox"
-                      checked={editSettings.offerwallsConfig?.offerwallDotComEnabled ?? true}
+                      checked={editSettings.offerwallsConfig?.freecashEnabled ?? true}
                       onChange={(e) => setEditSettings({
                         ...editSettings,
                         offerwallsConfig: {
                           ...editSettings.offerwallsConfig,
-                          offerwallDotComEnabled: e.target.checked
+                          freecashEnabled: e.target.checked
                         } as any
                       })}
                       className="rounded accent-emerald-500 w-4 h-4"
                     />
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-medium text-slate-400 mb-1">
-                      Offerwall.com Direct Link / URL:
-                    </label>
-                    <input
-                      type="text"
-                      value={editSettings.offerwallsConfig?.offerwallDotComUrl ?? 'https://offerwall.com'}
-                      onChange={(e) => setEditSettings({
-                        ...editSettings,
-                        offerwallsConfig: {
-                          ...editSettings.offerwallsConfig,
-                          offerwallDotComUrl: e.target.value.trim()
-                        } as any
-                      })}
-                      placeholder="https://offerwall.com/..."
-                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-emerald-200 focus:outline-none"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                        Freecash Referral Link:
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.freecashUrl ?? 'https://freecash.com/r/39Z5IH'}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            freecashUrl: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="https://freecash.com/r/39Z5IH"
+                        className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-emerald-200 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                        Freecash Referral Code:
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.freecashReferralCode ?? '39Z5IH'}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            freecashReferralCode: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="39Z5IH"
+                        className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-emerald-200 focus:outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

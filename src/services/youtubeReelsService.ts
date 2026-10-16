@@ -15,7 +15,7 @@ export interface YouTubeReelItem {
 // Highly reliable, embed-permitted official YouTube video IDs across Comedy, Music, Animation, Sports & Trends
 const VERIFIED_EMBED_YOUTUBE_VIDEOS = [
   { id: 'aqz-KE-bpKQ', title: 'Big Buck Bunny (Animation HD Shorts)', channel: 'Blender Studio', cat: 'কার্টুন ও এনিমেশন', views: '15M' },
-  { id: '21X5lGlDOfg', title: 'NASA | Earth from Space 4K Live Stream Clips', channel: 'NASA Space HD', cat: 'বিজ্ঞান ও বিস্ময়', views: '8.4M' },
+  { id: 'M7lc1UVf-VE', title: 'সেরা ফানি মুহূর্ত ও রোমাঞ্চকর ক্লিপ 🎬', channel: 'Bangla Fun Media', cat: 'বিনোদন ও হাসির ভিডিও', views: '12M' },
   { id: 'kJQP7kiw5Fk', title: 'Luis Fonsi - Despacito (Official Music Video)', channel: 'Universal Music', cat: 'গান ও মিউজিক', views: '8.2B' },
   { id: 'fRh_vgS2dFE', title: 'Amazing Wildlife in 4K: Tiger & Animals HD', channel: 'Nature Explorer BD', cat: 'প্রাণী ও প্রকৃতি', views: '3.5M' },
   { id: 'OPf0YbXqDm0', title: 'Mark Ronson - Uptown Funk ft. Bruno Mars', channel: 'Sony Music Entertainment', cat: 'মিউজিক ভিডিও', views: '5.1B' },

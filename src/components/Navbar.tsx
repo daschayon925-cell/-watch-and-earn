@@ -1,7 +1,8 @@
 import React from 'react';
-import { Bell, Shield, Sparkles, Volume2, VolumeX, Flame } from 'lucide-react';
+import { Bell, Shield, Sparkles, Volume2, VolumeX, Flame, Download, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 export const Navbar: React.FC = () => {
   const { user } = useAuth();
@@ -14,18 +15,25 @@ export const Navbar: React.FC = () => {
     setIsNotificationDrawerOpen,
     isMuted,
     setIsMuted,
-    settings
+    settings,
+    floatingAdsEnabled,
+    setFloatingAdsEnabled,
+    showToast
   } = useApp();
+  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
 
   // If in full watch mode, render a streamlined floating top overlay
   const isWatchTab = activeTab === 'watch';
 
   return (
-    <header className={`sticky top-0 z-40 transition-all duration-300 ${
-      isWatchTab 
-        ? 'bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px]' 
-        : 'bg-[#05070B]/90 backdrop-blur-md border-b border-slate-800/80'
-    } px-4 py-3 max-w-md mx-auto w-full`}>
+    <header 
+      data-top-nav="true"
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        isWatchTab 
+          ? 'bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px]' 
+          : 'bg-[#05070B]/90 backdrop-blur-md border-b border-slate-800/80'
+      } px-4 py-3 max-w-md mx-auto w-full`}
+    >
       <div className="flex items-center justify-between">
         {/* Brand Logo & Tagline */}
         <div 
@@ -74,6 +82,33 @@ export const Navbar: React.FC = () => {
 
         {/* Right Action Icons & Coin Pill */}
         <div className="flex items-center gap-2">
+          {/* Quick Clean View / Floating Ad Toggle */}
+          <button
+            onClick={() => {
+              const nextState = !floatingAdsEnabled;
+              setFloatingAdsEnabled(nextState);
+              showToast(
+                nextState 
+                  ? (language === 'bn' ? '🪙 ফ্লোটিং অ্যাড সক্রিয় (+বোনাস কয়েন)' : '🪙 Floating ads active')
+                  : (language === 'bn' ? '✨ ক্লিন ভিউ সক্রিয়: বিজ্ঞাপন লুকানো হয়েছে' : '✨ Clean view: Ads hidden'),
+                '',
+                nextState ? 'coin' : 'info'
+              );
+            }}
+            className={`p-1.5 rounded-full border transition active:scale-95 ${
+              floatingAdsEnabled 
+                ? 'bg-slate-900/80 border-slate-800 text-amber-400 hover:text-amber-300' 
+                : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
+            }`}
+            title={
+              floatingAdsEnabled 
+                ? (language === 'bn' ? 'ক্লিন ভিউ (বিজ্ঞাপন লুকান)' : 'Clean View (Hide floating ads)') 
+                : (language === 'bn' ? 'বিজ্ঞাপন দেখান' : 'Show ads')
+            }
+          >
+            {floatingAdsEnabled ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+          </button>
+
           {/* Audio Mute Toggle */}
           <button
             onClick={() => setIsMuted(!isMuted)}
@@ -82,6 +117,18 @@ export const Navbar: React.FC = () => {
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
           </button>
+
+          {/* PWA Direct Install Button */}
+          {!isInstalled && (isInstallable || isIOS) && (
+            <button
+              onClick={install}
+              className="px-2 py-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-300 border border-emerald-500/40 rounded-lg flex items-center gap-1 text-[11px] font-bold transition active:scale-95"
+              title={language === 'bn' ? 'অ্যাপটি ইনস্টল করুন' : 'Install App'}
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{language === 'bn' ? 'অ্যাপ' : 'App'}</span>
+            </button>
+          )}
 
           {/* User Coin Balance Ticker */}
           {user && (
@@ -114,6 +161,20 @@ export const Navbar: React.FC = () => {
                 {unreadNotificationCount}
               </span>
             )}
+          </button>
+
+          {/* 👑 Admin Direct Portal Button for Website Owner */}
+          <button
+            onClick={() => setActiveTab('admin')}
+            className={`px-2 py-1 rounded-lg text-[10px] font-black transition flex items-center gap-1 active:scale-95 ${
+              activeTab === 'admin'
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                : 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40'
+            }`}
+            title="মালিক অ্যাডমিন প্যানেল (ইনকাম ও লিংক পরিচালনা)"
+          >
+            <span>👑</span>
+            <span>অ্যাডমিন</span>
           </button>
 
           {/* Language Toggle */}

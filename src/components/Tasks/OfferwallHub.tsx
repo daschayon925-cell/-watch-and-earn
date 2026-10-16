@@ -38,7 +38,7 @@ interface OfferwallProvider {
   descEn: string;
   avgReward: string;
   payoutRange: string;
-  partnerType: 'CPALead' | 'Monlix' | 'TimeWall' | 'AdGate' | 'SmartTask' | 'Torox' | 'CPX' | 'Lootably' | 'BitLabs' | 'AdsterraTask' | 'HilltopAdsTask' | 'OfferwallMe' | 'Lootly' | 'Adscend' | 'OfferwallDotCom';
+  partnerType: 'Freecash' | 'OfferwallMe' | 'Lootly' | 'AdGem' | 'CPX' | 'AdsterraTask' | 'HilltopAdsTask' | 'MonetagTask';
   status: 'active' | 'popular' | 'high_rate';
 }
 
@@ -70,56 +70,28 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
   const [activeWallName, setActiveWallName] = useState<string>('');
   const [verifyingTaskId, setVerifyingTaskId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedFreecashCode, setCopiedFreecashCode] = useState<boolean>(false);
 
+  // 🛡️ User's Verified Ad Networks & Direct Links
   const hilltopAdsDirectLink = settings?.adsConfig?.hilltopAdsDirectLink?.trim() || 'https://affectionatestorage.com/Ah6g5c';
   const adsterraDirectLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
+  const monetagDirectLink = settings?.adsConfig?.monetagDirectLink?.trim() || 'https://uplcm.com/4/11971342';
 
-  // Configured or fallback Offerwall URLs with automatic subid parameter
-  const cpaleadBaseUrl = settings?.offerwallsConfig?.cpaleadUrl?.trim() || 'https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429';
-  const monlixAppId = settings?.offerwallsConfig?.monlixAppId?.trim() || 'demo_monlix';
-  const timewallPlacementId = settings?.offerwallsConfig?.timewallPlacementId?.trim() || 'd7521f148f92a2d3';
-  const timewallBaseUrl = settings?.offerwallsConfig?.timewallUrl?.trim() || `https://timewall.io/offers/${timewallPlacementId}`;
-  const toroxPubId = settings?.offerwallsConfig?.toroxPubId?.trim() || '';
+  // 🎯 User's Verified Offerwall Accounts & Active Referral Codes
+  const freecashUrl = settings?.offerwallsConfig?.freecashUrl?.trim() || 'https://freecash.com/r/39Z5IH';
+  const freecashReferralCode = settings?.offerwallsConfig?.freecashReferralCode?.trim() || '39Z5IH';
   const cpxAppId = settings?.offerwallsConfig?.cpxAppId?.trim() || '36966';
-  const lootablyPlacementId = settings?.offerwallsConfig?.lootablyPlacementId?.trim() || '';
-  const bitlabsToken = settings?.offerwallsConfig?.bitlabsToken?.trim() || '';
-  const offerwallMeApiKey = settings?.offerwallsConfig?.offerwallMeApiKey?.trim() || '';
+  const offerwallMeApiKey = settings?.offerwallsConfig?.offerwallMeApiKey?.trim() || '6yHRmktW7Ouf75SHc826oSbiYGu06W';
   const offerwallMeUrl = settings?.offerwallsConfig?.offerwallMeUrl?.trim() || '';
   const offerwallMePlacementId = settings?.offerwallsConfig?.offerwallMePlacementId?.trim() || '6aca33472eaa6484016c37d7';
   const lootlyApiKey = settings?.offerwallsConfig?.lootlyApiKey?.trim() || 'pj9b1buxrh05dt8eito0x8jxei21c3';
-  const adscendUrl = settings?.offerwallsConfig?.adscendUrl?.trim() || 'https://adscendmedia.com/wall';
-  const offerwallDotComUrl = settings?.offerwallsConfig?.offerwallDotComUrl?.trim() || 'https://offerwall.com';
+  const lootlyAppId = settings?.offerwallsConfig?.lootlyAppId?.trim() || '16';
+  const adgemAppId = settings?.offerwallsConfig?.adgemAppId?.trim() || '';
+  const adgemWallUrl = settings?.offerwallsConfig?.adgemWallUrl?.trim() || '';
 
+  // 💎 শুধুমাত্র যেসকল প্ল্যাটফর্মে ইউজারের অ্যাকাউন্ট বা কোড যুক্ত রয়েছে
   const providers: OfferwallProvider[] = [
-    // 🚀 0. ADSCEND MEDIA OFFERWALL (adscendmedia.com)
-    {
-      id: 'adscend',
-      name: 'AdscendMedia Global Wall',
-      badge: 'অফিসিয়াল পার্টনার 🚀',
-      badgeColor: 'from-sky-500 to-blue-600',
-      icon: '🚀',
-      descBn: 'গেমিং অফার, মোবাইল অ্যাপ টেস্ট ও প্রিমিয়াম সার্ভে করে ইনস্ট্যান্ট কয়েন আয় করুন',
-      descEn: 'Mobile games, app trials and top rewarding surveys',
-      avgReward: '+১৫০ – +৪,০০০ 🪙',
-      payoutRange: '৳২.০০ – ৳৫০.০০+',
-      partnerType: 'Adscend',
-      status: 'active'
-    },
-    // ⚡ 0. OFFERWALL.COM NETWORK
-    {
-      id: 'offerwall_dot_com',
-      name: 'Offerwall.com Network',
-      badge: 'প্রিমিয়াম নেটওয়ার্ক ⚡',
-      badgeColor: 'from-emerald-500 to-teal-600',
-      icon: '⚡',
-      descBn: 'গ্লোবাল অফারওয়াল ও সার্ভে পূরণ করে সর্বোচ্চ কয়েন রিওয়ার্ড নিন',
-      descEn: 'Global offerwall and survey completion rewards',
-      avgReward: '+২০০ – +৫,০০০ 🪙',
-      payoutRange: '৳২.৫০ – ৳৭০.০০+',
-      partnerType: 'OfferwallDotCom',
-      status: 'active'
-    },
-    // 🎯 1. OFFICIAL OFFERWALL: Offerwall.me (User's Verified Account)
+    // 🎯 1. OFFICIAL OFFERWALL: Offerwall.me (User's Verified Account - 6aca33472eaa6484016c37d7)
     {
       id: 'offerwall_me',
       name: 'Offerwall.me স্পেশাল হাব',
@@ -133,7 +105,7 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       partnerType: 'OfferwallMe',
       status: 'active'
     },
-    // 🎁 2. OFFICIAL OFFERWALL: Lootly (User's Verified Account)
+    // 🎁 2. OFFICIAL OFFERWALL: Lootly (User's Verified Account - App #16)
     {
       id: 'lootly_hub',
       name: 'Lootly Global Offerwall',
@@ -147,21 +119,49 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       partnerType: 'Lootly',
       status: 'active'
     },
-    // 📊 2. CPX RESEARCH OFFICIAL OFFERWALL (User's Verified Account)
+    // 📊 3. CPX RESEARCH OFFICIAL SURVEY HUB (User's Verified App ID: 36966)
     {
-      id: 'cpx',
-      name: 'CPX Research Surveys & Quizzes',
+      id: 'cpx_hub',
+      name: 'CPX Research পেইড সার্ভে ও কুইজ',
       badge: 'ভেরিফায়েড সার্ভে 📊',
       badgeColor: 'from-emerald-500 to-teal-600',
       icon: '📊',
-      descBn: 'সহজ প্রশ্ন-উত্তর, কুইজ ও পেইড সার্ভে—ডিসকোয়ালিফাই হলেও নিশ্চিত বোনাস কয়েন পাবেন!',
+      descBn: 'সহজ প্রশ্ন-উত্তর, মতামত সার্ভে ও কুইজ পূরণ করে নিশ্চিত ডলার ও কয়েন ইনকাম (ডিসকোয়ালিফাই হলেও বোনাস কয়েন)',
       descEn: 'Top global surveys & quizzes with guaranteed consolation coin rewards',
       avgReward: '+১৫০ – +১,৫০০ 🪙',
-      payoutRange: '৳২.০০ – ৳২০.০০+',
+      payoutRange: '৳২.০০ – ৳২৫.০০+',
       partnerType: 'CPX',
       status: 'popular'
     },
-    // 💎 3. ADSTERRA HIGH-CPM SPONSOR HUB (User's Verified Account)
+    // 💵 4. FREECASH MEGA GLOBAL REWARD HUB (User's Verified Partner Code: 39Z5IH)
+    {
+      id: 'freecash_hub',
+      name: 'Freecash গ্লোবাল হাব ($1 - $20+)',
+      badge: 'বিশ্বসেরা ইনকাম 💎',
+      badgeColor: 'from-emerald-500 to-green-600',
+      icon: '💵',
+      descBn: 'গেমিং অফার, মোবাইল অ্যাপ ইনস্টল ও সার্ভে করে সর্বোচ্চ সরাসরি ডলার রিওয়ার্ড (রেফারেল কোড: 39Z5IH)',
+      descEn: 'Top global games, app trials & high-paying surveys ($1 - $20+ per offer)',
+      avgReward: '+১,০০০ – +২৫,০০০ 🪙',
+      payoutRange: '৳১০০ – ৳২,০০০+',
+      partnerType: 'Freecash',
+      status: 'high_rate'
+    },
+    // 🚀 5. ADGEM OFFERWALL (WatchEarnBD - iFrame & Postback Ready)
+    {
+      id: 'adgem_hub',
+      name: 'AdGem গ্লোবাল অফারওয়াল',
+      badge: 'কানেক্টেড পার্টনার 🚀',
+      badgeColor: 'from-blue-600 to-cyan-600',
+      icon: '🚀',
+      descBn: 'জনপ্রিয় গেম লেভেল পার, মোবাইল অ্যাপ টেস্ট ও আন্তর্জাতিক হাই-পেইং অফার (WatchEarnBD)',
+      descEn: 'Play top games, test apps & earn high coin payouts with server postback',
+      avgReward: '+৩০০ – +৬,০০০ 🪙',
+      payoutRange: '৳৫.০০ – ৳৮০.০০+',
+      partnerType: 'AdGem',
+      status: 'high_rate'
+    },
+    // 💎 5. ADSTERRA HIGH-CPM SPONSOR HUB (User's Verified Account)
     {
       id: 'adsterra_hub',
       name: 'Adsterra হাই-রেট স্পন্সর অফার',
@@ -175,7 +175,7 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       partnerType: 'AdsterraTask',
       status: 'high_rate'
     },
-    // 🎁 3. HILLTOPADS VIP SPONSOR REWARDS (User's Verified Account)
+    // 🎁 6. HILLTOPADS VIP SPONSOR REWARDS (User's Verified Account)
     {
       id: 'hilltop_hub',
       name: 'HilltopAds ভিআইপি স্পন্সর হাব',
@@ -189,46 +189,20 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       partnerType: 'HilltopAdsTask',
       status: 'popular'
     },
-    // 🔒 ONLY SHOWN IF USER ADDS REAL PUBLISHER ID/TOKEN IN SETTINGS
-    ...(bitlabsToken ? [{
-      id: 'bitlabs',
-      name: 'BitLabs Surveys & AI',
-      badge: 'টপ রেটেড পেইড সার্ভে 💎',
-      badgeColor: 'from-blue-600 to-indigo-600',
-      icon: '💎',
-      descBn: 'বিশ্বসেরা সার্ভে ও পোল—প্রতিটি সম্পন্ন হওয়া সার্ভেতে উচ্চ রেট ডলারে ইনকাম',
-      descEn: 'Global premium surveys & polls with highest completion rewards',
-      avgReward: '+৩০০ – +৩,০০০ 🪙',
-      payoutRange: '৳৫.০০ – ৳৫০.০০+',
-      partnerType: 'BitLabs' as const,
-      status: 'high_rate' as const
-    }] : []),
-    ...(toroxPubId ? [{
-      id: 'torox',
-      name: 'Torox (OfferToro)',
-      badge: 'মোবাইল গেম ও অ্যাপস 🎮',
-      badgeColor: 'from-blue-500 to-indigo-600',
-      icon: '🎮',
-      descBn: 'জনপ্রিয় গেম খেলে লেভেল পার ও অ্যান্ড্রয়েড অ্যাপ ডাউনলোড করে বেশি কয়েন',
-      descEn: 'Top mobile games and app trials with high coin rewards',
-      avgReward: '+২৫০ – +২,৫০০ 🪙',
-      payoutRange: '৳৪.০০ – ৳৪০.০০+',
-      partnerType: 'Torox' as const,
-      status: 'high_rate' as const
-    }] : []),
-    ...(lootablyPlacementId ? [{
-      id: 'lootably',
-      name: 'Lootably (Loot.tv)',
-      badge: 'ভিডিও ও রিওয়ার্ড 📺',
-      badgeColor: 'from-rose-500 to-pink-600',
-      icon: '📺',
-      descBn: 'ভিডিও দেখে কয়েন ও সহজে নতুন মোবাইল অ্যাপ ট্রায়াল টাস্ক',
-      descEn: 'Watch videos, try apps and complete quick tasks for fast coins',
-      avgReward: '+১২০ – +৮০০ 🪙',
-      payoutRange: '৳২.০০ – ৳১২.০০',
-      partnerType: 'Lootably' as const,
-      status: 'popular' as const
-    }] : [])
+    // ⚡ 7. MONETAG VIP SMARTLINK SPONSOR (User's Verified Account)
+    {
+      id: 'monetag_hub',
+      name: 'Monetag স্মার্টলিঙ্ক স্পন্সর',
+      badge: 'হাই CPM স্পন্সর ⚡',
+      badgeColor: 'from-purple-600 to-pink-600',
+      icon: '⚡',
+      descBn: 'স্মার্টলিঙ্ক স্পন্সর পেজ ভিউ করে ২০ সেকেন্ডে নিশ্চিত বোনাস কয়েন সংগ্রহ করুন',
+      descEn: 'View smartlink sponsor offer page and earn instant bonus coins',
+      avgReward: '+১১০ – +৫৫০ 🪙',
+      payoutRange: '৳১.৬৫ – ৳৮.০০',
+      partnerType: 'MonetagTask',
+      status: 'active'
+    }
   ];
 
   // 🇧🇩 বাংলাদেশ ও 🇺🇸 USA লাইভ CPALead ও HilltopAds ১০০% ফ্রি অফার লিস্ট (কোনো টাকা লাগবে না)
@@ -387,44 +361,28 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
     const userId = user?.uid || 'user_guest';
     let url = '';
 
-    if (provider.partnerType === 'AdsterraTask') {
+    if (provider.partnerType === 'Freecash') {
+      try {
+        window.open(freecashUrl, '_blank', 'noopener,noreferrer');
+        showToast(
+          'Freecash গ্লোবাল হাব ওপেন হয়েছে 💵',
+          `রেফারেল কোড ${freecashReferralCode} স্বয়ংক্রিয়ভাবে সক্রিয় থাকবে। ফ্রি কেস ও $২৫০ পর্যন্ত বোনাস নিন!`,
+          'success'
+        );
+      } catch {
+        setActiveOfferwallUrl(freecashUrl);
+        setActiveWallName(provider.name);
+      }
+      return;
+    } else if (provider.partnerType === 'AdsterraTask') {
       openAdWithStrictTimer(adsterraDirectLink, 'Adsterra স্পন্সর অফার', 100, 20);
       return;
     } else if (provider.partnerType === 'HilltopAdsTask') {
       openAdWithStrictTimer(hilltopAdsDirectLink, 'HilltopAds স্পন্সর হাব', 120, 20);
-    } else if (provider.partnerType === 'CPX') {
-      const appId = cpxAppId || '36966';
-      url = `https://offers.cpx-research.com/index.php?app_id=${encodeURIComponent(appId)}&ext_user_id=${encodeURIComponent(userId)}`;
-      try {
-        window.open(url, '_blank', 'noopener,noreferrer');
-        showToast(
-          'CPX Research সার্ভে হাব ওপেন হয়েছে 📊',
-          'সার্ভে বা কুইজ সফলভাবে সম্পন্ন হলে সরাসরি কয়েন জমা হবে।',
-          'info'
-        );
-      } catch {
-        setActiveOfferwallUrl(url);
-        setActiveWallName(provider.name);
-      }
       return;
-    } else if (provider.partnerType === 'Torox') {
-      url = toroxPubId 
-        ? `https://torox.io/offerwall/${toroxPubId}/${encodeURIComponent(userId)}` 
-        : (cpaleadBaseUrl.includes('?') 
-            ? `${cpaleadBaseUrl}&subid=${encodeURIComponent(userId)}` 
-            : `${cpaleadBaseUrl}?subid=${encodeURIComponent(userId)}`);
-    } else if (provider.partnerType === 'BitLabs') {
-      url = bitlabsToken 
-        ? `https://web.bitlabs.ai/?token=${bitlabsToken}&uid=${encodeURIComponent(userId)}` 
-        : (cpaleadBaseUrl.includes('?') 
-            ? `${cpaleadBaseUrl}&subid=${encodeURIComponent(userId)}` 
-            : `${cpaleadBaseUrl}?subid=${encodeURIComponent(userId)}`);
-    } else if (provider.partnerType === 'Lootably') {
-      url = lootablyPlacementId 
-        ? `https://wall.lootably.com/?placementID=${lootablyPlacementId}&sid=${encodeURIComponent(userId)}` 
-        : (cpaleadBaseUrl.includes('?') 
-            ? `${cpaleadBaseUrl}&subid=${encodeURIComponent(userId)}` 
-            : `${cpaleadBaseUrl}?subid=${encodeURIComponent(userId)}`);
+    } else if (provider.partnerType === 'MonetagTask') {
+      openAdWithStrictTimer(monetagDirectLink, 'Monetag স্মার্টলিঙ্ক স্পন্সর', 110, 20);
+      return;
     } else if (provider.partnerType === 'OfferwallMe') {
       const activeApiKey = offerwallMeApiKey || '6yHRmktW7Ouf75SHc826oSbiYGu06W';
       
@@ -464,20 +422,36 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
     } else if (provider.partnerType === 'Lootly') {
       const activeLootlyKey = lootlyApiKey || 'pj9b1buxrh05dt8eito0x8jxei21c3';
       url = `https://offerwall.lootly.fun/offerwall/${encodeURIComponent(activeLootlyKey)}/${encodeURIComponent(userId)}`;
-    } else if (provider.partnerType === 'Adscend') {
-      const baseAdscend = adscendUrl || 'https://adscendmedia.com/wall';
-      url = baseAdscend.includes('?')
-        ? `${baseAdscend}&subId=${encodeURIComponent(userId)}&user_id=${encodeURIComponent(userId)}`
-        : `${baseAdscend}?subId=${encodeURIComponent(userId)}&user_id=${encodeURIComponent(userId)}`;
-    } else if (provider.partnerType === 'OfferwallDotCom') {
-      const baseOfferwall = offerwallDotComUrl || 'https://offerwall.com';
-      url = baseOfferwall.includes('?')
-        ? `${baseOfferwall}&subId=${encodeURIComponent(userId)}&user_id=${encodeURIComponent(userId)}`
-        : `${baseOfferwall}?subId=${encodeURIComponent(userId)}&user_id=${encodeURIComponent(userId)}`;
-    } else {
-      url = timewallBaseUrl.includes('?') 
-        ? `${timewallBaseUrl}&userId=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}` 
-        : `${timewallBaseUrl}?userId=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}`;
+    } else if (provider.partnerType === 'CPX') {
+      const appId = cpxAppId || '36966';
+      url = `https://offers.cpx-research.com/index.php?app_id=${encodeURIComponent(appId)}&ext_user_id=${encodeURIComponent(userId)}`;
+      try {
+        window.open(url, '_blank', 'noopener,noreferrer');
+        showToast(
+          'CPX Research সার্ভে হাব ওপেন হয়েছে 📊',
+          'সার্ভে বা কুইজ সফলভাবে সম্পন্ন হলে সরাসরি আপনার একাউন্টে কয়েন জমা হবে।',
+          'info'
+        );
+      } catch {
+        setActiveOfferwallUrl(url);
+        setActiveWallName(provider.name);
+      }
+      return;
+    } else if (provider.partnerType === 'AdGem') {
+      if (adgemWallUrl) {
+        url = adgemWallUrl.includes('?') 
+          ? `${adgemWallUrl}&player_id=${encodeURIComponent(userId)}&playerid=${encodeURIComponent(userId)}` 
+          : `${adgemWallUrl}?player_id=${encodeURIComponent(userId)}&playerid=${encodeURIComponent(userId)}`;
+      } else if (adgemAppId) {
+        url = `https://api.adgem.com/v1/wall?appid=${encodeURIComponent(adgemAppId)}&playerid=${encodeURIComponent(userId)}`;
+      } else {
+        showToast(
+          'AdGem অফারওয়াল সংযুক্ত হচ্ছে! 🚀',
+          'AdGem অ্যাকাউন্ট তৈরি সম্পন্ন হচ্ছে। ড্যাশবোর্ড থেকে App ID পাওয়ার পর এটি সরাসরি চালু হয়ে যাবে।',
+          'info'
+        );
+        return;
+      }
     }
 
     try {
@@ -525,21 +499,21 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
 
   return (
     <div className="space-y-5 animate-fadeIn">
-      {/* 🌟 Header Banner: CPA Income Multiplier */}
+      {/* 🌟 Header Banner: Verified Partner Offerwalls & Tasks */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-600/95 via-orange-600/90 to-rose-700/95 p-5 sm:p-6 text-white shadow-2xl border border-amber-400/30">
         <div className="absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 rounded-full bg-white/10 blur-2xl pointer-events-none" />
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <span className="px-2.5 py-0.5 rounded-full bg-black/40 backdrop-blur-md text-[10px] font-black text-amber-200 border border-amber-300/30 uppercase tracking-wider flex items-center gap-1">
               <Flame className="w-3 h-3 text-amber-300 fill-amber-300" />
-              CPALead লাইভ অফার হাব (Pub ID: 3364429)
+              ভেরিফায়েড পার্টনার অফারওয়াল হাব 💎
             </span>
           </div>
           <h2 className="text-lg sm:text-xl font-black tracking-tight text-white mb-1.5 flex items-center gap-2">
-            <span>🎯 বাংলাদেশ ও USA স্পেশাল অফার জোন</span>
+            <span>🎯 ভেরিফায়েড অফার ও স্পন্সর আর্নিং জোন</span>
           </h2>
           <p className="text-xs sm:text-sm text-amber-100/90 leading-relaxed max-w-lg">
-            পছন্দের অ্যাপ ডাউনলোড, সার্ভে বা কুইজ পূরণ করে প্রতি টাস্কে <span className="font-black text-amber-200">১২০ থেকে ৯০০ কয়েন</span> ইনস্ট্যান্ট আয় করুন!
+            পছন্দের অ্যাপ ডাউনলোড, ফ্রি সাইট ভিউ বা গেম খেলে প্রতি টাস্কে <span className="font-black text-amber-200">১২০ থেকে ৯০০ কয়েন</span> ইনস্ট্যান্ট আয় করুন!
           </p>
 
           <div className="mt-4 flex flex-wrap items-center gap-2.5">
@@ -596,6 +570,105 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
           </span>
         </button>
       )}
+
+      {/* 💵 FREECASH GLOBAL MEGA TASK & EARNING ZONE ($1 - $20+) */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-[#062016] to-slate-950 border-2 border-emerald-500/50 p-4 sm:p-5 shadow-2xl text-white">
+        <div className="absolute top-0 right-0 -mr-10 -mt-10 w-44 h-44 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10 space-y-3.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="p-2 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xl shadow-inner">
+                💵
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-black text-white">
+                    Freecash গ্লোবাল মেগা অফার জোন
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow">
+                    $১ – $২০+ প্রতি কাজ
+                  </span>
+                </div>
+                <p className="text-[11px] text-emerald-300 font-medium">
+                  বিশ্বের #১ গেমিং ও হাই-পেইং মাইক্রোজব প্ল্যাটফর্ম (Instant Cashout)
+                </p>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-400" />
+              <span>ফ্রি সাইনআপ কেস বোনাস ($২৫০ পর্যন্ত)</span>
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-300 leading-relaxed">
+            মোবাইল গেম খেলে লেভেল পার করা, বিভিন্ন প্রিমিয়াম অ্যাপ টেস্ট এবং আন্তর্জাতিক সার্ভে পূরণ করে সরাসরি <strong className="text-emerald-400">১ ডলার থেকে ২০ ডলার (১০০৳ থেকে ২০০০৳+)</strong> আয় করতে পারবেন।
+          </p>
+
+          {/* Referral Code & Action Buttons */}
+          <div className="p-3 rounded-2xl bg-slate-900/90 border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-[11px] font-bold text-slate-400">অফিশিয়াল রেফারেল কোড:</span>
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-emerald-500/50 font-mono font-black text-sm text-emerald-400">
+                <span>{freecashReferralCode}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(freecashReferralCode);
+                    setCopiedFreecashCode(true);
+                    showToast('কোড কপি হয়েছে ✓', `Freecash রেফারেল কোড: ${freecashReferralCode}`, 'success');
+                    setTimeout(() => setCopiedFreecashCode(false), 2500);
+                  }}
+                  className="p-1 rounded-lg hover:bg-emerald-500/20 text-emerald-300 transition"
+                  title="Copy Referral Code"
+                >
+                  {copiedFreecashCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  soundService.playSuccessFanfare();
+                  try {
+                    window.open(freecashUrl, '_blank', 'noopener,noreferrer');
+                    showToast(
+                      'Freecash ওপেন হয়েছে 🚀',
+                      `রেফারেল কোড ${freecashReferralCode} দিয়ে একাউন্ট খুলে কাজ শুরু করুন!`,
+                      'success'
+                    );
+                  } catch {
+                    setActiveOfferwallUrl(freecashUrl);
+                    setActiveWallName('Freecash.com');
+                  }
+                }}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition cursor-pointer"
+              >
+                <span>ফ্রি ক্যাশে কাজ শুরু করুন</span>
+                <ExternalLink className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+            <div className="p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/20">
+              <span className="block text-xs font-black text-emerald-300">🎮 গেম টাস্ক</span>
+              <span className="text-[10px] text-slate-400">$১ - $১৫ / গেম</span>
+            </div>
+            <div className="p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/20">
+              <span className="block text-xs font-black text-emerald-300">📋 সার্ভে অফার</span>
+              <span className="text-[10px] text-slate-400">$০.৫০ - $৩ / সার্ভে</span>
+            </div>
+            <div className="p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/20">
+              <span className="block text-xs font-black text-emerald-300">⚡ ইনস্ট্যান্ট পে</span>
+              <span className="text-[10px] text-slate-400">ক্রিপ্টো / বিকাশ / পেপ্যাল</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* 🚀 Top 3 Featured Offerwall Networks */}
       <div className="space-y-3">

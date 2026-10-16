@@ -193,14 +193,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </nav>
 
           {/* Action CTAs */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <button
               onClick={handleEnterAuditorPreview}
               disabled={guestLoading}
-              className="hidden md:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-xs font-bold text-cyan-300 border border-cyan-500/40 transition shadow-sm hover:border-cyan-400 cursor-pointer"
+              className="flex items-center gap-1 px-2.5 sm:px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-xs font-bold text-cyan-300 border border-cyan-500/40 transition shadow-sm hover:border-cyan-400 cursor-pointer"
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>{guestLoading ? 'লোডিং...' : 'অডিটর ডেমো'}</span>
+              <span>{guestLoading ? '...' : 'সরাসরি প্রবেশ'}</span>
             </button>
 
             <button
@@ -336,7 +336,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 className="w-full sm:w-auto px-6 py-3.5 bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 hover:text-white font-bold text-sm rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
               >
                 <Eye className="w-4 h-4 text-cyan-400" />
-                <span>{guestLoading ? 'লোডিং...' : 'গেস্ট / অডিটর ডেমো 👁️'}</span>
+                <span>{guestLoading ? 'লোডিং...' : 'সরাসরি অ্যাপে প্রবেশ ও ভিডিও দেখুন 🚀'}</span>
               </button>
             </div>
 

@@ -42,21 +42,21 @@ export const LivePayoutToast: React.FC = () => {
       setCurrentPayout(selected);
       setVisible(true);
 
-      // Hide toast after 4.5 seconds
+      // Hide toast after 3.5 seconds
       setTimeout(() => {
         setVisible(false);
-      }, 4500);
+      }, 3500);
     };
 
-    // First trigger after 4 seconds of entering the app
+    // First trigger after 6 seconds of entering the app
     const initialTimer = setTimeout(() => {
       showNextProof();
-    }, 3500);
+    }, 6000);
 
-    // Then trigger every 14 seconds
+    // Then trigger gently every 28 seconds (less aggressive)
     const loopInterval = setInterval(() => {
       showNextProof();
-    }, 14000);
+    }, 28000);
 
     return () => {
       clearTimeout(initialTimer);
@@ -67,8 +67,8 @@ export const LivePayoutToast: React.FC = () => {
   if (!visible || !currentPayout) return null;
 
   return (
-    <div className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-5 sm:max-w-xs z-40 pointer-events-none animate-in slide-in-from-bottom-5 duration-300">
-      <div className="pointer-events-auto flex items-center justify-between gap-2.5 p-2.5 rounded-2xl bg-gradient-to-r from-[#0C1524]/95 via-[#0D1C2A]/95 to-[#0A1715]/95 border border-emerald-500/40 shadow-2xl backdrop-blur-md">
+    <div className="fixed top-16 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-xs z-40 pointer-events-none animate-in slide-in-from-top-3 duration-300">
+      <div className="pointer-events-auto flex items-center justify-between gap-2.5 p-2 rounded-xl bg-gradient-to-r from-[#0C1524]/98 via-[#0D1C2A]/98 to-[#0A1715]/98 border border-emerald-500/40 shadow-2xl backdrop-blur-md">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="relative shrink-0">
             <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">

@@ -821,9 +821,9 @@ export const WatchScreen: React.FC = () => {
             </div>
           )}
 
-          {/* Bottom Info & Instant Ad Button */}
+          {/* Bottom Info & Instant Ad Button (Raised to bottom-20 so it's fully visible above BottomNav) */}
           {!isVideoLocked && (
-            <div className="absolute bottom-2 left-2 right-2 z-20 space-y-1.5">
+            <div className="absolute bottom-20 left-2 right-2 z-20 space-y-1.5 pb-1">
               <div className="p-2.5 rounded-2xl bg-gradient-to-t from-black/95 via-black/80 to-transparent">
                 <span className="px-2 py-0.5 rounded-md bg-red-600/60 text-white text-[9px] font-bold inline-block mb-1">
                   {currentReel.category} • {currentReel.views} Views

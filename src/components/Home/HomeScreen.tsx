@@ -417,21 +417,25 @@ export const HomeScreen: React.FC = () => {
           </div>
 
           {/* Quick Shortcuts to Spin, Leaderboard, Games & Tasks */}
+          {/* Quick Shortcuts to Spin, BD Microjobs, Leaderboard, Games & Tasks */}
           <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t border-slate-800/80">
+            <button
+              onClick={() => {
+                setSelectedTaskSubTab('bd_microtasks');
+                setActiveTab('tasks');
+              }}
+              className="p-2 rounded-2xl bg-gradient-to-b from-emerald-500/20 to-teal-700/10 border border-emerald-500/40 hover:border-emerald-300 text-center transition flex flex-col items-center justify-center cursor-pointer group shadow-sm"
+            >
+              <span className="text-xl group-hover:scale-110 transition">🇧🇩</span>
+              <span className="text-[10px] font-black text-emerald-300 block mt-0.5">২-৩ মিনিটের কাজ</span>
+            </button>
+
             <button
               onClick={() => setShowSpinModal(true)}
               className="p-2 rounded-2xl bg-gradient-to-b from-amber-500/20 to-yellow-600/10 border border-amber-500/40 hover:border-amber-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
             >
               <span className="text-xl group-hover:scale-110 transition">🎡</span>
               <span className="text-[10px] font-black text-amber-300 block mt-0.5">স্পিন হুইল</span>
-            </button>
-
-            <button
-              onClick={() => setShowLeaderboardModal(true)}
-              className="p-2 rounded-2xl bg-gradient-to-b from-yellow-500/20 to-amber-700/10 border border-yellow-500/40 hover:border-yellow-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
-            >
-              <span className="text-xl group-hover:scale-110 transition">🏆</span>
-              <span className="text-[10px] font-black text-yellow-300 block mt-0.5">লিডারবোর্ড</span>
             </button>
 
             <button
@@ -443,7 +447,10 @@ export const HomeScreen: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setActiveTab('tasks')}
+              onClick={() => {
+                setSelectedTaskSubTab('daily_tasks');
+                setActiveTab('tasks');
+              }}
               className="p-2 rounded-2xl bg-gradient-to-b from-purple-500/20 to-fuchsia-700/10 border border-purple-500/40 hover:border-purple-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
             >
               <span className="text-xl group-hover:scale-110 transition">🧠</span>
@@ -467,6 +474,58 @@ export const HomeScreen: React.FC = () => {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* 🇧🇩 ২ থেকে ৩ মিনিটের সহজ কাজ ও বাংলাদেশি মাইক্রোজব কার্ড (User Requested Feature) */}
+      <div 
+        onClick={() => {
+          setSelectedTaskSubTab('bd_microtasks');
+          setActiveTab('tasks');
+        }}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#061E14] via-[#092B1D] to-[#04140D] border-2 border-emerald-500/80 p-4 sm:p-5 shadow-2xl shadow-emerald-950/50 space-y-3 cursor-pointer hover:border-emerald-400 transition group active:scale-98"
+      >
+        <div className="absolute -top-10 -right-10 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="flex items-center justify-between">
+          <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/50 text-[10px] font-black uppercase tracking-wider text-emerald-300 flex items-center gap-1.5 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span>🇧🇩 বাংলাদেশি ২-৩ মিনিটের সহজ কাজ • ১০০% ফ্রি</span>
+          </span>
+          <span className="text-[10px] font-black text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/30">
+            ইনস্ট্যান্ট কয়েন
+          </span>
+        </div>
+
+        <div>
+          <h3 className="text-sm sm:text-base font-black text-white leading-snug flex items-center gap-1.5">
+            <span>⏱️ WorkupJob, ২ মিনিট ভিডিও ও কুইক সার্ভে করে ইনকাম!</span>
+          </h3>
+          <p className="text-xs text-emerald-100/90 mt-1 leading-relaxed">
+            বেশি সময় লাগবে না! মাত্র ২ থেকে ৩ মিনিট সহজ কাজ করে <span className="text-amber-300 font-bold">+৪০ হতে +৮০ কয়েন (৳১ - ৳৫)</span> সরাসরি ওয়ালেটে তুলুন।
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+          <div className="p-2 rounded-xl bg-black/40 border border-emerald-500/30">
+            <span className="text-sm">💼</span>
+            <span className="text-[10px] text-emerald-300 font-bold block mt-0.5">মাইক্রোজব</span>
+          </div>
+          <div className="p-2 rounded-xl bg-black/40 border border-emerald-500/30">
+            <span className="text-sm">🎬</span>
+            <span className="text-[10px] text-emerald-300 font-bold block mt-0.5">২ মিনিট ভিডিও</span>
+          </div>
+          <div className="p-2 rounded-xl bg-black/40 border border-emerald-500/30">
+            <span className="text-sm">📋</span>
+            <span className="text-[10px] text-emerald-300 font-bold block mt-0.5">শর্ট সার্ভে</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-1.5 group-hover:brightness-110 transition cursor-pointer"
+        >
+          <span>২-৩ মিনিটের কাজ শুরু করুন ➔</span>
+        </button>
       </div>
 
       {/* 🔥 🚀 বেশি টাকা ইনকাম করার জন্য স্পেশাল অফারওয়াল হাব কার্ড (User Requested Feature) */}

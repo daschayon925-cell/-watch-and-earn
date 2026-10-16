@@ -448,9 +448,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (savedUid) {
       loginDemo(savedUid);
     } else {
-      // Require explicit registration/login for Bangladeshi users
-      setLoading(false);
-      setUser(null);
+      // 🚀 Auto-initialize guest user session so users & owner immediately see the full dashboard, videos, and wallet
+      loginDemo();
     }
 
     // 🔄 Dynamic User Profile Polling every 12 seconds to reflect realtime earnings without overloading network

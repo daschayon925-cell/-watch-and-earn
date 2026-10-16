@@ -45,3 +45,34 @@ body.rewarded-ad-active [data-adsterra] {
   pointer-events: none !important;
   visibility: hidden !important;
 }
+
+/* 🛡️ Maximum priority for Bottom Navigation Bar & Top Header so buttons are ALWAYS visible and interactive */
+#bottom-nav-bar,
+nav[data-bottom-nav="true"],
+header[data-top-nav="true"] {
+  z-index: 50 !important;
+  pointer-events: auto !important;
+}
+
+/* 🛡️ Smart non-obstructive styling for external ad overlays (Adsterra Social Bar & Alerts) */
+div[id^="pl316"],
+div[class^="pl316"],
+div[id*="adsterra"]:not(#root *),
+div[class*="adsterra"]:not(#root *),
+div[data-scaled-social-bar="true"] {
+  max-width: 95vw !important;
+  z-index: 35 !important;
+}
+
+/* 🛡️ Instant Clean View: When user toggles floating ads off or needs clear view */
+body.floating-ads-hidden div[data-scaled-social-bar="true"],
+body.floating-ads-hidden body > div[style*="fixed"]:not(#root):not(#root *):not(#bottom-nav-bar),
+body.floating-ads-hidden body > iframe[style*="fixed"]:not(#root):not(#root *),
+body.floating-ads-hidden div[id^="pl316"],
+body.floating-ads-hidden div[class^="pl316"],
+body.floating-ads-hidden div[id*="adsterra"]:not(#root *),
+body.floating-ads-hidden div[class*="adsterra"]:not(#root *) {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}

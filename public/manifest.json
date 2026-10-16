@@ -1,22 +1,33 @@
 {
-  "short_name": "Watch&Earn BD",
-  "name": "WATCH & EARN BD - Watch Videos, Earn Rewards",
+  "id": "/",
+  "name": "WATCH & EARN BD",
+  "short_name": "WatchEarn BD",
+  "description": "বাংলাদেশের প্রিমিয়াম শর্ট ভিডিও ওয়াচ ও রিওয়ার্ড প্ল্যাটফর্ম। ভিডিও দেখুন, কয়েন জিতুন ও বিকাশ-নগদে ক্যাশআউট করুন।",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#05070B",
+  "background_color": "#05070B",
+  "categories": ["entertainment", "finance", "lifestyle"],
   "icons": [
     {
       "src": "/icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "sizes": "192x192"
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "sizes": "512x512"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ],
-  "start_url": "/",
-  "background_color": "#05070B",
-  "theme_color": "#22C55E",
-  "display": "standalone",
-  "orientation": "portrait",
-  "description": "Watch entertaining short videos, earn reward coins, and withdraw via bKash & Nagad in Bangladesh."
+  ]
 }

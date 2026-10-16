@@ -36,8 +36,10 @@ interface AppContextType {
   setTargetVideoId: (id: string | null) => void;
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
-  selectedTaskSubTab: 'micro_tasks' | 'daily_tasks' | 'offerwall';
-  setSelectedTaskSubTab: (tab: 'micro_tasks' | 'daily_tasks' | 'offerwall') => void;
+  selectedTaskSubTab: 'bd_microtasks' | 'micro_tasks' | 'daily_tasks' | 'offerwall';
+  setSelectedTaskSubTab: (tab: 'bd_microtasks' | 'micro_tasks' | 'daily_tasks' | 'offerwall') => void;
+  floatingAdsEnabled: boolean;
+  setFloatingAdsEnabled: (enabled: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -52,7 +54,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [targetVideoId, setTargetVideoId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedTaskSubTab, setSelectedTaskSubTab] = useState<'micro_tasks' | 'daily_tasks' | 'offerwall'>('micro_tasks');
+  const [selectedTaskSubTab, setSelectedTaskSubTab] = useState<'bd_microtasks' | 'micro_tasks' | 'daily_tasks' | 'offerwall'>('bd_microtasks');
+  const [floatingAdsEnabled, setFloatingAdsEnabledState] = useState<boolean>(() => {
+    return localStorage.getItem('we_floating_ads_enabled') !== 'false';
+  });
+
+  const setFloatingAdsEnabled = (enabled: boolean) => {
+    setFloatingAdsEnabledState(enabled);
+    localStorage.setItem('we_floating_ads_enabled', enabled ? 'true' : 'false');
+    if (enabled) {
+      document.body.classList.remove('floating-ads-hidden');
+    } else {
+      document.body.classList.add('floating-ads-hidden');
+    }
+  };
+
+  useEffect(() => {
+    if (!floatingAdsEnabled) {
+      document.body.classList.add('floating-ads-hidden');
+    } else {
+      document.body.classList.remove('floating-ads-hidden');
+    }
+  }, [floatingAdsEnabled]);
 
   const setIsMuted = (muted: boolean) => {
     setIsMutedState(muted);
@@ -177,7 +200,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         selectedCategory,
         setSelectedCategory,
         selectedTaskSubTab,
-        setSelectedTaskSubTab
+        setSelectedTaskSubTab,
+        floatingAdsEnabled,
+        setFloatingAdsEnabled
       }}
     >
       {children}

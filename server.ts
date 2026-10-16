@@ -183,6 +183,25 @@ function loadDbFromDisk() {
         db.settings.offerwallsConfig.lootlyApiKey = db.settings.offerwallsConfig.lootlyApiKey || 'pj9b1buxrh05dt8eito0x8jxei21c3';
         db.settings.offerwallsConfig.lootlySecretKey = db.settings.offerwallsConfig.lootlySecretKey || '9e50c6992d8772324fdd53a48529f2d3';
         db.settings.offerwallsConfig.lootlyAppId = db.settings.offerwallsConfig.lootlyAppId || '16';
+        db.settings.offerwallsConfig.freecashEnabled = db.settings.offerwallsConfig.freecashEnabled !== false;
+        db.settings.offerwallsConfig.freecashUrl = db.settings.offerwallsConfig.freecashUrl || 'https://freecash.com/r/39Z5IH';
+        db.settings.offerwallsConfig.freecashReferralCode = db.settings.offerwallsConfig.freecashReferralCode || '39Z5IH';
+        db.settings.offerwallsConfig.adgemEnabled = true;
+        db.settings.offerwallsConfig.adgemAppId = db.settings.offerwallsConfig.adgemAppId || '';
+        db.settings.offerwallsConfig.adgemWallUrl = db.settings.offerwallsConfig.adgemWallUrl || '';
+        db.settings.offerwallsConfig.cpxEnabled = true;
+        db.settings.offerwallsConfig.cpxAppId = db.settings.offerwallsConfig.cpxAppId || '36966';
+        // Disable platforms where the user has no accounts
+        db.settings.offerwallsConfig.adscendEnabled = false;
+        db.settings.offerwallsConfig.offerwallDotComEnabled = false;
+        db.settings.offerwallsConfig.cpagripEnabled = false;
+        db.settings.offerwallsConfig.wannadsEnabled = false;
+        db.settings.offerwallsConfig.cpaleadEnabled = false;
+        db.settings.offerwallsConfig.monlixEnabled = false;
+        db.settings.offerwallsConfig.timewallEnabled = false;
+        db.settings.offerwallsConfig.toroxEnabled = false;
+        db.settings.offerwallsConfig.lootablyEnabled = false;
+        db.settings.offerwallsConfig.bitlabsEnabled = false;
         db.users = loaded.users || db.users;
         db.videos = loaded.videos || db.videos;
         db.transactions = loaded.transactions || db.transactions;
@@ -1889,23 +1908,32 @@ app.post('/api/reward/task-reward', (req, res) => {
   });
 });
 
-// 6c-2. Universal CPA Offerwall Postback Webhook (CPALead, Monlix, TimeWall, AdGate Media, Torox, CPX, Lootably)
-app.all(['/api/postback/offerwall', '/api/postback/cpalead', '/api/postback/monlix', '/api/postback/timewall', '/api/postback/torox', '/api/postback/cpx', '/api/postback/lootably'], (req, res) => {
+// 6c-2. Universal & Freecash CPA Offerwall Postback Webhook (Freecash, CPALead, Monlix, TimeWall, AdGate Media, Torox, CPX, Lootably)
+app.all(['/api/postback/freecash', '/api/postback/offerwall', '/api/postback/cpalead', '/api/postback/monlix', '/api/postback/timewall', '/api/postback/torox', '/api/postback/cpx', '/api/postback/lootably'], (req, res) => {
   const params = { ...req.query, ...req.body };
   const subid = (params.subid || params.user_id || params.ext_user_id || params.userId || params.uid || params.sub_id || '') as string;
-  const payout = parseFloat((params.payout || params.amount || params.payout_usd || params.amount_usd || '0') as string);
+  const payout = parseFloat((params.payout || params.amount || params.payout_usd || params.amount_usd || params.reward || '0') as string);
   const points = parseInt((params.points || params.coins || params.amount_local || '0') as string, 10) || Math.round((payout || 0.05) * 6667 * 0.4);
+  const transactionId = (params.transaction_id || params.trx_id || params.id || ('trx_fc_' + Date.now())) as string;
+
+  console.log(`[POSTBACK RECEIVED] URL: ${req.path}, subid: ${subid}, payout: ${payout}, points: ${points}, tx: ${transactionId}`);
 
   if (!subid) {
     // Return 200 OK for testing pings without subid
-    return res.status(200).send('1');
+    return res.status(200).send('SUCCESS');
   }
 
   const user = db.users.find(u => u.uid === subid || u.email === subid);
   if (!user) {
-    // If it's a test ping or user not found, acknowledge 200 OK so CPX validation succeeds
-    console.log(`[Postback] Ping received for subid/user_id: ${subid}. Acknowledging 200 OK.`);
-    return res.status(200).send('1');
+    console.log(`[Postback] User not found for subid/user_id: ${subid}. Acknowledging 200 OK.`);
+    return res.status(200).send('SUCCESS');
+  }
+
+  // Prevent duplicate transaction processing if transactionId already exists
+  const existingTrx = db.transactions.find(t => t.transactionId === transactionId || t.externalTransactionId === transactionId);
+  if (existingTrx) {
+    console.log(`[Postback] Duplicate transaction ID ${transactionId} received. Ignoring.`);
+    return res.status(200).send('SUCCESS');
   }
 
   const earned = Math.max(50, points);
@@ -1914,21 +1942,36 @@ app.all(['/api/postback/offerwall', '/api/postback/cpalead', '/api/postback/monl
   user.todayCoins += earned;
   user.updatedAt = new Date().toISOString();
 
+  const sourceName = req.path.includes('freecash') ? 'Freecash অফার ও সার্ভে' : 'CPA অফারওয়াল রিওয়ার্ড';
   db.transactions.unshift({
-    transactionId: 'trx_offerwall_' + Date.now(),
+    transactionId: 'trx_fc_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    externalTransactionId: transactionId,
     userId: user.uid,
     type: 'TASK_REWARD',
     amount: earned,
     bdtEquivalent: earned * (db.settings.coinToBDTRate || 0.015),
-    source: `CPA অফারওয়াল রিওয়ার্ড: ${params.offer_name || params.campaign_name || 'সার্ভে ও অফার সম্পন্ন'}`,
+    source: `${sourceName}: ${params.offer_name || params.campaign_name || 'সার্ভে ও অফার সম্পন্ন'}`,
     status: 'COMPLETED',
     createdAt: new Date().toISOString()
   });
 
+  // Add notification for user
+  db.notifications.unshift({
+    id: 'notif_fc_' + Date.now(),
+    userId: user.uid,
+    title: 'Freecash অফার কমপ্লিট বোনাস! 🎉',
+    message: `অভিনন্দন! Freecash থেকে সফলভাবে কাজ সম্পন্ন করার জন্য আপনার অ্যাকাউন্টে +${earned} কয়েন যুক্ত হয়েছে।`,
+    type: 'reward',
+    read: false,
+    createdAt: new Date().toISOString(),
+    linkTab: 'wallet'
+  });
+
   saveDbToDisk();
-  // Return '1' as standard HTTP response for CPALead & Monlix postbacks
+  // Return '1' or 'SUCCESS' as standard HTTP response for S2S postback
   return res.status(200).send('1');
 });
+
 
 // 6d. Direct Banner Ad Click Reward (+15 Coins, daily click limit protection)
 app.post('/api/reward/ad-click', (req, res) => {
@@ -3093,6 +3136,58 @@ app.all(['/api/postback/cpx', '/api/postbacks/cpx'], (req, res) => {
   } catch (err) {
     console.error('[CPX Postback] Error:', err);
     return res.status(200).send('1');
+  }
+});
+
+// AdGem Official Postback Webhook
+app.all(['/api/postback/adgem', '/api/postbacks/adgem'], (req, res) => {
+  try {
+    const params = { ...req.query, ...req.body };
+    const userId = (params.player_id || params.playerid || params.user_id || params.userId || params.subid || '').toString().trim();
+    const transId = (params.transaction_id || params.transactionId || params.transId || 'adgem_' + Date.now()).toString();
+    const amountCoins = parseInt(params.amount || params.coins || '0', 10) || Math.round(parseFloat(params.payout || '0') * 1000);
+
+    console.log(`[AdGem Postback] Received: User=${userId}, TransID=${transId}, Coins=${amountCoins}`);
+
+    if (userId) {
+      const targetUser = db.users.find(u => u.uid === userId || u.id === userId || u.phone === userId);
+      if (targetUser && amountCoins > 0) {
+        const alreadyCredited = (db.transactions || []).some(t => t.id === `adgem_${transId}`);
+        if (!alreadyCredited) {
+          targetUser.coins = (targetUser.coins || 0) + amountCoins;
+          targetUser.lifetimeCoins = (targetUser.lifetimeCoins || 0) + amountCoins;
+          targetUser.todayCoins = (targetUser.todayCoins || 0) + amountCoins;
+
+          db.transactions.unshift({
+            id: `adgem_${transId}`,
+            userId: targetUser.uid,
+            type: 'CPA_OFFER_COMPLETED',
+            amount: amountCoins,
+            source: `💎 AdGem অফার রিওয়ার্ড (+${amountCoins} কয়েন)`,
+            status: 'COMPLETED',
+            createdAt: new Date().toISOString()
+          });
+
+          db.notifications.unshift({
+            id: 'notif_adgem_' + Date.now(),
+            userId: targetUser.uid,
+            title: '🎉 AdGem রিওয়ার্ড সফল!',
+            message: `AdGem থেকে অফার সম্পন্ন করায় আপনার একাউন্টে ${amountCoins} কয়েন যোগ করা হয়েছে!`,
+            type: 'coin',
+            read: false,
+            createdAt: new Date().toISOString(),
+            linkTab: 'wallet'
+          });
+
+          saveDbToDisk();
+        }
+      }
+    }
+
+    return res.status(200).send('OK');
+  } catch (err) {
+    console.error('[AdGem Postback] Error:', err);
+    return res.status(200).send('OK');
   }
 });
 

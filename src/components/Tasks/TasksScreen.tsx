@@ -34,9 +34,10 @@ import { sanitizeAdDirectLink } from '../../utils/adLinkSanitizer';
 import { SponsoredClickHub } from '../Common/SponsoredClickHub';
 import { openAdWithStrictTimer } from '../Common/AdVisitTimerModal';
 import { OfferwallHub } from './OfferwallHub';
+import { BDMicroTasksHub } from './BDMicroTasksHub';
 
 type TaskType = 'math' | 'gk' | 'captcha' | 'daily_checkin';
-type TaskTab = 'micro_tasks' | 'daily_tasks' | 'offerwall';
+type TaskTab = 'bd_microtasks' | 'micro_tasks' | 'daily_tasks' | 'offerwall';
 
 interface FreeMicroTask {
   id: string;
@@ -54,7 +55,7 @@ export const TasksScreen: React.FC = () => {
   const { user, refreshUser, awardCoinsLocally } = useAuth();
   const { language, showToast, triggerConfetti, settings, selectedTaskSubTab, setSelectedTaskSubTab } = useApp();
 
-  const [activeTab, setActiveTab] = useState<TaskTab>(selectedTaskSubTab || 'micro_tasks');
+  const [activeTab, setActiveTab] = useState<TaskTab>(selectedTaskSubTab || 'bd_microtasks');
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
 
   React.useEffect(() => {
@@ -152,6 +153,50 @@ export const TasksScreen: React.FC = () => {
       timeSec: 20,
       reward: 40,
       descBn: 'সহজ বাংলা কুইজে মতামত দিন ও ইনস্ট্যান্ট ওয়ালেট পয়েন্ট অর্জন করুন',
+      link: adsterraDirectLink
+    },
+    {
+      id: 'free_task_shortlink_captcha',
+      titleBn: 'বাংলাদেশি শর্টলিংক ও ১ মিনিট ক্যাপচা পূরণ 🔗',
+      category: 'web',
+      icon: '🔗',
+      badge: '১ মিনিট কাজ',
+      timeSec: 60,
+      reward: 45,
+      descBn: 'শর্টলিংক পেজে গিয়ে ১টি সহজ ক্যাপচা সমাধান করে ইনস্ট্যান্ট বড় কয়েন রিওয়ার্ড নিন',
+      link: adsterraDirectLink
+    },
+    {
+      id: 'free_task_fb_follow',
+      titleBn: 'অফিশিয়াল ফেসবুক পেজ ফলো ও লাইক 👍',
+      category: 'social',
+      icon: '👍',
+      badge: '৩০ সেকেন্ড',
+      timeSec: 30,
+      reward: 25,
+      descBn: 'ফেসবুক পেজ ভিজিট করে লাইক দিন ও দ্রুত ২০ সেকেন্ডে কয়েন সংগ্রহ করুন',
+      link: 'https://facebook.com'
+    },
+    {
+      id: 'free_task_bangla_article',
+      titleBn: 'তথ্যবহুল বাংলা ব্লগ আর্টিকেল ভিজিট ও স্ক্রোল 📰',
+      category: 'web',
+      icon: '📰',
+      badge: 'সহজ রিডিং',
+      timeSec: 45,
+      reward: 35,
+      descBn: 'বাংলা তথ্যবহুল ব্লগ পেজে প্রবেশ করে ৪৫ সেকেন্ড পড়ুন—কোনো অ্যাকাউন্ট লাগবে না',
+      link: hilltopAdsDirectLink
+    },
+    {
+      id: 'free_task_quick_poll',
+      titleBn: 'বিকাশ ও নগদ ক্যাশআউট কুইক মতামত পোল 🇧🇩',
+      category: 'app',
+      icon: '🇧🇩',
+      badge: '২ মিনিট সার্ভে',
+      timeSec: 60,
+      reward: 50,
+      descBn: 'পেমেন্ট মেথড সংক্রান্ত সহজ মতামত দিন এবং বিশেষ ক্যাশআউট বোনাস পান',
       link: adsterraDirectLink
     }
   ];
@@ -271,21 +316,38 @@ export const TasksScreen: React.FC = () => {
     if (taskId === 'captcha') {
       generateCaptcha();
     }
-    setAdStage('PRE_TASK');
+    // Instant open without 20s blocking delay!
+    setAdStage('NONE');
   };
 
-  // Step 2: Pre-task ad finished -> Open task form
   const handlePreAdFinished = () => {
     setAdStage('NONE');
   };
 
-  // Step 3: Task completed -> SHOW POST-TASK AD (Double monetization)
-  const triggerTaskComplete = (earned: number) => {
+  // Step 2: Task completed -> Instant Reward Credit
+  const triggerTaskComplete = async (earned: number) => {
     setTaskCoins(earned);
-    setAdStage('POST_TASK');
+    awardCoinsLocally(earned);
+    soundService.playSuccessFanfare();
+    triggerConfetti();
+    showToast(
+      language === 'bn' ? `+${earned} টাস্ক রিওয়ার্ড ওয়ালেটে যোগ হয়েছে! ✅` : `+${earned} Task Reward Credited!`,
+      language === 'bn' ? 'সঠিক উত্তর দিয়ে কয়েন অর্জন করেছেন।' : 'Correct answer!',
+      'coin'
+    );
+    setActiveTask(null);
+
+    try {
+      const res = await api.claimTaskReward(activeTask || 'task', activeTask || 'task', earned);
+      if (res && res.success) {
+        await refreshUser();
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  // Step 4: Post-task ad finished -> Credit in database
+  // Step 3: Handle legacy post ad finished if triggered
   const handlePostAdFinished = async () => {
     setAdStage('NONE');
     awardCoinsLocally(taskCoins);
@@ -372,9 +434,26 @@ export const TasksScreen: React.FC = () => {
 
   return (
     <div className="w-full max-w-md mx-auto px-4 pt-24 sm:pt-28 pb-24 space-y-4">
-      {/* 🚀 Main Navigation Tabs: 100% Free Micro Tasks vs Daily Quiz & Captcha vs Offerwall */}
+      {/* 🚀 Main Navigation Tabs: 4 Specialized Earning Sections */}
       <div className="p-1.5 rounded-2xl bg-slate-900/95 border border-slate-800 shadow-xl backdrop-blur-md">
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('bd_microtasks');
+              setSelectedTaskSubTab('bd_microtasks');
+              setActiveTask(null);
+            }}
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl font-black text-xs transition-all cursor-pointer ${
+              activeTab === 'bd_microtasks'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-md shadow-emerald-500/30'
+                : 'text-slate-400 hover:text-white bg-slate-950/40'
+            }`}
+          >
+            <Clock className={`w-3.5 h-3.5 ${activeTab === 'bd_microtasks' ? 'text-slate-950' : 'text-emerald-400'}`} />
+            <span>🇧🇩 ২-৩ মিনিটের কাজ</span>
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -382,14 +461,14 @@ export const TasksScreen: React.FC = () => {
               setSelectedTaskSubTab('micro_tasks');
               setActiveTask(null);
             }}
-            className={`flex flex-col items-center justify-center gap-1 py-2.5 px-2 rounded-xl font-black text-[11px] transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl font-black text-xs transition-all cursor-pointer ${
               activeTab === 'micro_tasks'
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-md shadow-emerald-500/30 font-black'
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 shadow-md shadow-teal-500/30'
                 : 'text-slate-400 hover:text-white bg-slate-950/40'
             }`}
           >
-            <Zap className={`w-4 h-4 ${activeTab === 'micro_tasks' ? 'text-slate-950 fill-slate-950' : 'text-emerald-400'}`} />
-            <span>১০০% ফ্রি টাস্ক ⚡</span>
+            <Zap className={`w-3.5 h-3.5 ${activeTab === 'micro_tasks' ? 'text-slate-950 fill-slate-950' : 'text-teal-400'}`} />
+            <span>স্পনসর টাস্ক ⚡</span>
           </button>
 
           <button
@@ -398,13 +477,13 @@ export const TasksScreen: React.FC = () => {
               setActiveTab('daily_tasks');
               setSelectedTaskSubTab('daily_tasks');
             }}
-            className={`flex flex-col items-center justify-center gap-1 py-2.5 px-2 rounded-xl font-black text-[11px] transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl font-black text-xs transition-all cursor-pointer ${
               activeTab === 'daily_tasks'
-                ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/30 font-black'
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/30'
                 : 'text-slate-400 hover:text-white bg-slate-950/40'
             }`}
           >
-            <CheckSquare className={`w-4 h-4 ${activeTab === 'daily_tasks' ? 'text-white' : 'text-purple-400'}`} />
+            <CheckSquare className={`w-3.5 h-3.5 ${activeTab === 'daily_tasks' ? 'text-white' : 'text-purple-400'}`} />
             <span>কুইজ ও ক্যাপচা 📝</span>
           </button>
 
@@ -415,17 +494,22 @@ export const TasksScreen: React.FC = () => {
               setSelectedTaskSubTab('offerwall');
               setActiveTask(null);
             }}
-            className={`flex flex-col items-center justify-center gap-1 py-2.5 px-2 rounded-xl font-black text-[11px] transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl font-black text-xs transition-all cursor-pointer ${
               activeTab === 'offerwall'
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md shadow-amber-500/30 font-black'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md shadow-amber-500/30'
                 : 'text-slate-400 hover:text-white bg-slate-950/40'
             }`}
           >
-            <Flame className={`w-4 h-4 ${activeTab === 'offerwall' ? 'text-slate-950' : 'text-amber-400'}`} />
+            <Flame className={`w-3.5 h-3.5 ${activeTab === 'offerwall' ? 'text-slate-950' : 'text-amber-400'}`} />
             <span>অফারওয়াল হাব 🔥</span>
           </button>
         </div>
       </div>
+
+      {/* TAB 0: 🇧🇩 BANGLADESHI 2-3 MINUTE MICRO-JOBS & EARNING SITES */}
+      {activeTab === 'bd_microtasks' && (
+        <BDMicroTasksHub />
+      )}
 
       {/* TAB 1: 100% FREE MICRO TASKS (NO DEPOSIT / ZERO COST) */}
       {activeTab === 'micro_tasks' && (
