@@ -143,5 +143,9 @@ fs.writeFileSync('public/icon-192.png', generatePng(192, 192, false));
 fs.writeFileSync('public/icon-512.png', generatePng(512, 512, false));
 fs.writeFileSync('public/icon-maskable-512.png', generatePng(512, 512, true));
 fs.writeFileSync('public/apple-touch-icon.png', generatePng(180, 180, false));
+fs.writeFileSync('public/adgem-icon-50.png', generatePng(50, 50, false));
+fs.writeFileSync('public/adgem-icon-100.png', generatePng(100, 100, false));
+fs.writeFileSync('public/adgem-icon.png', generatePng(50, 50, false));
 
-console.log('✅ Generated all compliant PWA icons in /public: icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png');
+console.log('✅ Generated all compliant icons including AdGem 50x50 & 100x100');
+

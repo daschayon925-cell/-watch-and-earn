@@ -1,4 +1,5 @@
 import { AdminSettings, Comment, NotificationItem, Report, RewardTransaction, User, Video, Withdrawal, PaymentMethod, AccountType } from '../types';
+import { antiBotShield } from '../utils/antiBotShield';
 
 let currentUserId = typeof window !== 'undefined' ? localStorage.getItem('we_user_id') || '' : '';
 
@@ -77,7 +78,10 @@ export const api = {
         monetagDirectLink: 'https://uplcm.com/4/11971342',
         popunderEnabled: true,
         popunderIntervalMinutes: 120,
-        popunderDailyCap: 8
+        popunderDailyCap: 8,
+        shortlinksEnabled: true,
+        shrinkmeShortlinkUrl: 'https://shrinkme.click/pipw',
+        droplinkShortlinkUrl: 'https://droplink.co/dmWjV8x7'
       }
     };
   },
@@ -219,10 +223,11 @@ export const api = {
   },
 
   claimReward: async (sessionId: string) => {
+    const antiBotProof = antiBotShield.generateProof('video_claim');
     return await safeJsonFetch('/api/reward/claim', {
       method: 'POST',
       headers: headers(),
-      body: JSON.stringify({ sessionId })
+      body: JSON.stringify({ sessionId, antiBotProof })
     });
   },
 
@@ -427,6 +432,52 @@ export const api = {
     return await safeJsonFetch(`/api/admin/notices/${id}`, {
       method: 'DELETE',
       headers: headers()
+    });
+  },
+
+  // 🛍️ Affiliate & Cashback Deals
+  getAffiliateDeals: async () => {
+    return await safeJsonFetch<{ success: boolean; deals: any[]; config?: any }>('/api/affiliate/deals');
+  },
+
+  clickAffiliateDeal: async (dealId: string) => {
+    return await safeJsonFetch<{ success: boolean; trackingUrl: string }>('/api/affiliate/click', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ dealId })
+    });
+  },
+
+  // 💼 Community Job Posting & Micro-Tasks
+  getActiveJobs: async () => {
+    return await safeJsonFetch<{ success: boolean; jobs: any[]; config?: any }>('/api/jobs/active');
+  },
+
+  createJob: async (jobData: any) => {
+    return await safeJsonFetch<{ success: boolean; message: string; job?: any }>('/api/jobs/create', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify(jobData)
+    });
+  },
+
+  completeWorkerJob: async (jobId: string, proofText?: string) => {
+    return await safeJsonFetch<{ success: boolean; message: string; earnedCoins?: number; newBalance?: number }>('/api/jobs/complete-worker', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ jobId, proofText })
+    });
+  },
+
+  getAdminJobs: async () => {
+    return await safeJsonFetch<{ success: boolean; jobs: any[] }>('/api/admin/jobs', { headers: headers() });
+  },
+
+  updateAdminJobStatus: async (jobId: string, status: string) => {
+    return await safeJsonFetch<{ success: boolean; message: string; job?: any }>('/api/admin/jobs/status', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ jobId, status })
     });
   }
 };

@@ -27,6 +27,7 @@ import { useApp } from '../../context/AppContext';
 import { soundService } from '../../services/audio';
 import { api } from '../../services/api';
 import { openAdWithStrictTimer } from '../Common/AdVisitTimerModal';
+import { AiTaskAssistantModal } from './AiTaskAssistantModal';
 
 interface OfferwallProvider {
   id: string;
@@ -38,7 +39,7 @@ interface OfferwallProvider {
   descEn: string;
   avgReward: string;
   payoutRange: string;
-  partnerType: 'Freecash' | 'OfferwallMe' | 'Lootly' | 'AdGem' | 'CPX' | 'AdsterraTask' | 'HilltopAdsTask' | 'MonetagTask';
+  partnerType: 'BitcoTasks' | 'Affmine' | 'Freecash' | 'OfferwallMe' | 'Lootly' | 'AdGem' | 'CPX' | 'CPAGrip' | 'AdsterraTask' | 'HilltopAdsTask' | 'MonetagTask' | 'ZeydooTask';
   status: 'active' | 'popular' | 'high_rate';
 }
 
@@ -71,6 +72,7 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
   const [verifyingTaskId, setVerifyingTaskId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedFreecashCode, setCopiedFreecashCode] = useState<boolean>(false);
+  const [showAiAssistantModal, setShowAiAssistantModal] = useState<boolean>(false);
 
   // 🛡️ User's Verified Ad Networks & Direct Links
   const hilltopAdsDirectLink = settings?.adsConfig?.hilltopAdsDirectLink?.trim() || 'https://affectionatestorage.com/Ah6g5c';
@@ -91,7 +93,49 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
 
   // 💎 শুধুমাত্র যেসকল প্ল্যাটফর্মে ইউজারের অ্যাকাউন্ট বা কোড যুক্ত রয়েছে
   const providers: OfferwallProvider[] = [
-    // 🎯 1. OFFICIAL OFFERWALL: Offerwall.me (User's Verified Account - 6aca33472eaa6484016c37d7)
+    // 🔥 1. OFFICIAL BITCOTASKS VERIFIED OFFERWALL (User's Verified Key: el15zv6b8o9kz3i9haq63pgtpdiivh)
+    {
+      id: 'bitcotasks_hub',
+      name: 'BitcoTasks অল-ইন-ওয়ান হাব (সার্ভে, অফার ও পিটিসি)',
+      badge: 'অফিসিয়াল পার্টনার 🔥',
+      badgeColor: 'from-amber-500 via-orange-600 to-red-600',
+      icon: '🔥',
+      descBn: 'পেইড সার্ভে (CPX/BitLabs), মোবাইল অ্যাপ ইনস্টল, গেম ও পিটিসি অ্যাডস—সর্বোচ্চ কয়েন ও অটোমেটিক পোস্টব্যাক',
+      descEn: 'All-in-one verified offerwall: Paid surveys, mobile apps, games & PTC rewards',
+      avgReward: '+২০০ – +৮,০০০ 🪙',
+      payoutRange: '৳৩.০০ – ৳১০০.০০+',
+      partnerType: 'BitcoTasks',
+      status: 'popular'
+    },
+    // 💎 2. OFFICIAL AFFMINE VERIFIED OFFERWALL (User's Verified Wall #6741 - ow_6aee0425704f4)
+    {
+      id: 'affmine_hub',
+      name: 'Affmine অফিশিয়াল অফারওয়াল ও অ্যাপস (#6741)',
+      badge: 'অফিসিয়াল পার্টনার 💎',
+      badgeColor: 'from-emerald-600 to-teal-600',
+      icon: '💎',
+      descBn: 'মোবাইল অ্যাপ ইনস্টল, হাই-পেয়িং গেম ও সাইন-আপ—সরাসরি অনুমোদিত অফিশিয়াল অফারওয়াল',
+      descEn: 'Premium mobile apps, top rewarding games and verified CPA offers',
+      avgReward: '+৩০০ – +৬,০০০ 🪙',
+      payoutRange: '৳৫.০০ – ৳৯০.০০+',
+      partnerType: 'Affmine',
+      status: 'popular'
+    },
+    // ⚡ 2. OFFICIAL PARTNER: Zeydoo SmartLink & Surveys (User's Verified Zone: 12138356)
+    {
+      id: 'zeydoo_hub',
+      name: 'Zeydoo গ্লোবাল স্মার্টলিঙ্ক ও সার্ভে',
+      badge: 'অফিসিয়াল পার্টনার ⚡',
+      badgeColor: 'from-blue-600 to-indigo-600',
+      icon: '⚡',
+      descBn: 'স্মার্ট সার্ভে, মোবাইল অফার ও গেম খেলে সর্বোচ্চ রিওয়ার্ড—বাংলাদেশি মোবাইল ইউজারদের জন্য শতভাগ কার্যকর',
+      descEn: 'Smart surveys, mobile apps & mini games with instant automatic payout',
+      avgReward: '+১৫০ – +৩,০০০ 🪙',
+      payoutRange: '৳২.০০ – ৳৪৫.০০+',
+      partnerType: 'ZeydooTask',
+      status: 'active'
+    },
+    // 🎯 2. OFFICIAL OFFERWALL: Offerwall.me (User's Verified Account - 6aca33472eaa6484016c37d7)
     {
       id: 'offerwall_me',
       name: 'Offerwall.me স্পেশাল হাব',
@@ -161,6 +205,20 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       partnerType: 'AdGem',
       status: 'high_rate'
     },
+    // 🌐 6. CPAGRIP GLOBAL CPA OFFERS & CONTENT LOCKER (User's Verified Account)
+    {
+      id: 'cpagrip_hub',
+      name: 'CPAGrip গ্লোবাল অফার হাব',
+      badge: 'টপ ডলার অফার 💵',
+      badgeColor: 'from-emerald-600 to-green-600',
+      icon: '💵',
+      descBn: 'গেমিং অ্যাপ ইনস্টল, গিফট কার্ড ও অফার পূরণ করে সরাসরি ডলারে রিওয়ার্ড আর্ন করুন',
+      descEn: 'Install apps, sign up and complete high-paying international CPA offers',
+      avgReward: '+৩০০ – +৮,০০০ 🪙',
+      payoutRange: '৳৫.০০ – ৳১০০.০০+',
+      partnerType: 'CPAGrip',
+      status: 'high_rate'
+    },
     // 💎 5. ADSTERRA HIGH-CPM SPONSOR HUB (User's Verified Account)
     {
       id: 'adsterra_hub',
@@ -207,6 +265,33 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
 
   // 🇧🇩 বাংলাদেশ ও 🇺🇸 USA লাইভ CPALead ও HilltopAds ১০০% ফ্রি অফার লিস্ট (কোনো টাকা লাগবে না)
   const curatedTasks: CpaTask[] = [
+    // ⚡ Zeydoo Official Smartlink Survey & Playable Task (User's Verified Zone 12138356)
+    {
+      id: 'zeydoo_smart_survey_bd',
+      title: 'Zeydoo স্মার্ট ওপিনিয়ন সার্ভে ও কুইজ ⚡',
+      category: 'bd',
+      country: 'BD',
+      icon: '⚡',
+      provider: 'Zeydoo SmartLink',
+      time: '১-২ মিনিট',
+      reward: 200,
+      estPayoutBDT: '৳৩.০০',
+      difficulty: '১০০% ফ্রি স্মার্ট সার্ভে',
+      link: `https://nya5.com/link?z=12138356&var=${encodeURIComponent(user?.uid || 'guest')}&ymid=${encodeURIComponent('task_survey_' + Date.now())}`
+    },
+    {
+      id: 'zeydoo_playable_click_bd',
+      title: 'Zeydoo প্লে-অ্যান্ড-উইন মোবাইল গেম ট্রায়াল 🎮',
+      category: 'bd',
+      country: 'BD',
+      icon: '🎯',
+      provider: 'Zeydoo SmartLink',
+      time: '২ মিনিট',
+      reward: 250,
+      estPayoutBDT: '৳৩.৭৫',
+      difficulty: '১০০% ফ্রি গেম ট্রায়াল',
+      link: `https://nya5.com/link?z=12138356&var=${encodeURIComponent(user?.uid || 'guest')}&ymid=${encodeURIComponent('task_game_' + Date.now())}`
+    },
     // 🚀 HilltopAds VIP Sponsor (100% Free Website Visit)
     {
       id: 'hilltop_direct_7488677',
@@ -361,9 +446,73 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
     const userId = user?.uid || 'user_guest';
     let url = '';
 
-    if (provider.partnerType === 'Freecash') {
+    if (provider.partnerType === 'BitcoTasks') {
+      const apiKey = settings?.offerwallsConfig?.bitcotasksApiKey || 'el15zv6b8o9kz3i9haq63pgtpdiivh';
+      const bitcotasksUrl = `https://bitcotasks.com/offerwall/${encodeURIComponent(apiKey)}/${encodeURIComponent(userId)}`;
       try {
-        window.open(freecashUrl, '_blank', 'noopener,noreferrer');
+        const win = window.open(bitcotasksUrl, '_blank', 'noopener,noreferrer');
+        if (!win || win.closed || typeof win.closed === 'undefined') {
+          setActiveOfferwallUrl(bitcotasksUrl);
+          setActiveWallName(provider.name);
+        }
+        showToast(
+          'BitcoTasks অফিশিয়াল অফারওয়াল ওপেন হয়েছে 🔥',
+          'সার্ভে, গেম বা অফার পূরণ করলে সরাসরি কয়েন যোগ হবে এবং মালিকের একাউন্টে ডলারে জমা হবে।',
+          'success'
+        );
+      } catch {
+        setActiveOfferwallUrl(bitcotasksUrl);
+        setActiveWallName(provider.name);
+      }
+      return;
+    }
+
+    if (provider.partnerType === 'Affmine') {
+      const affmineWallCode = settings?.offerwallsConfig?.affmineOfferwallCode || 'ow_6aee0425704f4';
+      const affmineUrl = `https://affgo.xyz/offerwall/?o=${encodeURIComponent(affmineWallCode)}&s1=${encodeURIComponent(userId)}`;
+      try {
+        const win = window.open(affmineUrl, '_blank', 'noopener,noreferrer');
+        if (!win || win.closed || typeof win.closed === 'undefined') {
+          setActiveOfferwallUrl(affmineUrl);
+          setActiveWallName(provider.name);
+        }
+        showToast(
+          'Affmine অফিশিয়াল অফারওয়াল ওপেন হয়েছে 💎',
+          'যেকোনো অ্যাপ ডাউনলোড বা অফার পূরণ করলে সরাসরি কয়েন যোগ হবে এবং ডলার মালিকের একাউন্টে যুক্ত হবে।',
+          'success'
+        );
+      } catch {
+        setActiveOfferwallUrl(affmineUrl);
+        setActiveWallName(provider.name);
+      }
+      return;
+    }
+
+    if (provider.partnerType === 'ZeydooTask') {
+      const clickId = 'c_' + userId + '_' + Date.now();
+      const zeydooUrl = `https://nya5.com/link?z=12138356&var=${encodeURIComponent(userId)}&ymid=${encodeURIComponent(clickId)}`;
+      try {
+        const win = window.open(zeydooUrl, '_blank', 'noopener,noreferrer');
+        if (!win || win.closed || typeof win.closed === 'undefined') {
+          setActiveOfferwallUrl(zeydooUrl);
+          setActiveWallName(provider.name);
+        }
+        showToast(
+          'Zeydoo স্মার্টলিঙ্ক ওপেন হয়েছে ⚡',
+          'সার্ভে বা অফার সফলভাবে সম্পন্ন হলে স্বয়ংক্রিয় পোস্টব্যাকের মাধ্যমে আপনার একাউন্টে কয়েন জমা হবে।',
+          'success'
+        );
+      } catch {
+        window.location.href = zeydooUrl;
+      }
+      return;
+    } else if (provider.partnerType === 'Freecash') {
+      try {
+        const win = window.open(freecashUrl, '_blank', 'noopener,noreferrer');
+        if (!win || win.closed || typeof win.closed === 'undefined') {
+          setActiveOfferwallUrl(freecashUrl);
+          setActiveWallName(provider.name);
+        }
         showToast(
           'Freecash গ্লোবাল হাব ওপেন হয়েছে 💵',
           `রেফারেল কোড ${freecashReferralCode} স্বয়ংক্রিয়ভাবে সক্রিয় থাকবে। ফ্রি কেস ও $২৫০ পর্যন্ত বোনাস নিন!`,
@@ -385,29 +534,32 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       return;
     } else if (provider.partnerType === 'OfferwallMe') {
       const activeApiKey = offerwallMeApiKey || '6yHRmktW7Ouf75SHc826oSbiYGu06W';
+      const fallbackUrl = offerwallMeUrl
+        ? (offerwallMeUrl.includes('?') ? `${offerwallMeUrl}&userId=${encodeURIComponent(userId)}` : `${offerwallMeUrl}?userId=${encodeURIComponent(userId)}`)
+        : `https://offerwall.me/offerwall/${encodeURIComponent(activeApiKey)}/${encodeURIComponent(userId)}`;
       
       const openOfferwall = async () => {
+        let targetUrl = fallbackUrl;
         try {
           const res = await fetch(`/api/offerwall/get-signed-url?userId=${encodeURIComponent(userId)}`);
           if (res.ok) {
             const data = await res.json();
             if (data?.success && data?.url) {
-              window.open(data.url, '_blank', 'noopener,noreferrer');
-              return;
+              targetUrl = data.url;
             }
           }
         } catch {
-          // fallback to direct link
+          // fallback
         }
 
-        const fallbackUrl = offerwallMeUrl
-          ? (offerwallMeUrl.includes('?') ? `${offerwallMeUrl}&userId=${encodeURIComponent(userId)}` : `${offerwallMeUrl}?userId=${encodeURIComponent(userId)}`)
-          : `https://offerwall.me/offerwall/${encodeURIComponent(activeApiKey)}/${encodeURIComponent(userId)}`;
-
         try {
-          window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+          const win = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+          if (!win || win.closed || typeof win.closed === 'undefined') {
+            setActiveOfferwallUrl(targetUrl);
+            setActiveWallName(provider.name);
+          }
         } catch {
-          setActiveOfferwallUrl(fallbackUrl);
+          setActiveOfferwallUrl(targetUrl);
           setActiveWallName(provider.name);
         }
       };
@@ -426,7 +578,11 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
       const appId = cpxAppId || '36966';
       url = `https://offers.cpx-research.com/index.php?app_id=${encodeURIComponent(appId)}&ext_user_id=${encodeURIComponent(userId)}`;
       try {
-        window.open(url, '_blank', 'noopener,noreferrer');
+        const win = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!win || win.closed || typeof win.closed === 'undefined') {
+          setActiveOfferwallUrl(url);
+          setActiveWallName(provider.name);
+        }
         showToast(
           'CPX Research সার্ভে হাব ওপেন হয়েছে 📊',
           'সার্ভে বা কুইজ সফলভাবে সম্পন্ন হলে সরাসরি আপনার একাউন্টে কয়েন জমা হবে।',
@@ -452,10 +608,23 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
         );
         return;
       }
+    } else if (provider.partnerType === 'CPAGrip') {
+      const cpagripUrl = settings?.offerwallsConfig?.cpagripUrl?.trim();
+      if (cpagripUrl) {
+        url = cpagripUrl.includes('?') 
+          ? `${cpagripUrl}&tracking_id=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}` 
+          : `${cpagripUrl}?tracking_id=${encodeURIComponent(userId)}&subid=${encodeURIComponent(userId)}`;
+      } else {
+        url = 'https://www.cpagrip.com/';
+      }
     }
 
     try {
-      window.open(url, '_blank', 'noopener,noreferrer');
+      const win = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!win || win.closed || typeof win.closed === 'undefined') {
+        setActiveOfferwallUrl(url);
+        setActiveWallName(provider.name);
+      }
       showToast(
         `${provider.name} অফারওয়াল ওপেন হয়েছে 🎯`,
         'কাজ বা সার্ভে সফলভাবে সম্পন্ন হলে প্রোভাইডার ভেরিফিকেশন শেষে স্বয়ংক্রিয়ভাবে কয়েন যোগ হবে।',
@@ -527,6 +696,31 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 🌐 BANGLA AI TASK TRANSLATOR & HELPER CARD */}
+      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 border-2 border-emerald-500/50 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative overflow-hidden">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-xl shrink-0 shadow-md">
+            🌐
+          </div>
+          <div>
+            <h4 className="text-xs font-black text-white flex items-center gap-1.5">
+              <span>অফারগুলোর ইংরেজি বুঝতে পারছেন না?</span>
+              <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">এআই অনুবাদক</span>
+            </h4>
+            <p className="text-[11px] text-slate-300">
+              যেকোনো কাজের ইংরেজি লেখা কপি করে আমাদের বাংলা অনুবাদকে দিলে সহজ ধাপে কাজ বুঝিয়ে দেবে!
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => setShowAiAssistantModal(true)}
+          className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 shrink-0 flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer"
+        >
+          <span>বাংলা অনুবাদক ও সাহায্য</span>
+          <span>🤖</span>
+        </button>
       </div>
 
       {/* 💡 Essential User Guideline for Bangladesh CPA Offers */}
@@ -875,26 +1069,51 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
 
       {/* 📱 Fullscreen Iframe Modal (Fallback if external window is blocked) */}
       {activeOfferwallUrl && (
-        <div className="fixed inset-0 z-[999999] bg-black/90 backdrop-blur-md flex flex-col justify-between animate-fadeIn">
+        <div className="fixed inset-0 z-[999999] bg-black/95 backdrop-blur-md flex flex-col justify-between animate-fadeIn">
           <div className="p-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm font-black text-amber-300">🎯 {activeWallName}</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setActiveOfferwallUrl(null)}
-              className="p-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAiAssistantModal(true)}
+                className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition active:scale-95"
+              >
+                <span>🌐 বাংলা অনুবাদক</span>
+              </button>
+              <a
+                href={activeOfferwallUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow cursor-pointer transition active:scale-95"
+              >
+                <span>নতুন ট্যাবে খুলুন</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+              <button
+                type="button"
+                onClick={() => setActiveOfferwallUrl(null)}
+                className="p-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           <iframe
             src={activeOfferwallUrl}
             className="w-full flex-1 border-0 bg-white"
             title="CPA Offerwall"
+            allow="camera; microphone; geolocation"
           />
         </div>
       )}
+
+      {/* 🌐 AI Task Assistant & Bengali Translator Modal */}
+      <AiTaskAssistantModal
+        isOpen={showAiAssistantModal}
+        onClose={() => setShowAiAssistantModal(false)}
+      />
     </div>
   );
 };

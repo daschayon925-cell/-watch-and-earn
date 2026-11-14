@@ -30,6 +30,7 @@ import { useApp } from '../../context/AppContext';
 import { soundService } from '../../services/audio';
 import { api } from '../../services/api';
 import { sanitizeAdDirectLink } from '../../utils/adLinkSanitizer';
+import { PostJobModal } from './PostJobModal';
 
 export interface BDMicroJob {
   id: string;
@@ -55,6 +56,14 @@ export const BDMicroTasksHub: React.FC = () => {
   const adsterraDirectLink = settings?.adsConfig?.adsterraDirectLink?.trim() || 'https://www.profitableratecpmnetwork.com/qbtbe2bx?key=2c7a6b8817f0da29e82bed11c12f55c4';
   const hilltopAdsDirectLink = settings?.adsConfig?.hilltopAdsDirectLink?.trim() || 'https://affectionatestorage.com/Ah6g5c';
 
+  const monetagDirectLink = settings?.adsConfig?.monetagDirectLink?.trim() || 'https://uplcm.com/4/11971342';
+  const freecashUrl = settings?.offerwallsConfig?.freecashUrl?.trim() || 'https://freecash.com/r/39Z5IH';
+  const freecashReferralCode = settings?.offerwallsConfig?.freecashReferralCode?.trim() || '39Z5IH';
+  const cpxAppId = settings?.offerwallsConfig?.cpxAppId?.trim() || '36966';
+  const offerwallMeApiKey = settings?.offerwallsConfig?.offerwallMeApiKey?.trim() || '6yHRmktW7Ouf75SHc826oSbiYGu06W';
+  const lootlyApiKey = settings?.offerwallsConfig?.lootlyApiKey?.trim() || 'pj9b1buxrh05dt8eito0x8jxei21c3';
+  const userId = user?.uid || 'user_guest';
+
   // Completed task ids in localStorage
   const [completedTaskIds, setCompletedTaskIds] = useState<string[]>(() => {
     try {
@@ -75,92 +84,106 @@ export const BDMicroTasksHub: React.FC = () => {
 
   // Filter category
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'microjob' | 'social' | 'video' | 'survey'>('all');
+  const [showPostJobModal, setShowPostJobModal] = useState<boolean>(false);
+  const [communityJobs, setCommunityJobs] = useState<any[]>([]);
 
-  // Top Bangladeshi micro-job platforms with zero-rejection & quick tasks
+  // 💎 শুধুমাত্র যেসকল প্ল্যাটফর্মে ইউজারের অ্যাকাউন্ট ও কোড যুক্ত রয়েছে
   const bdPlatforms = [
     {
-      id: 'workupjob',
-      name: 'WorkupJob (ওয়ার্কআপ জব BD)',
-      badge: 'বাংলাদেশের #১ মাইক্রোজব • বিকাশ/নগদ',
-      tagline: '২-৩ মিনিটে ফেসবুক লাইক, ইউটিউব সাবস্ক্রাইব, জিমেইল তৈরি ও অ্যাপ রিভিউ করে সরাসরি টাকা ইনকাম',
-      icon: '💼',
-      time: '১-৩ মিনিট / কাজ',
-      payoutMethods: 'বিকাশ ও নগদ (সরাসরি)',
-      url: settings?.adsConfig?.workupJobReferralLink?.trim() || 'https://workupjob.com',
-      referralBenefitBn: 'রেফারেল কমিশন: ইউজার যা আয় করবে তার ৫%-১০% কমিশন আপনার একাউন্টে আজীবন আসবে!',
-      gradient: 'from-emerald-600 to-teal-700'
-    },
-    {
-      id: 'sproutgigs',
-      name: 'SproutGigs (স্প্রাউটগিগস)',
-      badge: 'আন্তর্জাতিক টপ মাইক্রোজব 🌟',
-      tagline: 'গুগল সার্চ ও ভিজিট, সোশ্যাল মিডিয়া ফলো ও রেডিট আপভোট করে প্রতি কাজে ৩ থেকে ৩০ টাকা',
-      icon: '🚀',
-      time: '২-৩ মিনিট / কাজ',
-      payoutMethods: 'Airtm (সরাসরি বিকাশ), Litecoin',
-      url: 'https://sproutgigs.com',
-      referralBenefitBn: 'রেফারেল কমিশন: আজীবন প্রতিটি সফল টাস্কে ৫% বোনাস',
-      gradient: 'from-blue-600 to-cyan-700'
-    },
-    {
-      id: 'twocaptcha',
-      name: '2Captcha (ক্যাপচা টাইপিং)',
-      badge: '১০০% নো-রিজেক্ট • সহজ কাজ ⌨️',
-      tagline: 'মাত্র ১০-২০ সেকেন্ডে সহজ ক্যাপচা টাইপ করে আয়। এখানে কোনো কাজের ভুল বা আইডি ব্যান নেই!',
-      icon: '⌨️',
-      time: '১০-২০ সেকেন্ড / কাজ',
-      payoutMethods: 'Payeer, Airtm, Crypto (মাত্র $০.৫ হলেই তোলা যায়)',
-      url: 'https://2captcha.com',
-      referralBenefitBn: '১০% লাইফটাইম রেফারেল কমিশন',
-      gradient: 'from-amber-600 to-orange-700'
-    },
-    {
-      id: 'aviso_ptc',
-      name: 'Aviso.bz (কুইক সার্ফিং ও ভিডিও)',
-      badge: 'ইনস্ট্যান্ট পেআউট ⚡',
-      tagline: '১৫-৩০ সেকেন্ড বিজ্ঞাপন বা ওয়েবসাইট দেখা এবং ইউটিউব ভিডিও দেখে দ্রুত ক্যাশ ইনকাম',
-      icon: '⚡',
-      time: '১৫-৩০ সেকেন্ড',
-      payoutMethods: 'Payeer ওয়ালেট (Payeer থেকে সরাসরি বিকাশ)',
-      url: 'https://aviso.bz',
-      referralBenefitBn: 'রেফারেল আয়ের ১০%-১৫% কমিশন',
-      gradient: 'from-purple-600 to-indigo-700'
+      id: 'cpx_research',
+      name: 'CPX Research পেইড সার্ভে ও কুইজ 📊',
+      badge: 'ভেরিফায়েড অ্যাপ ID: 36966',
+      tagline: 'সহজ প্রশ্ন-উত্তর, মতামত সার্ভে ও কুইজ পূরণ করে নিশ্চিত ডলার ও ওয়ালেট কয়েন',
+      icon: '📊',
+      time: '২-৩ মিনিট / সার্ভে',
+      payoutMethods: 'অ্যাপ ওয়ালেট (বিকাশ/নগদ)',
+      url: `https://offers.cpx-research.com/index.php?app_id=${encodeURIComponent(cpxAppId)}&ext_user_id=${encodeURIComponent(userId)}`,
+      referralBenefitBn: 'ডিসকোয়ালিফাই হলেও সান্ত্বনা বোনাস কয়েন পাবেন',
+      gradient: 'from-teal-600 via-emerald-600 to-green-700'
     },
     {
       id: 'freecash_mega',
       name: 'Freecash মেগা হাব ($১ - $২০+)',
-      badge: 'বিশ্বসেরা ইনকাম হাব 💎',
+      badge: 'ভেরিফায়েড কোড: 39Z5IH 💎',
       tagline: 'মোবাইল গেম খেলে, অ্যাপ টেস্ট ও সার্ভে করে সরাসরি ডলার ($১ - $১০+) ইনকাম',
       icon: '💵',
       time: '৫-১৫ মিনিট / কাজ',
       payoutMethods: 'বিকাশ, নগদ, ক্রিপ্টো, পেপ্যাল',
-      url: settings?.offerwallsConfig?.freecashUrl?.trim() || 'https://freecash.com/r/39Z5IH',
-      referralCode: settings?.offerwallsConfig?.freecashReferralCode?.trim() || '39Z5IH',
-      referralBenefitBn: 'প্রতি রেফারেলে ৩০% পর্যন্ত ফ্রি আর্নিং শেয়ার',
-      gradient: 'from-teal-600 via-emerald-600 to-green-700'
+      url: freecashUrl,
+      referralCode: freecashReferralCode,
+      referralBenefitBn: 'রেফারেল কোড 39Z5IH দিয়ে ফ্রি কেস ও $২৫০ পর্যন্ত বোনাস',
+      gradient: 'from-emerald-600 to-teal-700'
     },
     {
-      id: 'jhotpottask',
-      name: 'Watch&Earn ইন-হাউজ টাস্ক 🇧🇩',
-      badge: 'আপনার সাইটের নিজস্ব টাস্ক',
-      tagline: 'ভিজিট ও স্পনসর স্ক্রোলিং করে কয়েন সংগ্রহ করুন—কোনো অ্যাকাউন্ট খোলার ঝামেলা নেই',
+      id: 'offerwall_me',
+      name: 'Offerwall.me স্পেশাল হাব 🎯',
+      badge: 'ভেরিফায়েড প্লেসমেন্ট ID',
+      tagline: 'জনপ্রিয় গেম লেভেল পার, অ্যাপ ট্রায়াল ও হাই-পেইং অফার থেকে নিশ্চিত কয়েন',
       icon: '🎯',
-      time: '১-২ মিনিট / কাজ',
+      time: '১-৫ মিনিট / অফার',
+      payoutMethods: 'অ্যাপ ওয়ালেট (বিকাশ/নগদ)',
+      url: `https://offerwall.me/offerwall/${encodeURIComponent(offerwallMeApiKey)}/${encodeURIComponent(userId)}`,
+      referralBenefitBn: 'সার্ভার ভেরিফিকেশনের মাধ্যমে সরাসরি ওয়ালেটে কয়েন যুক্ত হবে',
+      gradient: 'from-amber-600 to-orange-700'
+    },
+    {
+      id: 'lootly_global',
+      name: 'Lootly গ্লোবাল অফারওয়াল 🎁',
+      badge: 'ভেরিফায়েড অ্যাপ #১৬',
+      tagline: 'গেমিং অফার, মোবাইল অ্যাপ ইনস্টল ও সার্ভে করে বড় কয়েন আর্ন করুন',
+      icon: '🎁',
+      time: '২-৫ মিনিট / কাজ',
+      payoutMethods: 'অ্যাপ ওয়ালেট (বিকাশ/নগদ)',
+      url: `https://offerwall.lootly.fun/offerwall/${encodeURIComponent(lootlyApiKey)}/${encodeURIComponent(userId)}`,
+      referralBenefitBn: 'আন্তর্জাতিক হাই-রেট অফার ও সহজ টাস্ক',
+      gradient: 'from-purple-600 to-indigo-700'
+    },
+    {
+      id: 'adsterra_sponsor',
+      name: 'Adsterra হাই-রেট স্পনসর ভিজিট 🌐',
+      badge: 'হাই-CPM স্পনসর 💎',
+      tagline: 'হাই-সিপিএম স্পনসর পেজ ভিজিট করুন এবং প্রতি সম্পন্ন টাস্কে সরাসরি ওয়ালেটে কয়েন পান',
+      icon: '💎',
+      time: '২০-৩০ সেকেন্ড',
+      payoutMethods: 'অ্যাপ ওয়ালেট (বিকাশ/নগদ)',
+      url: adsterraDirectLink,
+      referralBenefitBn: 'কোনো রেজিস্ট্রেশন লাগবে না—২০ সেকেন্ড স্ক্রোল করলেই কয়েন',
+      gradient: 'from-blue-600 to-cyan-700'
+    },
+    {
+      id: 'hilltop_sponsor',
+      name: 'HilltopAds ভিআইপি স্পনসর হাব 🚀',
+      badge: 'টপ স্পনসর • জোন ৭৪৮৮৬৭৭',
+      tagline: '১০০% ফ্রি স্পনসর ওয়েবসাইট ও অ্যাপ ট্রায়াল ভিজিট করে বড় বোনাস কয়েন সংগ্রহ করুন',
+      icon: '🚀',
+      time: '২০ সেকেন্ড',
       payoutMethods: 'অ্যাপ ওয়ালেট (বিকাশ/নগদ)',
       url: hilltopAdsDirectLink,
-      referralBenefitBn: 'Adsterra ও HilltopAds থেকে আপনার একাউন্টে ডিরেক্ট ডলার জমা হবে',
+      referralBenefitBn: '১০০% ফ্রি ব্রাউজ—টাইমার শেষ হলেই কয়েন জমা হবে',
       gradient: 'from-rose-600 to-pink-700'
+    },
+    {
+      id: 'monetag_sponsor',
+      name: 'Monetag স্মার্টলিঙ্ক স্পনসর ⚡',
+      badge: 'হাই-রেট স্মার্টলিঙ্ক • জোন ১১৯৪... ⚡',
+      tagline: 'স্মার্টলিঙ্ক স্পন্সর পেজ ভিউ করে ২০ সেকেন্ডে নিশ্চিত বোনাস কয়েন সংগ্রহ করুন',
+      icon: '⚡',
+      time: '২০ সেকেন্ড',
+      payoutMethods: 'অ্যাপ ওয়ালেট (বিকাশ/নগদ)',
+      url: monetagDirectLink,
+      referralBenefitBn: 'স্পন্সর ভিউ শেষ হলে স্বয়ংক্রিয়ভাবে কয়েন ক্লেইম',
+      gradient: 'from-emerald-700 to-cyan-800'
     }
   ];
 
   // Curated 2 to 3 minute quick jobs
   const microJobsList: BDMicroJob[] = [
     {
-      id: 'bd_job_workup_sponsor',
-      titleBn: 'WorkupJob পার্টনার স্পনসর পেজ ভিজিট ও ২ মিনিট স্ক্রোল 💼',
+      id: 'bd_job_adsterra_sponsor',
+      titleBn: 'Adsterra হাই-রেট স্পনসর পেজ ভিজিট ও ২ মিনিট স্ক্রোল 🌐',
       category: 'microjob',
-      platformName: 'WorkupJob Partner',
-      icon: '💼',
+      platformName: 'Adsterra Sponsor',
+      icon: '💎',
       badge: '২ মিনিট কাজ • ৳১.০৫',
       timeEstimate: '২ মিনিট',
       durationSeconds: 120,
@@ -172,7 +195,7 @@ export const BDMicroTasksHub: React.FC = () => {
         'নতুন ট্যাবে সাইটটি কমপক্ষে ২ মিনিট (১২০ সেকেন্ড) স্ক্রোল করে পড়ুন।',
         'কাউন্টডাউন টাইমার শেষ হলে "কয়েন ক্লেইম করুন" এ চাপ দিন।'
       ],
-      externalUrl: hilltopAdsDirectLink,
+      externalUrl: adsterraDirectLink,
       isPopular: true
     },
     {
@@ -215,23 +238,23 @@ export const BDMicroTasksHub: React.FC = () => {
       externalUrl: hilltopAdsDirectLink
     },
     {
-      id: 'bd_job_fb_page_follow',
-      titleBn: 'বাংলাদেশি ফেসবুক পেজ ফলো ও লাইক 👍',
+      id: 'bd_job_tg_channel_follow',
+      titleBn: 'অফিশিয়াল টেলিগ্রাম চ্যানেল ও সাপোর্ট গ্রুপ জয়েন ✈️',
       category: 'social',
-      platformName: 'Facebook Job',
-      icon: '👍',
-      badge: '১.৫ মিনিট • ৳০.৭০',
-      timeEstimate: '১.৫ মিনিট',
-      durationSeconds: 90,
+      platformName: 'Telegram Official',
+      icon: '✈️',
+      badge: '১ মিনিট • ৳০.৭০',
+      timeEstimate: '১ মিনিট',
+      durationSeconds: 60,
       rewardCoins: 45,
       estPayoutBDT: '৳০.৭০',
-      descriptionBn: 'অফিশিয়াল সোশ্যাল পেজে গিয়ে একটি ফলো দিন এবং পোস্টগুলোতে লাইক দিয়ে আসুন।',
+      descriptionBn: 'আমাদের অফিশিয়াল টেলিগ্রাম চ্যানেলে যুক্ত হয়ে নিয়মিত নোটিশ ও পেমেন্ট প্রুফ দেখুন।',
       instructionsBn: [
-        'ফেসবুক পেজ লিঙ্ক ওপেন করুন।',
-        'পেজে ফলো বা লাইক বাটনে চাপ দিন।',
-        'অ্যাপে ফিরে এসে আপনার প্রোফাইল বা কনফার্মেশন ক্লেইম করুন।'
+        'টেলিগ্রাম চ্যানেল লিঙ্ক ওপেন করুন।',
+        'চ্যানেলে জয়েন বাটনে চাপ দিন।',
+        'অ্যাপে ফিরে এসে রিওয়ার্ড কয়েন সংগ্রহ করুন।'
       ],
-      externalUrl: 'https://facebook.com'
+      externalUrl: 'https://t.me/+EarnWatchBD'
     },
     {
       id: 'bd_job_blog_reading',
@@ -337,6 +360,21 @@ export const BDMicroTasksHub: React.FC = () => {
       if (interval) clearInterval(interval);
     };
   }, [isTimerRunning, timerRemaining]);
+
+  useEffect(() => {
+    loadCommunityJobs();
+  }, []);
+
+  const loadCommunityJobs = async () => {
+    try {
+      const res = await api.getActiveJobs();
+      if (res?.success && Array.isArray(res.jobs)) {
+        setCommunityJobs(res.jobs);
+      }
+    } catch (e) {
+      console.error('Failed to load community jobs', e);
+    }
+  };
 
   // Start job modal
   const handleOpenJob = (job: BDMicroJob) => {
@@ -455,14 +493,135 @@ export const BDMicroTasksHub: React.FC = () => {
         </div>
       </div>
 
-      {/* 🚀 1. শীর্ষ বাংলাদেশি মাইক্রোজব পার্টনার সাইটসমূহ (WorkupJob ইত্যাদি) */}
+      {/* 📢 POST YOUR OWN JOB BANNER (EARN FROM PROMOTERS & USERS) */}
+      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-teal-950/80 border border-emerald-500/40 shadow-xl flex items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-1.5 text-xs font-black text-white">
+            <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400">📢</span>
+            <span>নিজের চ্যানেল, পেজ বা অ্যাপ প্রচার করতে চান?</span>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            বিকাশ/নগদে ডিপোজিট করে কাজ দিন—রিয়েল ইউজাররা সম্পন্ন করবে!
+          </p>
+        </div>
+        <button
+          onClick={() => setShowPostJobModal(true)}
+          className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-md shadow-emerald-500/30 whitespace-nowrap active:scale-95 transition cursor-pointer"
+        >
+          ➕ কাজ দিন
+        </button>
+      </div>
+
+      {/* 🌟 COMMUNITY POSTED JOBS (REAL USER TASKS) */}
+      {communityJobs.length > 0 && (
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>কমিউনিটি মাইক্রোজব (ইউজারদের দেওয়া কাজ)</span>
+            </h3>
+            <span className="text-[10px] text-amber-400 font-bold">{communityJobs.length}টি লাইভ কাজ</span>
+          </div>
+
+          <div className="space-y-2.5">
+            {communityJobs.map((cJob) => {
+              const isCompleted = completedTaskIds.includes(cJob.id);
+              return (
+                <div
+                  key={cJob.id}
+                  className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-[#0c1815] border border-emerald-500/30 hover:border-emerald-500/60 transition shadow-lg flex flex-col gap-2.5"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xl flex-shrink-0">
+                        {cJob.category === 'youtube' ? '🎬' : cJob.category === 'facebook' ? '👍' : cJob.category === 'app' ? '📱' : '🌐'}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            কমিউনিটি জব 🌟
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            কোটা: {cJob.completedWorkers}/{cJob.targetWorkers} জন
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-white line-clamp-1">
+                          {cJob.title}
+                        </h4>
+                        <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                          {cJob.instructions}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right flex-shrink-0">
+                      <div className="flex items-center gap-1 text-amber-400 font-black text-xs">
+                        <Coins className="w-3.5 h-3.5" />
+                        <span>+{cJob.rewardCoinsPerWorker || 25}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-500">কয়েন</span>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                    <span className="text-[10px] text-slate-500">
+                      পোস্টদাতা: {cJob.userName}
+                    </span>
+                    <button
+                      disabled={isCompleted}
+                      onClick={async () => {
+                        if (isCompleted) return;
+                        try {
+                          window.open(cJob.targetUrl, '_blank', 'noopener,noreferrer');
+                        } catch {}
+                        showToast('কাজটি সম্পন্ন করার পর ৫ সেকেন্ডে কয়েন যোগ হবে', '', 'info');
+                        setTimeout(async () => {
+                          const res = await api.completeWorkerJob(cJob.id);
+                          if (res?.success) {
+                            awardCoinsLocally(cJob.rewardCoinsPerWorker || 25);
+                            soundService.playSuccessFanfare();
+                            triggerConfetti();
+                            setCompletedTaskIds((prev) => [...prev, cJob.id]);
+                            loadCommunityJobs();
+                            showToast(res.message, '', 'coin');
+                          }
+                        }, 5000);
+                      }}
+                      className={`px-3.5 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 cursor-pointer ${
+                        isCompleted
+                          ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                          : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>সম্পন্ন হয়েছে</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>কাজটি করুন</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 🚀 1. শীর্ষ ভেরিফায়েড আর্নিং ও সার্ভে পার্টনার সাইটসমূহ (CPX, Freecash, Offerwall.me) */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <Briefcase className="w-4 h-4 text-emerald-400" />
-            <span>জনপ্রিয় বাংলাদেশি টাস্ক ওয়েবসাইটসমূহ</span>
+            <span>ভেরিফায়েড আর্নিং ও স্পনসর প্ল্যাটফর্মসমূহ</span>
           </h3>
-          <span className="text-[10px] text-emerald-400 font-bold">লাইভ পার্টনার</span>
+          <span className="text-[10px] text-emerald-400 font-bold">অ্যাক্টিভ কোডযুক্ত সাইট</span>
         </div>
 
         <div className="grid grid-cols-1 gap-2.5">
@@ -792,6 +951,14 @@ export const BDMicroTasksHub: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* 💼 USER JOB POSTING MODAL */}
+      {showPostJobModal && (
+        <PostJobModal 
+          onClose={() => setShowPostJobModal(false)} 
+          onJobCreated={loadCommunityJobs} 
+        />
       )}
     </div>
   );

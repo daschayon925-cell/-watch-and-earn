@@ -33,27 +33,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const savedPhoto = localStorage.getItem(`we_user_photo_${activeUid}`);
       const u = await api.getProfile();
       if (u) {
-        // 🛡️ Prevent Coin Decreases / Rollback across sessions or server restarts
-        let highestCoins = u.coins;
-        const currentCached = localStorage.getItem('we_user_cached_profile');
-        if (currentCached) {
-          try {
-            const parsed = JSON.parse(currentCached);
-            if (parsed.coins && parsed.coins > highestCoins) highestCoins = parsed.coins;
-          } catch {}
-        }
-        if (user && user.coins > highestCoins) highestCoins = user.coins;
-
         const finalUser: User = {
           ...u,
-          coins: highestCoins,
           photoURL: (savedPhoto && savedPhoto.startsWith('data:')) ? savedPhoto : (u.photoURL || savedPhoto || u.photoURL)
         };
         setUser(finalUser);
         localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
-        if (highestCoins > u.coins) {
-          api.syncCoins(highestCoins);
-        }
       } else {
         const cloudUser = await cloudDb.getUser(activeUid);
         if (cloudUser) {
@@ -224,27 +209,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const u = await api.getProfile();
       if (u) {
-        // 🛡️ Prevent Coin Decreases
-        let highestCoins = u.coins;
-        const currentCached = localStorage.getItem('we_user_cached_profile');
-        if (currentCached) {
-          try {
-            const parsed = JSON.parse(currentCached);
-            if (parsed.coins && parsed.coins > highestCoins) highestCoins = parsed.coins;
-          } catch {}
-        }
-        if (user && user.coins > highestCoins) highestCoins = user.coins;
-
         const finalUser: User = {
           ...u,
-          coins: highestCoins,
           photoURL: savedPhoto || u.photoURL
         };
         setUser(finalUser);
         localStorage.setItem('we_user_cached_profile', JSON.stringify(finalUser));
-        if (highestCoins > u.coins) {
-          api.syncCoins(highestCoins);
-        }
       } else {
         // Fetch from Cloud DB directly if server just restarted
         const cloudUser = await cloudDb.getUser(effectiveUid);

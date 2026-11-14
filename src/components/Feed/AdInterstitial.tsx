@@ -45,6 +45,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
   const adsterraContainerRef = useRef<HTMLDivElement | null>(null);
 
   // High-converting Rewarded Video Ads with authentic video & sponsor badges
+  // High-converting Rewarded Video Ads with authentic video & sponsor badges
   const rewardedAds = [
     {
       adIndex: 1,
@@ -57,7 +58,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       badge: 'অফিসিয়াল স্পন্সর',
       category: 'Shopping & Offers',
       installBonus: '৳৫০০ ডিসকাউন্ট ভাউচার',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+      youtubeId: 'aqz-KE-bpKQ',
       posterImage: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&auto=format&fit=crop&q=80',
       logoUrl: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=150&auto=format&fit=crop&q=80',
       actionTextBn: 'স্পনসর অফার দেখুন',
@@ -75,7 +76,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       badge: 'ভেরিফায়েড পার্টনার',
       category: 'Finance & Payments',
       installBonus: '৳১০০ ফ্রি ক্যাশব্যাক',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      youtubeId: 'OPf0YbXqDm0',
       posterImage: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=80',
       logoUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=150&auto=format&fit=crop&q=80',
       actionTextBn: 'স্পনসর অফার দেখুন',
@@ -93,7 +94,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       badge: 'টপ চার্টিং গেম',
       category: 'Gaming & Action',
       installBonus: '৫০০ ডায়মন্ড ফ্রি',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
+      youtubeId: 'RgKAFK5djSk',
       posterImage: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80',
       logoUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=150&auto=format&fit=crop&q=80',
       actionTextBn: 'স্পনসর অফার দেখুন',
@@ -111,7 +112,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       badge: 'পপুলার স্পন্সর',
       category: 'Food & Drinks',
       installBonus: '৳১০০ ডিসকাউন্ট',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+      youtubeId: 'JGwWNGJdvx8',
       posterImage: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop&q=80',
       logoUrl: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=150&auto=format&fit=crop&q=80',
       actionTextBn: 'স্পনসর অফার দেখুন',
@@ -129,7 +130,7 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
       badge: 'নাম্বার ১ ট্রেন্ডিং',
       category: 'Entertainment',
       installBonus: '৳২,০০০ ওয়েলকাম ক্যাশ',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+      youtubeId: '9bZkp7q19f0',
       posterImage: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&auto=format&fit=crop&q=80',
       logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',
       actionTextBn: 'স্পনসর অফার দেখুন',
@@ -390,9 +391,9 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
         <button
           type="button"
           onClick={() => {
+            setIsMuted(prev => !prev);
             if (videoRef.current) {
               videoRef.current.muted = !videoRef.current.muted;
-              setIsMuted(videoRef.current.muted);
             }
           }}
           className="p-2 rounded-full bg-black/70 hover:bg-black/90 border border-white/20 text-slate-300 hover:text-white transition active:scale-95 cursor-pointer touch-manipulation pointer-events-auto"
@@ -512,16 +513,29 @@ export const AdInterstitial: React.FC<AdInterstitialProps> = ({
             ref={adsterraContainerRef} 
             className="w-full h-full flex items-center justify-center relative z-10 p-2"
           />
+        ) : currentAd.youtubeId ? (
+          <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden pointer-events-none">
+            {/* Background Poster while buffering */}
+            <img
+              src={currentAd.posterImage}
+              alt={currentAd.appName}
+              className="absolute inset-0 w-full h-full object-cover blur-sm opacity-60"
+            />
+            {/* 100% Guaranteed Official Embed Player */}
+            <iframe
+              key={`${currentAd.youtubeId}_${isMuted}`}
+              src={`https://www.youtube.com/embed/${currentAd.youtubeId}?autoplay=1&mute=${isMuted ? 1 : 0}&controls=0&loop=1&playlist=${currentAd.youtubeId}&playsinline=1&modestbranding=1&enablejsapi=1&rel=0`}
+              title={currentAd.appName}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="relative w-full h-full object-cover border-0 scale-125 pointer-events-none"
+            />
+          </div>
         ) : (
-          <video
-            ref={videoRef}
-            src={currentAd.videoUrl}
-            poster={currentAd.posterImage}
-            autoPlay
-            playsInline
-            loop
-            muted={isMuted}
-            className="w-full h-full object-cover max-h-screen"
+          <img
+            src={currentAd.posterImage}
+            alt={currentAd.appName}
+            className="w-full h-full object-cover"
           />
         )}
 

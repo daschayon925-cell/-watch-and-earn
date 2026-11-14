@@ -1,0 +1,2 @@
+offerwall-verification=ow-426ee7fc2d9f872a6a0a
+# Offerwall.GG site verification - https://offerwall.gg

@@ -31,19 +31,23 @@ import {
   ExternalLink,
   Zap,
   Flame,
-  Briefcase
+  Briefcase,
+  Bot
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { Video, User, Withdrawal, Report, AdminSettings } from '../../types';
 import { api } from '../../services/api';
 import { cloudDb } from '../../services/cloudDb';
+import { AiSentinelTab } from './AiSentinelTab';
 
 export const AdminDashboard: React.FC = () => {
   const { user, toggleAdminRole } = useAuth();
   const { settings, refreshSettings, showToast, language } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'videos' | 'withdrawals' | 'users' | 'settings' | 'broadcast' | 'reports'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'ai_sentinel' | 'jobs' | 'exchanges' | 'videos' | 'withdrawals' | 'users' | 'settings' | 'broadcast' | 'reports'>('overview');
+  const [adminJobs, setAdminJobs] = useState<any[]>([]);
+  const [adminExchanges, setAdminExchanges] = useState<any[]>([]);
   const [kpis, setKpis] = useState<any>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [usersList, setUsersList] = useState<User[]>([]);
@@ -156,14 +160,16 @@ export const AdminDashboard: React.FC = () => {
   const loadAllAdminData = async (showFullLoader: boolean = true) => {
     if (showFullLoader) setLoading(true);
     try {
-      const [ov, vids, usrs, wths, reps, freshSettings, notices] = await Promise.all([
+      const [ov, vids, usrs, wths, reps, freshSettings, notices, jobsRes, excRes] = await Promise.all([
         api.getAdminOverview(),
         api.getVideos(),
         api.getAdminUsers(),
         api.getAdminWithdrawals(),
         api.getAdminReports(),
         api.getSettings(),
-        api.getAdminNotices()
+        api.getAdminNotices(),
+        api.getAdminJobs().catch(() => ({ success: true, jobs: [] })),
+        fetch('/api/admin/exchanges', { credentials: 'include' }).then(r => r.json()).catch(() => ({ exchanges: [] }))
       ]);
       
       // Merge with Cloud Firestore to make sure no user or request is missed even after server refresh
@@ -175,8 +181,12 @@ export const AdminDashboard: React.FC = () => {
         if (!existing) {
           mergedUsers.push(cu);
         } else {
-          existing.coins = Math.max(existing.coins || 0, cu.coins || 0);
-          existing.lifetimeCoins = Math.max(existing.lifetimeCoins || 0, cu.lifetimeCoins || 0);
+          if (existing.coins === undefined && cu.coins !== undefined) {
+            existing.coins = cu.coins;
+          }
+          if (existing.lifetimeCoins === undefined && cu.lifetimeCoins !== undefined) {
+            existing.lifetimeCoins = cu.lifetimeCoins;
+          }
         }
       });
 
@@ -186,6 +196,12 @@ export const AdminDashboard: React.FC = () => {
       setWithdrawals(wths || []);
       setReports(reps || []);
       setSentNoticesList(notices || []);
+      if (jobsRes?.jobs) {
+        setAdminJobs(jobsRes.jobs);
+      }
+      if (excRes?.exchanges) {
+        setAdminExchanges(excRes.exchanges);
+      }
       if (freshSettings) {
         setEditSettings(freshSettings);
       } else if (settings) {
@@ -506,6 +522,9 @@ export const AdminDashboard: React.FC = () => {
       <div className="flex items-center gap-1 overflow-x-auto no-scrollbar p-1 rounded-2xl bg-slate-900 border border-slate-800">
         {[
           { id: 'overview', label: 'ওভারভিউ', icon: <DollarSign className="w-3.5 h-3.5" /> },
+          { id: 'ai_sentinel', label: '🤖 এআই সেন্টিনেল', icon: <Bot className="w-3.5 h-3.5 text-cyan-400" /> },
+          { id: 'jobs', label: `জবস (${adminJobs.filter(j => j.status === 'pending').length})`, icon: <Briefcase className="w-3.5 h-3.5 text-emerald-400" /> },
+          { id: 'exchanges', label: `ডলার এক্সচেঞ্জ (${adminExchanges.filter(e => e.status === 'Pending').length})`, icon: <DollarSign className="w-3.5 h-3.5 text-amber-400" /> },
           { id: 'broadcast', label: 'নোটিশ পাঠান', icon: <Megaphone className="w-3.5 h-3.5 text-amber-400" /> },
           { id: 'withdrawals', label: 'ক্যাশআউট', icon: <Wallet className="w-3.5 h-3.5" /> },
           { id: 'videos', label: 'ভিডিও', icon: <VideoIcon className="w-3.5 h-3.5" /> },
@@ -625,6 +644,11 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* 🤖 AI SENTINEL AUTONOMOUS AGENT TAB */}
+      {activeTab === 'ai_sentinel' && (
+        <AiSentinelTab showToast={showToast} />
+      )}
+
       {/* 2. WITHDRAWALS TAB */}
       {activeTab === 'withdrawals' && (
         <div className="space-y-3">
@@ -692,6 +716,21 @@ export const AdminDashboard: React.FC = () => {
                         </span>
                       )}
                     </div>
+
+                    {/* 🤖 AI Sentinel Fraud & Audit Badge */}
+                    <div className="flex items-center gap-2 mt-1 text-[10px]">
+                      {(w as any).aiQuarantined ? (
+                        <span className="text-red-400 font-bold flex items-center gap-1 bg-red-950/60 px-2 py-0.5 rounded-md border border-red-500/40">
+                          <Bot className="w-3 h-3 text-red-400" />
+                          <span>এআই কোয়ারেন্টাইন: {(w as any).aiQuarantineReason || 'উচ্চ ঝুঁকি শনাক্ত'}</span>
+                        </span>
+                      ) : (
+                        <span className="text-cyan-400 font-bold flex items-center gap-1 bg-cyan-950/40 px-2 py-0.5 rounded-md border border-cyan-500/30">
+                          <Bot className="w-3 h-3 text-cyan-400" />
+                          <span>এআই অডিট: নিরাপদ ও বৈধ কয়েন</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                     w.status === 'Paid'
@@ -745,18 +784,423 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 3. VIDEOS MANAGEMENT TAB */}
-      {activeTab === 'videos' && (
+      {/* 2.5 COMMUNITY JOB POSTS & BKASH/NAGAD DEPOSITS TAB */}
+      {activeTab === 'jobs' && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-xs text-slate-300 uppercase tracking-wider">
-              কনটেন্ট ক্যাটালগ ({videos.length})
-            </h3>
+            <div>
+              <h3 className="font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Briefcase className="w-4 h-4 text-emerald-400" />
+                <span>কমিউনিটি কাজ ও বিকাশ ডিপোজিট ({adminJobs.length})</span>
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                ইউজারদের পোস্ট করা কাজের বিকাশ/নগদ পেমেন্ট ভেরিফাই করে অ্যাপ্রুভ করুন
+              </p>
+            </div>
+            <button
+              onClick={() => loadAllAdminData(true)}
+              className="px-3 py-1.5 rounded-xl bg-slate-800 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1 cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>রিফ্রেশ</span>
+            </button>
+          </div>
+
+          {adminJobs.length === 0 ? (
+            <div className="p-8 text-center rounded-2xl bg-slate-900/60 border border-slate-800 text-slate-400 text-xs">
+              কোনো কাজের আবেদন জমা পড়েনি।
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {adminJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-500/40 transition shadow-lg space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                          job.status === 'approved'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                            : job.status === 'rejected'
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+                        }`}>
+                          {job.status === 'approved' ? 'লাইভ (অনুমোদিত) ✅' : job.status === 'rejected' ? 'বাতিলকৃত ❌' : 'পেন্ডিং ভেরিফিকেশন ⏳'}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {job.category.toUpperCase()}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-bold text-white">
+                        {job.title}
+                      </h4>
+                      <a
+                        href={job.targetUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-cyan-400 hover:underline flex items-center gap-1 mt-0.5 font-mono break-all"
+                      >
+                        <span>{job.targetUrl}</span>
+                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                      </a>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-base font-black text-emerald-400 block font-mono">
+                        ৳{job.costBDT} BDT
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {job.targetWorkers} জন ইউজার
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Payment Verification Box */}
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-500 block">পেমেন্ট মেথড:</span>
+                      <span className="font-bold text-white uppercase">{job.paymentMethod}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 block">প্রেরক মোবাইল:</span>
+                      <span className="font-bold text-emerald-400 font-mono">{job.senderPhone}</span>
+                    </div>
+                    <div className="col-span-2 pt-1 border-t border-slate-800/60 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-slate-500 block">পেমেন্ট TrxID:</span>
+                        <span className="font-black text-amber-400 font-mono tracking-wider">{job.trxId}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400">
+                        পোস্টকারী: {job.userName}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Admin Actions */}
+                  {job.status === 'pending' && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={async () => {
+                          const res = await api.updateAdminJobStatus(job.id, 'approved');
+                          if (res?.success) {
+                            showToast('কাজটি লাইভ করা হয়েছে! ✅', '', 'success');
+                            loadAllAdminData(false);
+                          }
+                        }}
+                        className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>পেমেন্ট পেয়েছি, লাইভ করুন</span>
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const res = await api.updateAdminJobStatus(job.id, 'rejected');
+                          if (res?.success) {
+                            showToast('আবেদনটি বাতিল করা হয়েছে', '', 'info');
+                            loadAllAdminData(false);
+                          }
+                        }}
+                        className="px-4 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 font-bold text-xs transition cursor-pointer"
+                      >
+                        বাতিল
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 2.5 DOLLAR EXCHANGES MANAGEMENT TAB */}
+      {activeTab === 'exchanges' && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4 text-amber-400" />
+                <span>ডলার টু বিকাশ এক্সচেঞ্জ আবেদন ({adminExchanges.length})</span>
+              </h3>
+              <p className="text-[10px] text-slate-400">ইউজারদের পাঠানো ডলার যাচাই করে তাদের বিকাশ/নগদে টাকা পাঠান</p>
+            </div>
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              {adminExchanges.filter(e => e.status === 'Pending').length} টি অপেক্ষমাণ
+            </span>
+          </div>
+
+          {adminExchanges.length === 0 ? (
+            <div className="p-8 text-center text-xs text-slate-400 bg-slate-900 rounded-2xl border border-slate-800">
+              <DollarSign className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+              <p>এখনো কোনো ডলার এক্সচেঞ্জ আবেদন জমা পড়েনি।</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {adminExchanges.map((exc) => (
+                <div
+                  key={exc.id}
+                  className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-black text-amber-400 font-mono">
+                        ${exc.usdAmount} USD
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                        {exc.platform}
+                      </span>
+                    </div>
+                    <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
+                      exc.status === 'Paid'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : exc.status === 'Rejected'
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    }`}>
+                      {exc.status === 'Paid' ? 'পরিশোধিত ✓' : exc.status === 'Rejected' ? 'বাতিল ✕' : 'অপেক্ষমাণ...'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs p-2.5 rounded-xl bg-slate-950 border border-slate-800/80">
+                    <div>
+                      <span className="text-[10px] text-slate-500 block">ইউজারকে দিতে হবে:</span>
+                      <span className="font-black text-emerald-400 font-mono">৳{exc.bdtAmount} BDT</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 block">পেমেন্ট মেথড:</span>
+                      <span className="font-bold text-white uppercase">{exc.paymentMethod}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 block">ইউজার মোবাইল নম্বর:</span>
+                      <span className="font-bold text-emerald-400 font-mono select-all">{exc.mobileNumber}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 block">ইউজারের ডলার TrxID:</span>
+                      <span className="font-bold text-amber-300 font-mono select-all">{exc.trxId}</span>
+                    </div>
+                  </div>
+
+                  {exc.status === 'Pending' && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={async () => {
+                          const pTrx = window.prompt(`ইউজারের ${exc.paymentMethod} (${exc.mobileNumber}) নম্বরে ৳${exc.bdtAmount} পাঠিয়েছেন? বিকাশ/নগদের TrxID দিন:`);
+                          if (!pTrx) return;
+                          const res = await fetch('/api/admin/exchange/status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                              exchangeId: exc.id,
+                              status: 'Paid',
+                              payoutTrxId: pTrx.trim()
+                            })
+                          }).then(r => r.json());
+                          if (res.success) {
+                            showToast('পেমেন্ট সফলভাবে সম্পন্ন হয়েছে! 💵', '', 'success');
+                            loadAllAdminData(false);
+                          }
+                        }}
+                        className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>টাকা পাঠানো হয়েছে (Paid)</span>
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const note = window.prompt('বাতিল করার কারণ লিখুন (যেমন: ডলার পাওয়া যায়নি):') || 'লেনদেন ভেরিফাই করা যায়নি';
+                          const res = await fetch('/api/admin/exchange/status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                              exchangeId: exc.id,
+                              status: 'Rejected',
+                              note
+                            })
+                          }).then(r => r.json());
+                          if (res.success) {
+                            showToast('আবেদনটি বাতিল করা হয়েছে', '', 'info');
+                            loadAllAdminData(false);
+                          }
+                        }}
+                        className="px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 font-bold text-xs transition cursor-pointer"
+                      >
+                        বাতিল
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. VIDEOS MANAGEMENT TAB */}
+      {activeTab === 'videos' && (
+        <div className="space-y-4">
+          
+          {/* 💰 OWNER VIDEO MONETIZATION BLUEPRINT CARD */}
+          <div className="p-4 rounded-3xl bg-gradient-to-br from-[#0c1a2e] via-[#091524] to-[#06111d] border-2 border-amber-500/50 shadow-2xl space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-400">
+                  <DollarSign className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-amber-300 uppercase tracking-wide">
+                    ভিডিও দেখিয়ে মালিকের (আপনার) টাকা আয়ের সেরা ৪টি মাধ্যম
+                  </h4>
+                  <p className="text-[10px] text-slate-300">
+                    ইউজাররা ওয়েবসাইট বা অ্যাপে ভিডিও দেখলে কীভাবে সরাসরি আপনার অ্যাকাউন্টে টাকা আসবে
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                ১০০% রিয়েল ইনকাম
+              </span>
+            </div>
+
+            {/* 4 Revenue Pillars Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
+              {/* Method 1: Dailymotion Publisher Partner (50% RevShare) */}
+              <div className="p-3 rounded-2xl bg-slate-950/80 border border-cyan-500/30 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-cyan-400 text-xs font-black">
+                  <span>🎥</span>
+                  <span>১. Dailymotion পার্টনার</span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  ডেইলিমোশন পার্টনারে জয়েন করে তাদের যে কোনো ভিডিও আপনার সাইটে এম্বেড করলে প্রতিটি ভিডিওতে <strong>প্রি-রোল ও মিড-রোল ভিডিও বিজ্ঞাপন</strong> চলবে এবং মোট আয়ের <strong>৫০% রেভিনিউ শেয়ার</strong> সরাসরি আপনার ব্যাংক/পেপ্যালে জমা হবে!
+                </p>
+              </div>
+
+              {/* Method 2: Adsterra & Monetag Rewarded Ads */}
+              <div className="p-3 rounded-2xl bg-slate-950/80 border border-amber-500/30 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-amber-400 text-xs font-black">
+                  <span>⚡</span>
+                  <span>২. ভিডিওর পর স্বয়ংক্রিয় বিজ্ঞাপন</span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  ভিডিও দেখা শেষ হলে ইউজারের সামনে স্বয়ংক্রিয়ভাবে আপনার <strong>Adsterra / Monetag Rewarded Video</strong> চলে আসে। ইউজার বিজ্ঞাপন দেখে কয়েন পাবে এবং আপনার অ্যাকাউন্টে সরাসরি CPM ডলার জমা হবে।
+                </p>
+              </div>
+
+              {/* Method 3: Loot.tv & Rewarded Streams */}
+              <div className="p-3 rounded-2xl bg-slate-950/80 border border-purple-500/30 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-purple-400 text-xs font-black">
+                  <span>💎</span>
+                  <span>৩. Loot.tv রিওয়ার্ডেড প্লেয়ার</span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  লুট.টিভি (Loot.tv / Adscend Media) বিশেষভাবে রিওয়ার্ড ওয়েবসাইটের জন্য তৈরি। এখানে ভিডিও দেখালে সরাসরি প্রতি অ্যাড ইমপ্রেশনে পাবলিশারকে ডলার দেওয়া হয়।
+                </p>
+              </div>
+
+              {/* Method 4: YouTube & Paid Sponsorships */}
+              <div className="p-3 rounded-2xl bg-slate-950/80 border border-red-500/30 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-red-400 text-xs font-black">
+                  <span>📺</span>
+                  <span>৪. ইউটিউব ও পেইড স্পন্সরশিপ</span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  নিজের চ্যানেলে ভিউ ও ওয়াচ টাইম বাড়ানোর পাশাপাশি লোকাল ক্লায়েন্টদের থেকে অগ্রিম ৫০০-১০০০ টাকা নিয়ে তাদের ভিডিও এখানে স্পনসর হিসেবে যুক্ত করে আয় করুন।
+                </p>
+              </div>
+            </div>
+
+            {/* Partner IDs & Configurations Row */}
+            <div className="pt-3 border-t border-slate-800 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-cyan-300 mb-1">
+                    🎥 Dailymotion Partner Player ID (ঐচ্ছিক):
+                  </label>
+                  <input
+                    type="text"
+                    value={editSettings.adsConfig?.dailymotionPlayerId || ''}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      adsConfig: { ...editSettings.adsConfig, dailymotionPlayerId: e.target.value.trim() } as any
+                    })}
+                    placeholder="যেমন: x1a2b3c (Dailymotion Partner Console থেকে প্রাপ্ত)"
+                    className="w-full p-2 bg-slate-950 border border-cyan-500/40 rounded-xl text-xs font-mono text-cyan-200 focus:outline-none"
+                  />
+                  <span className="text-[9px] text-slate-400 block mt-0.5">
+                    💡 partner.dailymotion.com এ সাইন-আপ করে প্লেয়ার আইডি বসালে ৫০% ইনকাম সরাসরি আপনার ডেইলিমোশনে যোগ হবে।
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-amber-300 mb-1">
+                    ⏱️ ভিডিও কতক্ষণ চলবে (সেকেন্ড - ডিফল্ট ৬০ সে / ১ মিনিট):
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={editSettings.adsConfig?.videoWatchSeconds ?? 60}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        adsConfig: { ...editSettings.adsConfig, videoWatchSeconds: parseInt(e.target.value, 10) || 60 } as any
+                      })}
+                      className="w-24 p-2 bg-slate-950 border border-amber-500/40 rounded-xl text-xs font-mono text-amber-300 font-bold"
+                    />
+                    <span className="text-[10px] text-slate-300">
+                      ৬০ সেকেন্ড (১ মিনিট) দেখার পর ১৫ সেকেন্ডের বিজ্ঞাপন আসবে
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Owner YouTube Channel URL Quick Input */}
+              <div className="space-y-1.5 pt-1">
+                <label className="block text-[11px] font-bold text-slate-200">
+                  🔗 মালিকের অফিসিয়াল ইউটিউব চ্যানেল / ভিডিও লিংক (Sponsor Channel URL):
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={editSettings.adsConfig?.sponsorChannelUrl || ''}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      adsConfig: { ...editSettings.adsConfig, sponsorChannelUrl: e.target.value } as any
+                    })}
+                    placeholder="https://www.youtube.com/@YourChannelName বা ভিডিও লিংক"
+                    className="flex-1 p-2 bg-slate-950 border border-amber-500/40 rounded-xl text-xs font-mono text-amber-300 focus:outline-none focus:border-amber-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await api.updateSettings(editSettings);
+                        showToast('ভিডিও মনিটাইজেশন সেটিংস সংরক্ষিত হয়েছে! ✅', 'ইউজাররা ভিডিও দেখলে আপনার রেভিনিউ যোগ হবে', 'success');
+                      } catch {
+                        showToast('সংরক্ষণ ব্যর্থ হয়েছে', '', 'error');
+                      }
+                    }}
+                    className="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-slate-950 font-black text-xs rounded-xl shadow transition cursor-pointer shrink-0"
+                  >
+                    সেটিংস সংরক্ষণ করুন
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-xs text-slate-300 uppercase tracking-wider">
+                অনুমোদিত ভিডিও ক্যাটালগ ({videos.length})
+              </h3>
+              <p className="text-[10px] text-slate-400">এই ভিডিওগুলো ইউজারদের ফিডে দেখানো হচ্ছে</p>
+            </div>
             <button
               onClick={() => setShowAddVideo(true)}
-              className="px-3 py-1.5 bg-emerald-500 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1 shadow"
+              className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 shadow transition cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" /> ভিডিও যুক্ত করুন
+              <Plus className="w-4 h-4" /> <span>নতুন ভিডিও যুক্ত করুন</span>
             </button>
           </div>
 
@@ -766,11 +1210,11 @@ export const AdminDashboard: React.FC = () => {
                 key={v.id}
                 className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3"
               >
-                <img src={v.thumbnailUrl} alt={v.title} className="w-12 h-14 object-cover rounded-xl shrink-0" />
+                <img src={v.thumbnailUrl} alt={v.title} className="w-12 h-14 object-cover rounded-xl shrink-0 border border-slate-700" />
                 <div className="flex-1 min-w-0">
                   <h5 className="text-xs font-bold text-white truncate">{v.title}</h5>
                   <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                    <span>{v.category}</span>
+                    <span className="capitalize">{v.category}</span>
                     <span>•</span>
                     <span className="text-emerald-400 font-semibold">+{v.rewardCoins} Coins</span>
                     <span>•</span>
@@ -1355,6 +1799,50 @@ export const AdminDashboard: React.FC = () => {
                       </span>
                     </div>
 
+                    <div className="p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/40 space-y-1.5">
+                      <label className="block text-[10px] font-bold text-indigo-300 mb-1 flex items-center justify-between">
+                        <span>🔗 ShrinkMe.io শর্ট লিংক (১৫ সে. ভিজিট টাস্ক URL):</span>
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                          ডাবল ডলার আর্ন
+                        </span>
+                      </label>
+                      <input
+                        type="url"
+                        value={editSettings.adsConfig?.shrinkmeShortlinkUrl ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          adsConfig: { ...editSettings.adsConfig, shrinkmeShortlinkUrl: e.target.value } as any
+                        })}
+                        placeholder="https://shrinkme.ink/..."
+                        className="w-full p-2.5 bg-slate-950 border border-indigo-500/50 rounded-xl text-xs font-mono text-cyan-300 focus:outline-none focus:border-indigo-400"
+                      />
+                      <span className="text-[9px] text-slate-400 block mt-0.5">
+                        💡 ShrinkMe.io থেকে আপনার Adsterra Direct Link শর্ট করে সেই ছোট লিংকটি এখানে দিন। ইউজাররা ১৫ সেকেন্ড ভিজিট করলে ShrinkMe + Adsterra দুই জায়গা থেকেই আপনার একাউন্টে ডলার যোগ হবে!
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/40 space-y-1.5">
+                      <label className="block text-[10px] font-bold text-cyan-300 mb-1 flex items-center justify-between">
+                        <span>🔗 DropLink.co শর্ট লিংক (১৫ সে. ভিজিট টাস্ক ২ URL):</span>
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                          DropLink ডলার আর্ন
+                        </span>
+                      </label>
+                      <input
+                        type="url"
+                        value={editSettings.adsConfig?.droplinkShortlinkUrl ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          adsConfig: { ...editSettings.adsConfig, droplinkShortlinkUrl: e.target.value } as any
+                        })}
+                        placeholder="https://droplink.co/..."
+                        className="w-full p-2.5 bg-slate-950 border border-cyan-500/50 rounded-xl text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-400"
+                      />
+                      <span className="text-[9px] text-slate-400 block mt-0.5">
+                        💡 DropLink.co থেকে তৈরি করা ছোট লিংকটি এখানে দিন। ইউজাররা এখান থেকেও ডলার কামাতে পারবে!
+                      </span>
+                    </div>
+
                     {/* 🎬 REWARDED VIDEO DURATION SELECTOR */}
                     <div className="p-3 rounded-xl bg-slate-950 border border-amber-500/40 space-y-2">
                       <div className="flex items-center justify-between">
@@ -1637,27 +2125,11 @@ export const AdminDashboard: React.FC = () => {
                           💰 আপনার অ্যাকাউন্ট না খুলেও আপনার ১০০% লাভ হবে কিভাবে?
                         </p>
                         <p className="text-slate-300">
-                          ১. <strong>স্বয়ংক্রিয় অ্যাড আর্বিট্রেজ:</strong> আপনি যদি WorkupJob বা অন্য কোনো সাইটে অ্যাকাউন্ট নাও খোলেন, ইউজার যখন ২-৩ মিনিটের কাজে ক্লিক করে তখন স্বয়ংক্রিয়ভাবে আপনার <strong>Adsterra / HilltopAds Direct Link</strong> ওপেন হয়। ইউজার ২ মিনিট সেখানে ব্রাউজ করে, যার ফলে প্রতি ১,০০০ ক্লিকে Adsterra থেকে সরাসরি আপনার অ্যাকাউন্টে $২-$৫ (২৪০-৬০০ টাকা) জমা হয়!
+                          ১. <strong>স্বয়ংক্রিয় স্পনসর ও অফার লিঙ্ক:</strong> ইউজার যখন বাংলাদেশি ২-৩ মিনিটের কাজে ক্লিক করে তখন স্বয়ংক্রিয়ভাবে আপনার ভেরিফায়েড <strong>Adsterra / HilltopAds / Monetag Direct Link</strong> ওপেন হয়। ইউজার সেখানে ব্রাউজ করে, যার ফলে প্রতি ১,০০০ ক্লিকে সরাসরি আপনার নেটওয়ার্ক অ্যাকাউন্টে ডলার ও CPM রেভিনিউ জমা হয়!
                         </p>
                         <p className="text-slate-300">
-                          ২. <strong>রেফারেল কমিশন (ঐচ্ছিক):</strong> আপনি চাইলে WorkupJob.com এ একটি ফ্রি অ্যাকাউন্ট খুলে আপনার নিজের রেফারেল লিংকটি নিচে দিতে পারেন। তাহলে ইউজারদের লাইফটাইম কাজের ১০%-১৫% কমিশন সরাসরি আপনার WorkupJob অ্যাকাউন্টেও জমা হবে।
+                          ২. <strong>সিপিএ ও সার্ভে ইনকাম:</strong> পাশাপাশি ইউজাররা আপনার ভেরিফায়েড CPX Research (App ID: 36966), Freecash (Code: 39Z5IH), Offerwall.me ও Lootly অফার সম্পন্নের মাধ্যমে রিয়েল কয়েন আয় করবে।
                         </p>
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-emerald-200 mb-1">
-                          🔗 আপনার WorkupJob রেফারেল লিংক (ঐচ্ছিক - খালি রাখলে স্বয়ংক্রিয়ভাবে Adsterra ডিরেক্ট লিঙ্ক চলবে):
-                        </label>
-                        <input
-                          type="url"
-                          value={editSettings.adsConfig?.workupJobReferralLink ?? ''}
-                          onChange={(e) => setEditSettings({
-                            ...editSettings,
-                            adsConfig: { ...editSettings.adsConfig, workupJobReferralLink: e.target.value } as any
-                          })}
-                          placeholder="https://workupjob.com/?ref=YOUR_USER_ID"
-                          className="w-full p-2 bg-slate-950 border border-emerald-500/30 rounded-xl text-xs font-mono text-emerald-200 focus:outline-none focus:border-emerald-400"
-                        />
                       </div>
                     </div>
                   </div>
@@ -1726,6 +2198,127 @@ export const AdminDashboard: React.FC = () => {
                   />
                 </label>
 
+                {/* 🔥 BitcoTasks Official Integration */}
+                <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                      <span>🔥</span>
+                      <span>BitcoTasks অল-ইন-ওয়ান অফারওয়াল (সার্ভে, অফার ও পিটিসি)</span>
+                    </span>
+                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-amber-200 cursor-pointer">
+                      <span>চালু</span>
+                      <input
+                        type="checkbox"
+                        checked={editSettings.offerwallsConfig?.bitcotasksEnabled ?? true}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            bitcotasksEnabled: e.target.checked
+                          } as any
+                        })}
+                        className="rounded accent-amber-500 w-4 h-4"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-900/90 border border-amber-500/20 text-[11px] text-slate-300 space-y-2">
+                    <div>
+                      <p className="font-bold text-amber-300 mb-1">
+                        🔗 BitcoTasks Postback URL:
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <code className="text-[10px] font-mono text-emerald-300 bg-slate-950 p-1.5 rounded-lg border border-emerald-500/30 flex-1 select-all break-all">
+                          {`${window.location.origin}/api/postback/bitcotasks?user_id={user_id}&amount={amount}&payout={payout}&trans_id={trans_id}&status=1`}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/api/postback/bitcotasks?user_id={user_id}&amount={amount}&payout={payout}&trans_id={trans_id}&status=1`);
+                            showToast('পোস্টব্যাক লিংক কপি হয়েছে! 📋', 'BitcoTasks-এর Postback বক্সে পেস্ট করুন', 'success');
+                          }}
+                          className="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-[10px] rounded-lg shrink-0"
+                        >
+                          কপি করুন
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 mb-1">
+                          API Key
+                        </label>
+                        <input
+                          type="text"
+                          value={editSettings.offerwallsConfig?.bitcotasksApiKey ?? 'el15zv6b8o9kz3i9haq63pgtpdiivh'}
+                          onChange={(e) => setEditSettings({
+                            ...editSettings,
+                            offerwallsConfig: {
+                              ...editSettings.offerwallsConfig,
+                              bitcotasksApiKey: e.target.value
+                            } as any
+                          })}
+                          placeholder="el15zv6b8o9kz3i9haq63pgtpdiivh"
+                          className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 mb-1">
+                          Secret Key
+                        </label>
+                        <input
+                          type="text"
+                          value={editSettings.offerwallsConfig?.bitcotasksSecretKey ?? 'f1d36264b0fa90900bda3aaf5ef7847c'}
+                          onChange={(e) => setEditSettings({
+                            ...editSettings,
+                            offerwallsConfig: {
+                              ...editSettings.offerwallsConfig,
+                              bitcotasksSecretKey: e.target.value
+                            } as any
+                          })}
+                          placeholder="f1d36264b0fa90900bda3aaf5ef7847c"
+                          className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-white font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 💎 Affmine Official Integration (#6741) */}
+                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-emerald-300 flex items-center gap-1.5">
+                      <span>💎</span>
+                      <span>Affmine অফিশিয়াল অফারওয়াল (#6741)</span>
+                    </span>
+                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-200 cursor-pointer">
+                      <span>চালু</span>
+                      <input
+                        type="checkbox"
+                        checked={editSettings.offerwallsConfig?.affmineEnabled ?? true}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            affmineEnabled: e.target.checked
+                          } as any
+                        })}
+                        className="rounded accent-emerald-500 w-4 h-4"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-900/90 border border-emerald-500/20 text-[11px] text-slate-300 space-y-2">
+                    <p className="font-bold text-emerald-300">
+                      Offerwall Code: <span className="font-mono text-white">ow_6aee0425704f4</span> (ID: #6741)
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      পোস্টব্যাক লিংক: <code className="text-emerald-400">{`${window.location.origin}/api/postback/affmine`}</code>
+                    </p>
+                  </div>
+                </div>
+
                 {/* 🚀 1. AdGem Official Integration (WatchEarnBD) */}
                 <div className="p-3 rounded-xl bg-blue-950/40 border border-blue-500/40 space-y-2.5">
                   <div className="flex items-center justify-between">
@@ -1750,28 +2343,34 @@ export const AdminDashboard: React.FC = () => {
                     </label>
                   </div>
 
-                  <div className="p-2.5 rounded-lg bg-slate-900/90 border border-blue-500/20 text-[11px] text-slate-300 space-y-1">
-                    <p className="font-bold text-cyan-300">
-                      🔗 আপনার সার্ভার পোস্টব্যাক URL (AdGem ড্যাশবোর্ডে বসানোর লিংক):
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <code className="text-[10px] font-mono text-cyan-200 bg-slate-950 p-1.5 rounded-lg border border-cyan-500/30 flex-1 select-all break-all">
-                        https://watch-and-earn-z5hx.onrender.com/api/postback/adgem?amount={'{amount}'}&payout={'{payout}'}&player_id={'{player_id}'}&transaction_id={'{transaction_id}'}
-                      </code>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText('https://watch-and-earn-z5hx.onrender.com/api/postback/adgem?amount={amount}&payout={payout}&player_id={player_id}&transaction_id={transaction_id}');
-                          showToast('পোস্টব্যাক লিংক কপি হয়েছে! 📋', 'AdGem ড্যাশবোর্ডে পেস্ট করুন', 'success');
-                        }}
-                        className="px-2.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-[10px] rounded-lg shrink-0"
-                      >
-                        কপি করুন
-                      </button>
+                  <div className="p-2.5 rounded-lg bg-slate-900/90 border border-blue-500/20 text-[11px] text-slate-300 space-y-2">
+                    <div>
+                      <p className="font-bold text-cyan-300 mb-1">
+                        🔗 AdGem Postback URL (AdGem-এর Postback URL বক্সে শুধুমাত্র এই লিংকটি দিন):
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <code className="text-[10px] font-mono text-emerald-300 bg-slate-950 p-1.5 rounded-lg border border-emerald-500/30 flex-1 select-all break-all">
+                          {`${window.location.origin}/api/postback/adgem`}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/api/postback/adgem`);
+                            showToast('বেস পোস্টব্যাক লিংক কপি হয়েছে! 📋', 'AdGem এর Postback URL বক্সে পেস্ট করুন', 'success');
+                          }}
+                          className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-[10px] rounded-lg shrink-0"
+                        >
+                          কপি করুন
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] text-slate-400">
+                      💡 <strong>নোট:</strong> AdGem-এর নিচে <code>INCLUDE MACROS</code> সেকশনে <code>amount</code>, <code>payout</code>, <code>player_id</code>, <code>transaction_id</code> সিলেক্ট করা থাকলে লিংকের শেষে কোনো <code>?amount=...</code> লিখতে হয় না।
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div>
                       <label className="block text-[10px] font-medium text-slate-300 mb-1">
                         AdGem App ID (Create হওয়ার পর পাওয়া যাবে):
@@ -1788,6 +2387,24 @@ export const AdminDashboard: React.FC = () => {
                         })}
                         placeholder="AdGem App ID"
                         className="w-full p-2 bg-slate-950 border border-blue-500/30 rounded-xl text-xs font-mono text-blue-200 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-300 mb-1">
+                        Postback Key (AdGem ড্যাশবোর্ড থেকে প্রাপ্ত):
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.adgemPostbackKey ?? '7429809lf0jdd2mb22e2mhad'}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            adgemPostbackKey: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="7429809lf0jdd2mb22e2mhad"
+                        className="w-full p-2 bg-slate-950 border border-blue-500/30 rounded-xl text-xs font-mono text-emerald-300 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -1961,12 +2578,12 @@ export const AdminDashboard: React.FC = () => {
                     </p>
                     <div className="flex items-center gap-2">
                       <code className="text-[10px] font-mono text-teal-200 bg-slate-950 p-1.5 rounded-lg border border-teal-500/30 flex-1 select-all break-all">
-                        https://watch-and-earn-z5hx.onrender.com/api/postback/cpx?status={'{status}'}&trans_id={'{trans_id}'}&user_id={'{user_id}'}&amount_local_currency={'{amount_local_currency}'}
+                        {`${window.location.origin}/api/postback/cpx?status={status}&trans_id={trans_id}&user_id={user_id}&amount_local_currency={amount_local_currency}`}
                       </code>
                       <button
                         type="button"
                         onClick={() => {
-                          navigator.clipboard.writeText('https://watch-and-earn-z5hx.onrender.com/api/postback/cpx?status={status}&trans_id={trans_id}&user_id={user_id}&amount_local_currency={amount_local_currency}');
+                          navigator.clipboard.writeText(`${window.location.origin}/api/postback/cpx?status={status}&trans_id={trans_id}&user_id={user_id}&amount_local_currency={amount_local_currency}`);
                           showToast('পোস্টব্যাক লিংক কপি হয়েছে! 📋', 'CPX পাবলিশার ড্যাশবোর্ডে পেস্ট করুন', 'success');
                         }}
                         className="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-500 text-slate-950 font-bold text-[10px] rounded-lg shrink-0"
@@ -1993,6 +2610,94 @@ export const AdminDashboard: React.FC = () => {
                       placeholder="36966"
                       className="w-full p-2 bg-slate-950 border border-teal-500/30 rounded-xl text-xs font-mono text-teal-200 focus:outline-none"
                     />
+                  </div>
+                </div>
+
+                {/* ⏱️ 4.5 TimeWall Micro-Tasks & Clicks Offerwall */}
+                <div className="p-3 rounded-xl bg-blue-950/40 border border-blue-500/40 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-blue-300 flex items-center gap-1.5">
+                      <span>⏱️</span>
+                      <span>TimeWall মাইক্রো-টাস্ক, ক্লিক ও সার্ভে (siteowner.timewall.io)</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={editSettings.offerwallsConfig?.timewallEnabled ?? false}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          timewallEnabled: e.target.checked
+                        } as any
+                      })}
+                      className="rounded accent-blue-500 w-4 h-4"
+                    />
+                  </div>
+
+                  {/* Copyable TimeWall Postback URL */}
+                  <div className="p-2 rounded-lg bg-slate-950/80 border border-blue-500/30 space-y-1">
+                    <span className="block text-[10px] font-bold text-blue-300">
+                      TimeWall Postback URL (TimeWall ড্যাশবোর্ডে পেস্ট করুন):
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        readOnly
+                        value={`${window.location.origin}/api/postback/timewall?userid={userID}&txid={transactionID}&revenue={revenue}&currency={currencyAmount}&hash={hash}&ip={ip}&type={type}&withdrawid={withdrawid}&reason={reason}&offername={offername}&offerdetail={offerdetail}`}
+                        className="flex-1 p-1.5 bg-slate-900 border border-slate-800 rounded text-[10px] font-mono text-cyan-300 select-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = `${window.location.origin}/api/postback/timewall?userid={userID}&txid={transactionID}&revenue={revenue}&currency={currencyAmount}&hash={hash}&ip={ip}&type={type}&withdrawid={withdrawid}&reason={reason}&offername={offername}&offerdetail={offerdetail}`;
+                          navigator.clipboard?.writeText(url);
+                          showToast('কপি সফল ✅', 'TimeWall Postback URL কপি করা হয়েছে', 'success');
+                        }}
+                        className="px-2 py-1.5 rounded bg-blue-500 text-slate-950 font-black text-[10px] hover:bg-blue-400 shrink-0 cursor-pointer"
+                      >
+                        কপি করুন
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-300 mb-1">
+                        TimeWall Placement ID (OID):
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.timewallPlacementId ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            timewallPlacementId: e.target.value.trim(),
+                            timewallEnabled: true
+                          } as any
+                        })}
+                        placeholder="যেমন: a1b2c3d4e5f6"
+                        className="w-full p-2 bg-slate-950 border border-blue-500/30 rounded-xl text-xs font-mono text-blue-200 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-300 mb-1">
+                        TimeWall Secret Key (REVEAL থেকে):
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.timewallSecretKey ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            timewallSecretKey: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="Secret Key বসান"
+                        className="w-full p-2 bg-slate-950 border border-blue-500/30 rounded-xl text-xs font-mono text-blue-200 focus:outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -2053,6 +2758,76 @@ export const AdminDashboard: React.FC = () => {
                         className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-emerald-200 focus:outline-none"
                       />
                     </div>
+                  </div>
+                </div>
+
+                {/* 🌐 6. CPAGrip Global CPA Offers & Content Locker */}
+                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-emerald-300 flex items-center gap-1.5">
+                      <span>🌐</span>
+                      <span>CPAGrip গ্লোবাল CPA অফার ও কনটেন্ট লকার</span>
+                    </span>
+                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-200 cursor-pointer">
+                      <span>চালু</span>
+                      <input
+                        type="checkbox"
+                        checked={editSettings.offerwallsConfig?.cpagripEnabled ?? true}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            cpagripEnabled: e.target.checked
+                          } as any
+                        })}
+                        className="rounded accent-emerald-500 w-4 h-4"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-slate-900/90 border border-emerald-500/20 text-[11px] text-slate-300 space-y-2">
+                    <div>
+                      <p className="font-bold text-emerald-300 mb-1">
+                        🔗 আপনার CPAGrip গ্লোবাল পোস্টব্যাক URL (Postback Tools → Global Postback এ পেস্ট করুন):
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <code className="text-[10px] font-mono text-emerald-300 bg-slate-950 p-1.5 rounded-lg border border-emerald-500/30 flex-1 select-all break-all">
+                          {`${window.location.origin}/api/postback/cpagrip?tracking_id={subid}&payout={payout}&offer_id={offer_id}`}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/api/postback/cpagrip?tracking_id={subid}&payout={payout}&offer_id={offer_id}`);
+                            showToast('CPAGrip পোস্টব্যাক লিংক কপি হয়েছে! 📋', 'CPAGrip এর Global Postback বক্সে পেস্ট করুন', 'success');
+                          }}
+                          className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-[10px] rounded-lg shrink-0"
+                        >
+                          কপি করুন
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      💡 <strong>নোট:</strong> পোস্টব্যাক লিঙ্ক সেট করলে আপনার অ্যাপের কোনো ইউজার অফার বা সার্ভে পূরণ করলেই আপনার সার্ভারে সিগন্যাল আসবে এবং স্বয়ংক্রিয়ভাবে ইউজারকে পয়েন্ট দেওয়া হবে।
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-medium text-slate-300 mb-1">
+                      CPAGrip Offerwall / URL Locker Link (Monetization Tools বা Offer Tools থেকে প্রাপ্ত লিংক):
+                    </label>
+                    <input
+                      type="text"
+                      value={editSettings.offerwallsConfig?.cpagripUrl ?? ''}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          cpagripUrl: e.target.value.trim()
+                        } as any
+                      })}
+                      placeholder="https://www.cpagrip.com/showoffers.php?... অথবা URL Locker Link"
+                      className="w-full p-2 bg-slate-950 border border-emerald-500/30 rounded-xl text-xs font-mono text-emerald-200 focus:outline-none"
+                    />
                   </div>
                 </div>
               </div>
@@ -2243,6 +3018,182 @@ export const AdminDashboard: React.FC = () => {
                     className="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-white"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* 💼 COMMUNITY JOB POSTING & BKASH/NAGAD NUMBER SETTINGS */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-emerald-500/40 space-y-3">
+              <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                <Briefcase className="w-4 h-4" />
+                <span>কাজের ডিপোজিট ও বিকাশ/নগদ নম্বর সেটিংস</span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                ইউজাররা কাজ পোস্ট করার সময় যে নম্বরে বিকাশ/নগদে টাকা পাঠাবে তা এখানে সেট করুন:
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                    বিকাশ পার্সোনাল নম্বর:
+                  </label>
+                  <input
+                    type="tel"
+                    value={editSettings.jobPostingConfig?.bkashNumber ?? '01339223713'}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      jobPostingConfig: {
+                        ...(editSettings.jobPostingConfig || {
+                          enabled: true,
+                          nagadNumber: '01339223713',
+                          rocketNumber: '01339223713',
+                          pricePerWorkerBDT: 1.5,
+                          workerRewardCoins: 25,
+                          minWorkers: 20
+                        }),
+                        bkashNumber: e.target.value
+                      }
+                    })}
+                    placeholder="01339223713"
+                    className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                    নগদ পার্সোনাল নম্বর:
+                  </label>
+                  <input
+                    type="tel"
+                    value={editSettings.jobPostingConfig?.nagadNumber ?? '01339223713'}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      jobPostingConfig: {
+                        ...(editSettings.jobPostingConfig || {
+                          enabled: true,
+                          bkashNumber: '01339223713',
+                          rocketNumber: '01339223713',
+                          pricePerWorkerBDT: 1.5,
+                          workerRewardCoins: 25,
+                          minWorkers: 20
+                        }),
+                        nagadNumber: e.target.value
+                      }
+                    })}
+                    placeholder="01339223713"
+                    className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                    প্রতি কর্মীর খরচ (টাকা / BDT):
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={editSettings.jobPostingConfig?.pricePerWorkerBDT ?? 1.5}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      jobPostingConfig: {
+                        ...(editSettings.jobPostingConfig || {
+                          enabled: true,
+                          bkashNumber: '01339223713',
+                          nagadNumber: '01339223713',
+                          rocketNumber: '01339223713',
+                          workerRewardCoins: 25,
+                          minWorkers: 20
+                        }),
+                        pricePerWorkerBDT: parseFloat(e.target.value) || 1.5
+                      }
+                    })}
+                    className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                    প্রতি কাজে ইউজার কত কয়েন পাবে:
+                  </label>
+                  <input
+                    type="number"
+                    value={editSettings.jobPostingConfig?.workerRewardCoins ?? 25}
+                    onChange={(e) => setEditSettings({
+                      ...editSettings,
+                      jobPostingConfig: {
+                        ...(editSettings.jobPostingConfig || {
+                          enabled: true,
+                          bkashNumber: '01339223713',
+                          nagadNumber: '01339223713',
+                          rocketNumber: '01339223713',
+                          pricePerWorkerBDT: 1.5,
+                          minWorkers: 20
+                        }),
+                        workerRewardCoins: parseInt(e.target.value) || 25
+                      }
+                    })}
+                    className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 🛍️ DARAZ & AFFILIATE PROGRAM SETTINGS */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-rose-500/40 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
+                  <Sparkles className="w-4 h-4" />
+                  <span>দারাজ ও অ্যাফিলিয়েট লিংক সেটিংস 🛍️</span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-mono font-bold">
+                  Member ID: 167492337
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                দারাজ পার্টনার অ্যাপ থেকে আপনার যেকোনো প্রোডাক্ট বা স্টোরের ট্র্যাক করা অ্যাফিলিয়েট লিংক এখানে বসিয়ে দিন। ইউজার "দারাজ হট ডিলস" বাটনে ক্লিক করলে এই লিংকে চলে যাবে এবং আপনার অ্যাকাউন্টে কমিশন জমা হবে:
+              </p>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                  দারাজ প্রধান অ্যাফিলিয়েট লিংক (Daraz Affiliate / Store URL):
+                </label>
+                <input
+                  type="url"
+                  value={editSettings.affiliateConfig?.darazDefaultUrl ?? 'https://s.daraz.com.bd/s.Y39Ff?cc'}
+                  onChange={(e) => setEditSettings({
+                    ...editSettings,
+                    affiliateConfig: {
+                      ...(editSettings.affiliateConfig || {
+                        enabled: true,
+                        darazAffiliateId: '167492337'
+                      }),
+                      darazDefaultUrl: e.target.value
+                    }
+                  })}
+                  placeholder="https://s.daraz.com.bd/s.Y39Ff?cc"
+                  className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono text-white focus:border-rose-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                  দারাজ মেম্বার আইডি (Member ID):
+                </label>
+                <input
+                  type="text"
+                  value={editSettings.affiliateConfig?.darazAffiliateId ?? '167492337'}
+                  onChange={(e) => setEditSettings({
+                    ...editSettings,
+                    affiliateConfig: {
+                      ...(editSettings.affiliateConfig || {
+                        enabled: true,
+                        darazDefaultUrl: 'https://s.daraz.com.bd/s.Y39Ff?cc'
+                      }),
+                      darazAffiliateId: e.target.value
+                    }
+                  })}
+                  placeholder="167492337"
+                  className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono text-white focus:border-rose-500 focus:outline-none"
+                />
               </div>
             </div>
 
@@ -2742,30 +3693,47 @@ export const AdminDashboard: React.FC = () => {
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-slate-300 block">ভিডিও URL (MP4 / TikTok / Shorts):</label>
-                  <span className="text-[10px] text-cyan-400 font-semibold">টিকটক লিঙ্ক সাপোর্টেড</span>
+                  <label className="text-slate-300 block font-bold">ভিডিও URL (ডেইলিমোশন / ইউটিউব / Shorts / MP4 / Loot.tv):</label>
+                  <span className="text-[10px] text-cyan-400 font-bold bg-cyan-500/20 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                    অটো থাম্বনেইল ও ডিটেকশন
+                  </span>
                 </div>
                 <input
                   type="url"
                   required
                   value={vUrl}
                   onChange={(e) => {
-                    const val = e.target.value;
+                    const val = e.target.value.trim();
                     setVUrl(val);
-                    if (val.includes('tiktok.com')) {
+                    const dmMatch = val.match(/(?:dailymotion\.com\/(?:video|embed\/video)\/|dai\.ly\/)([a-zA-Z0-9]+)/);
+                    const ytMatch = val.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+                    if (dmMatch && dmMatch[1]) {
+                      setVLicense('official_embed');
+                      setVAttribution('Dailymotion Publisher Partner Stream (৫০% অ্যাড রেভিনিউ শেয়ার)');
+                      setVThumb(`https://www.dailymotion.com/thumbnail/video/${dmMatch[1]}`);
+                      if (!vTitle || vTitle === 'নতুন ভিডিও') setVTitle('ডেইলিমোশন পার্টনার ভিডিও');
+                      if (!vCreator || vCreator === 'Bangla Creator Media') setVCreator('Dailymotion Creator');
+                    } else if (ytMatch && ytMatch[1]) {
+                      setVLicense('official_embed');
+                      setVAttribution('মালিকের মনিটাইজড ইউটিউব চ্যানেল স্ট্রিম');
+                      setVThumb(`https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`);
+                      if (!vTitle || vTitle === 'নতুন ভিডিও') setVTitle('ইউটিউব ভাইরাল ভিডিও');
+                      if (!vCreator || vCreator === 'Bangla Creator Media') setVCreator('মালিকের ইউটিউব চ্যানেল');
+                    } else if (val.includes('loot.tv')) {
+                      setVLicense('official_embed');
+                      setVAttribution('Loot.tv Rewarded Video Stream');
+                      if (!vTitle) setVTitle('Loot.tv রিওয়ার্ডেড স্পন্সর ভিডিও');
+                    } else if (val.includes('tiktok.com')) {
                       setVLicense('official_embed');
                       setVAttribution('Official TikTok Creator Embed / oEmbed Stream');
                       if (!vTitle) setVTitle('TikTok Trending Short');
-                    } else if (val.includes('youtube.com') || val.includes('youtu.be')) {
-                      setVLicense('official_embed');
-                      setVAttribution('YouTube Shorts Embed Stream');
                     }
                   }}
-                  placeholder="https://...mp4 বা https://www.tiktok.com/@.../video/..."
-                  className="w-full p-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono text-[11px]"
+                  placeholder="https://www.dailymotion.com/video/... বা https://youtu.be/... বা MP4 লিংক"
+                  className="w-full p-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono text-[11px] focus:border-cyan-400 focus:outline-none"
                 />
                 <p className="text-[10px] text-slate-400 mt-1">
-                  *টিকটক ভিডিওর লিঙ্ক পেস্ট করলে স্বয়ংক্রিয়ভাবে অফিসিয়াল এম্বেড প্লেয়ার চালু হবে।
+                  💡 <strong>ডেইলিমোশন</strong> লিংক দিলে ভিডিওতে চলা প্রি-রোল বিজ্ঞাপনের ৫০% ইনকাম সরাসরি আপনার ব্যাংক/পেপ্যালে আসবে! আর <strong>ইউটিউব</strong> দিলে আপনার চ্যানেলে ভিউ ও ওয়াচ টাইম বাড়বে।
                 </p>
               </div>
 
@@ -2776,6 +3744,7 @@ export const AdminDashboard: React.FC = () => {
                   required
                   value={vThumb}
                   onChange={(e) => setVThumb(e.target.value)}
+                  placeholder="https://img.youtube.com/vi/.../hqdefault.jpg"
                   className="w-full p-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono text-[11px]"
                 />
               </div>

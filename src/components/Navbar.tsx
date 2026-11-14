@@ -22,18 +22,21 @@ export const Navbar: React.FC = () => {
   } = useApp();
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
 
-  // If in full watch mode, render a streamlined floating top overlay
+  // If in full VideoCash watch mode, hide the top navbar so VideoCash dual bars take top presence
   const isWatchTab = activeTab === 'watch';
+  if (isWatchTab) return null;
 
   return (
-    <header 
-      data-top-nav="true"
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        isWatchTab 
-          ? 'bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px]' 
-          : 'bg-[#05070B]/90 backdrop-blur-md border-b border-slate-800/80'
-      } px-4 py-3 max-w-md mx-auto w-full`}
-    >
+    <>
+      <header 
+        data-top-nav="true"
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          isWatchTab 
+            ? 'bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px]' 
+            : 'bg-[#05070B]/90 backdrop-blur-md border-b border-slate-800/80'
+        } px-4 py-3 max-w-md mx-auto w-full`}
+      >
+
       <div className="flex items-center justify-between">
         {/* Brand Logo & Tagline */}
         <div 
@@ -199,5 +202,7 @@ export const Navbar: React.FC = () => {
         </div>
       )}
     </header>
+    </>
   );
 };
+

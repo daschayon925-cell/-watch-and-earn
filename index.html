@@ -4,9 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>WATCH & EARN BD | ভিডিও দেখুন • প্রতিদিন আয় করুন 🇧🇩</title>
-    <meta name="description" content="বাংলাদেশের প্রিমিয়াম শর্ট ভিডিও ওয়াচ এবং রিওয়ার্ড প্ল্যাটফর্ম। ভিডিও দেখুন, কয়েন জিতুন ও বিকাশ-নগদ-রিচার্জে সরাসরি ক্যাশআউট করুন।" />
+    <meta name="description" content="বাংলাদেশের বিশ্বস্ত শর্ট ভিডিও ওয়াচ ও রিওয়ার্ড প্ল্যাটফর্ম। ভিডিও দেখুন, ১৫ সে. শর্টলিংক ভিজিট করুন ও বিকাশ-নগদ-রিচার্জে সরাসরি ক্যাশআউট করুন।" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-    <meta name="keywords" content="Watch & Earn BD, ভিডিও দেখে টাকা আয়, ভিডিও দেখে বিকাশ নগদ আয়, bd video income app, watch and earn bangladesh, online income bd, daily earn bkash, watch videos earn coins bangladesh" />
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="keywords" content="Watch & Earn BD, ভিডিও দেখে টাকা আয়, ভিডিও দেখে বিকাশ নগদ আয়, bd video income app, watch and earn bangladesh, online income bd, daily earn bkash, watch videos earn coins bangladesh, শর্টলিংক দেখে টাকা ইনকাম, ভিডিও দেখে ইনকাম বিকাশ পেমেন্ট, video dekhe taka income 2026, mobile diye taka income bd, best earning app bangladesh, shrinkme bd, droplink bd, workupjob alternative bd" />
     <meta name="author" content="Watch & Earn BD" />
     <link rel="canonical" href="https://watch-and-earn-z5hx.onrender.com" />
     
@@ -15,18 +17,19 @@
     <meta name="5a6aa39ee3ae413ebcefceebfc1a31468855fd81" content="5a6aa39ee3ae413ebcefceebfc1a31468855fd81" />
     <meta name="hilltopads-site-verification" content="5a6aa39ee3ae413ebcefceebfc1a31468855fd81" />
     <meta name="timewall-site-verification" content="6aca33472eaa6484016c37d7" />
-    <meta name="offerwall-verification" content="6aca33472eaa6484016c37d7" />
-    <meta name="offerwall-site-verification" content="6aca33472eaa6484016c37d7" />
-    <meta name="verification" content="6aca33472eaa6484016c37d7" />
+    <meta name="offerwall-verification" content="ow-426ee7fc2d9f872a6a0a" />
+    <meta name="offerwall-site-verification" content="ow-426ee7fc2d9f872a6a0a" />
+    <meta name="verification" content="ow-426ee7fc2d9f872a6a0a" />
     <meta name="referrer" content="no-referrer-when-downgrade" />
     
-    <!-- OpenGraph & Social Sharing Cards -->
+    <!-- OpenGraph & Social Sharing Cards (Facebook, WhatsApp, Telegram, Discord) -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://watch-and-earn-z5hx.onrender.com" />
     <meta property="og:site_name" content="Watch & Earn BD" />
     <meta property="og:title" content="WATCH & EARN BD | ভিডিও দেখুন • প্রতিদিন আয় করুন 🇧🇩" />
-    <meta property="og:description" content="বাংলাদেশের বিশ্বস্ত শর্ট ভিডিও ওয়াচ প্ল্যাটফর্ম। ভিডিও দেখুন, কয়েন জিতুন ও বিকাশ-নগদ-রিচার্জে সরাসরি ক্যাশআউট করুন।" />
+    <meta property="og:description" content="ভিডিও দেখে ও ১৫ সেকেন্ড শর্টলিংক সম্পন্ন করে সরাসরি বিকাশ, নগদ ও মোবাইল রিচার্জে ক্যাশআউট নিন! ফ্রি সাইনআপ বোনাস ২৫ কয়েন।" />
     <meta property="og:image" content="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80" />
+    <meta property="og:locale" content="bn_BD" />
     
     <!-- Twitter Social Cards -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -63,6 +66,15 @@
           return true;
         }
       });
+      // Dynamic canonical tag updater for multi-host deployment
+      try {
+        var canEl = document.querySelector('link[rel="canonical"]');
+        if (canEl && window.location.origin) {
+          if (window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) {
+            canEl.href = window.location.origin + window.location.pathname;
+          }
+        }
+      } catch (e) {}
     </script>
     <link rel="manifest" href="/manifest.json" />
 
@@ -74,15 +86,37 @@
         {
           "@type": "WebApplication",
           "name": "Watch & Earn BD",
-          "alternateName": ["ভিডিও দেখে টাকা আয়", "Watch and Earn Bangladesh", "Watch & Earn BD App"],
+          "alternateName": [
+            "ভিডিও দেখে টাকা আয়",
+            "Watch and Earn Bangladesh",
+            "Watch & Earn BD App",
+            "ভিডিও দেখে বিকাশ নগদ আয়"
+          ],
           "url": "https://watch-and-earn-z5hx.onrender.com",
           "applicationCategory": "EntertainmentApplication",
           "operatingSystem": "All, Android, iOS, Windows, Mac",
-          "description": "বাংলাদেশের প্রিমিয়াম শর্ট ভিডিও ওয়াচ এবং রিওয়ার্ড প্ল্যাটফর্ম। ভিডিও দেখুন ও বিকাশ-নগদে আয় করুন।",
+          "description": "বাংলাদেশের প্রিমিয়াম শর্ট ভিডিও ওয়াচ এবং রিওয়ার্ড প্ল্যাটফর্ম। ভিডিও দেখুন, ১৫ সে. শর্টলিংক সম্পন্ন করুন ও বিকাশ-নগদে আয় করুন।",
           "offers": {
             "@type": "Offer",
             "price": "0",
             "priceCurrency": "BDT"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "1250",
+            "bestRating": "5",
+            "worstRating": "1"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "name": "Watch & Earn BD",
+          "url": "https://watch-and-earn-z5hx.onrender.com",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://watch-and-earn-z5hx.onrender.com/?search={search_term_string}",
+            "query-input": "required name=search_term_string"
           }
         },
         {
@@ -93,7 +127,7 @@
               "name": "ভিডিও দেখে কীভাবে কয়েন বা টাকা পাওয়া যায়?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "ওয়াচ স্ক্রিনে ভিডিও ৪ মিনিট দেখার পর স্পন্সর বিজ্ঞাপন সম্পন্ন করলে ওয়ালেটে কয়েন যুক্ত হয়।"
+                "text": "ওয়াচ স্ক্রিনে ভিডিও ২৫ সেকেন্ড দেখার পর স্বয়ংক্রিয়ভাবে কয়েন অ্যাকাউন্টে যোগ হয়। এছাড়া স্পন্সর বিজ্ঞাপন দেখলে অতিরিক্ত বোনাস পাওয়া যায়।"
               }
             },
             {
@@ -102,6 +136,14 @@
               "acceptedAnswer": {
                 "@type": "Answer",
                 "text": "ওয়ালেট অপশন থেকে সর্বনিম্ন ৩০ টাকা মোবাইল রিচার্জ এবং ১০০ টাকা বিকাশ বা নগদ নম্বরে সরাসরি উত্তোলন করা যায়।"
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "১৫ সেকেন্ড শর্টলিংক টাস্ক কী?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "মাত্র ১৫ সেকেন্ড শর্টলিংক পেজ ভিজিট করে ক্যাপচা সম্পন্ন করলেই প্রতি লিংকে ৫০ থেকে ৬০ কয়েন পাওয়া যায়।"
               }
             }
           ]

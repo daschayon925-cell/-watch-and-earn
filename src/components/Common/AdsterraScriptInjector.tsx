@@ -10,14 +10,22 @@ export const AdsterraScriptInjector: React.FC = () => {
   const isExecutingRef = useRef(false);
 
   useEffect(() => {
-    // 🛡️ CRITICAL: Never inject any ad scripts or popunder listeners inside Admin Panel or during Login Modal!
-    if (!user || (activeTab as string) === 'admin') {
+    // 🛡️ CRITICAL: Never inject any ad scripts or popunder listeners inside Admin Panel, Login Modal, or Video Watch Reel!
+    if (!user || (activeTab as string) === 'admin' || (activeTab as string) === 'watch') {
       const socialScript = document.getElementById('adsterra-dynamic-social-bar-script');
       const popScript = document.getElementById('adsterra-official-popunder-script');
       const mScript = document.getElementById('monetag-dynamic-tag-script');
       if (socialScript) socialScript.remove();
       if (popScript) popScript.remove();
       if (mScript) mScript.remove();
+      try {
+        const injectedAds = document.querySelectorAll('[data-scaled-social-bar="true"], body > div[style*="fixed"]');
+        injectedAds.forEach(el => {
+          if (el.id !== 'root' && el.id !== 'bottom-nav-bar') {
+            (el as HTMLElement).style.display = 'none';
+          }
+        });
+      } catch {}
       return;
     }
 

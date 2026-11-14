@@ -174,16 +174,37 @@ export interface AdminSettings {
     // 💼 Bangladeshi Micro-Job Partner / Affiliate Links
     workupJobReferralLink?: string; // Optional WorkupJob Affiliate/Referral link (or defaults to Adsterra)
     sponsorChannelUrl?: string; // Optional Admin YouTube channel or Facebook page link
+    // 🔗 Paid URL Shorteners (ShrinkMe.io / Droplink Arbitrage)
+    shrinkmeShortlinkUrl?: string; // Admin's ShrinkMe shortened URL
+    droplinkShortlinkUrl?: string; // Admin's DropLink shortened URL
+    shortlinksEnabled?: boolean;
+    // 🎥 Monetized Video Publishers (Dailymotion 50% RevShare & Loot.tv)
+    dailymotionEnabled?: boolean;
+    dailymotionPlayerId?: string; // Custom Dailymotion Partner Player ID
+    dailymotionPartnerId?: string; // Dailymotion Publisher / Partner Account ID
+    loottvEnabled?: boolean;
+    loottvPublisherId?: string; // Loot.tv / Adscend Media publisher ID
+    autoAdAfterEveryVideo?: boolean; // Show ad after every single video (Default: true)
+    videoWatchSeconds?: number; // Duration in seconds to watch before reward & ad (Default: 15)
   };
   offerwallsConfig?: {
     enabled: boolean;
+    bitcotasksEnabled?: boolean;
+    bitcotasksApiKey?: string; // BitcoTasks API Key
+    bitcotasksSecretKey?: string; // BitcoTasks Secret Key
+    bitcotasksUrl?: string; // BitcoTasks Offerwall Base URL
+    affmineEnabled?: boolean;
+    affmineOfferwallId?: string; // Affmine Offerwall ID (e.g. 6741)
+    affmineOfferwallCode?: string; // Affmine Offerwall Code (e.g. ow_6aee0425704f4)
+    affmineUrl?: string; // Affmine iFrame/Offerwall URL (https://affgo.xyz/offerwall/?o=...)
     cpaleadEnabled?: boolean;
     cpaleadUrl?: string; // CPALead Offerwall or Direct Locker URL
     monlixEnabled?: boolean;
     monlixAppId?: string; // Monlix App ID
     timewallEnabled?: boolean;
-    timewallPlacementId?: string; // TimeWall Placement ID (e.g. d7521f148f92a2d3)
-    timewallUrl?: string; // TimeWall publisher URL
+    timewallPlacementId?: string; // TimeWall Placement ID / OID
+    timewallSecretKey?: string; // TimeWall Secret Key for SHA256 Postback Verification
+    timewallUrl?: string; // TimeWall publisher iFrame URL
     adgateEnabled?: boolean;
     adgateWallId?: string; // AdGate Media Wall ID
     notikEnabled?: boolean;
@@ -221,6 +242,7 @@ export interface AdminSettings {
     adgemEnabled?: boolean;
     adgemAppId?: string; // AdGem App ID
     adgemWallUrl?: string; // AdGem Offerwall URL / iFrame link
+    adgemPostbackKey?: string; // AdGem Postback Key
     customTasksRewardMultiplier?: number;
   };
   activeNotice?: {
@@ -242,6 +264,55 @@ export interface AdminSettings {
     apiUrl?: string;
     enabled: boolean;
   };
+  affiliateConfig?: {
+    enabled: boolean;
+    darazAffiliateId?: string;
+    darazDefaultUrl?: string;
+    deals?: AffiliateDeal[];
+  };
+  jobPostingConfig?: {
+    enabled: boolean;
+    bkashNumber: string;
+    nagadNumber: string;
+    rocketNumber: string;
+    pricePerWorkerBDT: number;
+    workerRewardCoins: number;
+    minWorkers: number;
+  };
+}
+
+export interface AffiliateDeal {
+  id: string;
+  titleBn: string;
+  category: 'gadget' | 'app' | 'fashion' | 'tech' | 'deals';
+  priceBDT?: number;
+  originalPriceBDT?: number;
+  cashbackCoins: number;
+  imageUrl: string;
+  affiliateUrl: string;
+  storeName: 'Daraz' | 'BDShop' | 'Binance' | 'AppPromo' | 'Special';
+  badgeBn: string;
+  clicksCount?: number;
+}
+
+export interface UserPostedJob {
+  id: string;
+  userId: string;
+  userName: string;
+  userPhone: string;
+  title: string;
+  category: 'youtube' | 'facebook' | 'telegram' | 'app' | 'website';
+  targetUrl: string;
+  instructions: string;
+  targetWorkers: number;
+  completedWorkers: number;
+  costBDT: number;
+  rewardCoinsPerWorker: number;
+  paymentMethod: 'bkash' | 'nagad' | 'rocket';
+  senderPhone: string;
+  trxId: string;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  createdAt: string;
 }
 
 export interface Report {
@@ -279,3 +350,5 @@ export interface Comment {
   likesCount: number;
   createdAt: string;
 }
+
+export * from './aiSentinel';

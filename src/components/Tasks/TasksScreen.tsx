@@ -22,7 +22,8 @@ import {
   ExternalLink,
   CheckCircle2,
   Lock,
-  Clock
+  Clock,
+  Keyboard
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -35,9 +36,13 @@ import { SponsoredClickHub } from '../Common/SponsoredClickHub';
 import { openAdWithStrictTimer } from '../Common/AdVisitTimerModal';
 import { OfferwallHub } from './OfferwallHub';
 import { BDMicroTasksHub } from './BDMicroTasksHub';
+import { AffiliateDealsHub } from './AffiliateDealsHub';
+import { DataEntryTypingHub } from './DataEntryTypingHub';
+import { ShortlinkTasksHub } from './ShortlinkTasksHub';
+import { BanglaDailyWorkHub } from './BanglaDailyWorkHub';
 
 type TaskType = 'math' | 'gk' | 'captcha' | 'daily_checkin';
-type TaskTab = 'bd_microtasks' | 'micro_tasks' | 'daily_tasks' | 'offerwall';
+type TaskTab = 'bangla_daily_jobs' | 'bd_microtasks' | 'shortlinks' | 'typing_jobs' | 'affiliate_deals' | 'micro_tasks' | 'daily_tasks' | 'offerwall';
 
 interface FreeMicroTask {
   id: string;
@@ -55,7 +60,7 @@ export const TasksScreen: React.FC = () => {
   const { user, refreshUser, awardCoinsLocally } = useAuth();
   const { language, showToast, triggerConfetti, settings, selectedTaskSubTab, setSelectedTaskSubTab } = useApp();
 
-  const [activeTab, setActiveTab] = useState<TaskTab>(selectedTaskSubTab || 'bd_microtasks');
+  const [activeTab, setActiveTab] = useState<TaskTab>(selectedTaskSubTab || 'bangla_daily_jobs');
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
 
   React.useEffect(() => {
@@ -434,9 +439,27 @@ export const TasksScreen: React.FC = () => {
 
   return (
     <div className="w-full max-w-md mx-auto px-4 pt-24 sm:pt-28 pb-24 space-y-4">
-      {/* 🚀 Main Navigation Tabs: 4 Specialized Earning Sections */}
+      {/* 🚀 Main Navigation Tabs: 7 Specialized Earning Sections */}
       <div className="p-1.5 rounded-2xl bg-slate-900/95 border border-slate-800 shadow-xl backdrop-blur-md">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+          {/* 🔥 PRIMARY HIGHLIGHT: 80-100 TAKA DAILY BANGLA WORK HUB */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('bangla_daily_jobs');
+              setSelectedTaskSubTab('bangla_daily_jobs');
+              setActiveTask(null);
+            }}
+            className={`col-span-2 sm:col-span-3 flex items-center justify-center gap-2 py-3 px-3 rounded-xl font-black text-xs sm:text-sm transition-all cursor-pointer ${
+              activeTab === 'bangla_daily_jobs'
+                ? 'bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 text-slate-950 shadow-lg shadow-emerald-500/40 ring-2 ring-emerald-400'
+                : 'text-emerald-300 hover:text-white bg-gradient-to-r from-emerald-950/70 to-slate-900 border border-emerald-500/40'
+            }`}
+          >
+            <Flame className="w-4 h-4 text-amber-400 fill-amber-400 animate-pulse" />
+            <span>🇧🇩 দৈনিক ৮০-১০০৳ বাংলা কাজ (হট মিশন) 🏆</span>
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -452,6 +475,57 @@ export const TasksScreen: React.FC = () => {
           >
             <Clock className={`w-3.5 h-3.5 ${activeTab === 'bd_microtasks' ? 'text-slate-950' : 'text-emerald-400'}`} />
             <span>🇧🇩 ২-৩ মিনিটের কাজ</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('shortlinks');
+              setSelectedTaskSubTab('shortlinks' as any);
+              setActiveTask(null);
+            }}
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl font-black text-xs transition-all cursor-pointer ${
+              activeTab === 'shortlinks'
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-md shadow-cyan-500/30 font-black'
+                : 'text-slate-400 hover:text-white bg-slate-950/40'
+            }`}
+          >
+            <Zap className={`w-3.5 h-3.5 ${activeTab === 'shortlinks' ? 'text-slate-950 fill-slate-950' : 'text-cyan-400'}`} />
+            <span>🔗 ১৫ সে. শর্টলিংক ⚡</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('typing_jobs');
+              setSelectedTaskSubTab('typing_jobs');
+              setActiveTask(null);
+            }}
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl font-black text-xs transition-all cursor-pointer ${
+              activeTab === 'typing_jobs'
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/30'
+                : 'text-slate-400 hover:text-white bg-slate-950/40'
+            }`}
+          >
+            <Keyboard className={`w-3.5 h-3.5 ${activeTab === 'typing_jobs' ? 'text-white' : 'text-indigo-400'}`} />
+            <span>⌨️ ডাটা এন্ট্রি ও টাইপিং</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('affiliate_deals');
+              setSelectedTaskSubTab('affiliate_deals');
+              setActiveTask(null);
+            }}
+            className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl font-black text-xs transition-all cursor-pointer ${
+              activeTab === 'affiliate_deals'
+                ? 'bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-md shadow-rose-500/30'
+                : 'text-slate-400 hover:text-white bg-slate-950/40'
+            }`}
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${activeTab === 'affiliate_deals' ? 'text-white fill-white' : 'text-rose-400'}`} />
+            <span>দারাজ হট ডিলস 🛍️</span>
           </button>
 
           <button
@@ -506,9 +580,29 @@ export const TasksScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* TAB 0: 🇧🇩 BANGLADESHI 2-3 MINUTE MICRO-JOBS & EARNING SITES */}
+      {/* TAB 0: 🇧🇩 BANGLA DAILY 80-100 BDT WORK HUB (EXCLUSIVE) */}
+      {activeTab === 'bangla_daily_jobs' && (
+        <BanglaDailyWorkHub />
+      )}
+
+      {/* TAB 1: 🇧🇩 BANGLADESHI 2-3 MINUTE MICRO-JOBS & EARNING SITES */}
       {activeTab === 'bd_microtasks' && (
         <BDMicroTasksHub />
+      )}
+
+      {/* TAB 0.1: 🔗 15-SECOND SHORTLINK & DOUBLE-EARN HUB */}
+      {activeTab === 'shortlinks' && (
+        <ShortlinkTasksHub />
+      )}
+
+      {/* TAB 0.2: ⌨️ DATA ENTRY, CAPTCHA & TYPING WORKSTATION */}
+      {activeTab === 'typing_jobs' && (
+        <DataEntryTypingHub />
+      )}
+
+      {/* TAB 0.5: 🔥 DARAZ & OFFICIAL AFFILIATE CASHBACK DEALS */}
+      {activeTab === 'affiliate_deals' && (
+        <AffiliateDealsHub />
       )}
 
       {/* TAB 1: 100% FREE MICRO TASKS (NO DEPOSIT / ZERO COST) */}

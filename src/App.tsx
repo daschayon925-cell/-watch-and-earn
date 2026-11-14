@@ -19,6 +19,7 @@ import { LandingPage } from './components/Home/LandingPage';
 import { AdsterraScriptInjector } from './components/Common/AdsterraScriptInjector';
 import { ContinuousSocialBar } from './components/Common/ContinuousSocialBar';
 import { AdVisitTimerModal } from './components/Common/AdVisitTimerModal';
+import { AntiAdblockGuard } from './components/Common/AntiAdblockGuard';
 import { api } from './services/api';
 
 const MainLayout: React.FC = () => {
@@ -68,16 +69,36 @@ const MainLayout: React.FC = () => {
       <Navbar />
 
       {/* Main Tab Content Viewport */}
-      <main className="flex-1 w-full max-w-md mx-auto relative overflow-x-hidden pb-44">
-        {activeTab === 'home' && <HomeScreen />}
-        {activeTab === 'watch' && <WatchScreen />}
-        {activeTab === 'games' && <GamesScreen />}
-        {activeTab === 'tasks' && <TasksScreen />}
-        {activeTab === 'wallet' && <WalletScreen />}
-        {activeTab === 'rewards' && <RewardsScreen />}
-        {activeTab === 'profile' && <ProfileScreen />}
-        {activeTab === 'admin' && <AdminDashboard />}
-      </main>
+      {activeTab === 'watch' ? (
+        <main 
+          style={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: '60px',
+            height: 'calc(100dvh - 60px)',
+            maxWidth: '28rem',
+            margin: '0 auto',
+            zIndex: 30,
+            overflow: 'hidden',
+            backgroundColor: '#000000'
+          }}
+          className="w-full bg-black select-none"
+        >
+          <WatchScreen />
+        </main>
+      ) : (
+        <main className="flex-1 w-full max-w-md mx-auto relative overflow-x-hidden pb-44">
+          {activeTab === 'home' && <HomeScreen />}
+          {activeTab === 'games' && <GamesScreen />}
+          {activeTab === 'tasks' && <TasksScreen />}
+          {activeTab === 'wallet' && <WalletScreen />}
+          {activeTab === 'rewards' && <RewardsScreen />}
+          {activeTab === 'profile' && <ProfileScreen />}
+          {activeTab === 'admin' && <AdminDashboard />}
+        </main>
+      )}
 
       {/* Persistent Bottom Navigation */}
       <BottomNav />
@@ -86,8 +107,9 @@ const MainLayout: React.FC = () => {
       <NotificationDrawer />
       <ToastContainer />
       <InstallPrompt />
-      {(activeTab as string) !== 'admin' && <AdsterraScriptInjector />}
-      {(activeTab as string) !== 'admin' && <ContinuousSocialBar />}
+      <AntiAdblockGuard />
+      {(activeTab as string) !== 'admin' && (activeTab as string) !== 'watch' && <AdsterraScriptInjector />}
+      {(activeTab as string) !== 'admin' && (activeTab as string) !== 'watch' && <ContinuousSocialBar />}
       {(activeTab as string) !== 'admin' && <AdVisitTimerModal />}
     </div>
   );

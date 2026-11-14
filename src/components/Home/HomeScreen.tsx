@@ -38,6 +38,7 @@ import { WorkEngagementHub } from './WorkEngagementHub';
 import { ProVipBoosterHub } from './ProVipBoosterHub';
 import { SurpriseDailyBonus } from './SurpriseDailyBonus';
 import { openAdWithStrictTimer } from '../Common/AdVisitTimerModal';
+import { PostJobModal } from '../Tasks/PostJobModal';
 
 export const HomeScreen: React.FC = () => {
   const { user, refreshUser, awardCoinsLocally } = useAuth();
@@ -60,6 +61,7 @@ export const HomeScreen: React.FC = () => {
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [showLandingPreview, setShowLandingPreview] = useState(false);
+  const [showPostJobModal, setShowPostJobModal] = useState(false);
   const [legalTab, setLegalTab] = useState<PolicyTab>('privacy');
 
   const handleOpenYouTubeApp = (topic?: string) => {
@@ -329,6 +331,43 @@ export const HomeScreen: React.FC = () => {
       {/* 🌟 প্রধান স্পনসর বিজ্ঞাপন ব্যানার (Home Top Adsterra Direct Link Spot) */}
       <MiniBannerAd slotId="home_top_premium_slot" category="finance" />
 
+      {/* 🇧🇩 দৈনিক ৮০-১০০৳ বাংলা কাজ স্পেশাল ব্যানার কার্ড */}
+      <div 
+        onClick={() => {
+          setSelectedTaskSubTab('bangla_daily_jobs');
+          setActiveTab('tasks');
+          soundService.playSuccessFanfare();
+        }}
+        className="relative overflow-hidden p-4 rounded-3xl bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 border-2 border-emerald-400/60 shadow-xl shadow-emerald-950/40 cursor-pointer active:scale-98 transition group"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-black text-2xl shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition flex-shrink-0">
+              🇧🇩
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center gap-1">
+                  <Flame className="w-3 h-3 text-amber-400 fill-amber-400" />
+                  <span>দৈনিক ৮০-১০০৳ ইনকাম মিশন</span>
+                </span>
+                <span className="text-[10px] font-bold text-emerald-300">১০০% ফ্রি</span>
+              </div>
+              <h3 className="text-sm sm:text-base font-black text-white mt-1">
+                বাংলা কাজ করে প্রতিদিন ৮০ থেকে ১০০ টাকা আয় 🏆
+              </h3>
+              <p className="text-[11px] text-slate-300">
+                আর্টিকেল পড়া, অডিও টাইপিং ও বানান ঠিক করে সরাসরি ওয়ালেটে টাকা নিন
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500 text-slate-950 font-black text-sm group-hover:translate-x-1 transition shadow-md shadow-emerald-500/30">
+            ➔
+          </div>
+        </div>
+      </div>
+
       {/* Hero Wallet & Earnings Card */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0D1624] via-[#0A101A] to-[#0D1A14] border border-emerald-500/30 p-5 shadow-2xl">
         {/* Glow ambient */}
@@ -400,80 +439,303 @@ export const HomeScreen: React.FC = () => {
           {/* Action CTAs */}
           <div className="flex items-center gap-2.5 mt-3">
             <button
-              onClick={() => handleOpenYouTubeApp()}
-              className="flex-1 py-3 bg-gradient-to-r from-pink-600 via-rose-600 to-red-600 hover:from-pink-500 hover:to-rose-500 text-white font-black text-xs rounded-2xl shadow-lg shadow-pink-600/30 flex items-center justify-center gap-2 transition active:scale-98"
+              onClick={() => {
+                setActiveTab('watch');
+                soundService.playLikePop();
+                showToast('🎬 ভিডিও প্লেয়ার চালু হচ্ছে...', 'ভিডিও দেখে সাথে সাথে কয়েন নিন!', 'coin');
+              }}
+              className="flex-1 py-3 bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs rounded-2xl shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition active:scale-98"
             >
-              <Sparkles className="w-5 h-5 fill-white text-white animate-pulse" />
-              {language === 'bn' ? 'টিকটক ভিডিও দেখুন ও আয় করুন' : 'Watch TikTok Reels & Earn'}
+              <Play className="w-4 h-4 fill-white text-white animate-pulse" />
+              <span>{language === 'bn' ? '🎬 ভিডিও দেখুন ও ইনকাম করুন (+১৫ 🪙)' : 'Watch Video & Earn (+15 🪙)'}</span>
             </button>
 
             <button
               onClick={() => setActiveTab('wallet')}
-              className="px-4 py-3 bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs rounded-2xl flex items-center gap-1.5 transition"
+              className="px-4 py-3 bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs rounded-2xl flex items-center gap-1.5 transition active:scale-95"
             >
               <Wallet className="w-4 h-4 text-emerald-400" />
-              {language === 'bn' ? 'ক্যাশআউট' : 'Cashout'}
+              <span>{language === 'bn' ? 'ক্যাশআউট' : 'Cashout'}</span>
             </button>
           </div>
 
-          {/* Quick Shortcuts to Spin, Leaderboard, Games & Tasks */}
-          {/* Quick Shortcuts to Spin, BD Microjobs, Leaderboard, Games & Tasks */}
-          <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t border-slate-800/80">
+          {/* Quick Shortcuts to Shortcuts, Shortlinks, BD Microjobs, Spin, Games */}
+          <div className="grid grid-cols-5 gap-1.5 mt-2.5 pt-2.5 border-t border-slate-800/80">
             <button
               onClick={() => {
-                setSelectedTaskSubTab('bd_microtasks');
+                setSelectedTaskSubTab('bangla_daily_jobs');
                 setActiveTab('tasks');
+                soundService.playLikePop();
               }}
-              className="p-2 rounded-2xl bg-gradient-to-b from-emerald-500/20 to-teal-700/10 border border-emerald-500/40 hover:border-emerald-300 text-center transition flex flex-col items-center justify-center cursor-pointer group shadow-sm"
+              className="p-1.5 rounded-xl bg-gradient-to-b from-emerald-500/25 to-teal-700/15 border border-emerald-400/50 hover:border-emerald-300 text-center transition flex flex-col items-center justify-center cursor-pointer group shadow-sm ring-1 ring-emerald-500/30"
             >
-              <span className="text-xl group-hover:scale-110 transition">🇧🇩</span>
-              <span className="text-[10px] font-black text-emerald-300 block mt-0.5">২-৩ মিনিটের কাজ</span>
+              <span className="text-lg group-hover:scale-110 transition animate-bounce">🇧🇩</span>
+              <span className="text-[9px] font-black text-emerald-300 block mt-0.5 leading-tight">৮০-১০০৳ কাজ</span>
             </button>
 
             <button
-              onClick={() => setShowSpinModal(true)}
-              className="p-2 rounded-2xl bg-gradient-to-b from-amber-500/20 to-yellow-600/10 border border-amber-500/40 hover:border-amber-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
+              onClick={() => {
+                setSelectedTaskSubTab('shortlinks');
+                setActiveTab('tasks');
+                soundService.playLikePop();
+              }}
+              className="p-1.5 rounded-xl bg-gradient-to-b from-amber-500/20 to-orange-700/10 border border-amber-500/40 hover:border-amber-300 text-center transition flex flex-col items-center justify-center cursor-pointer group shadow-sm"
             >
-              <span className="text-xl group-hover:scale-110 transition">🎡</span>
-              <span className="text-[10px] font-black text-amber-300 block mt-0.5">স্পিন হুইল</span>
+              <span className="text-lg group-hover:scale-110 transition">🔗</span>
+              <span className="text-[9px] font-black text-amber-300 block mt-0.5 leading-tight">১৫ সে. লিংক</span>
             </button>
 
             <button
-              onClick={() => setActiveTab('games')}
-              className="p-2 rounded-2xl bg-gradient-to-b from-blue-500/20 to-indigo-700/10 border border-blue-500/40 hover:border-blue-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
+              onClick={() => {
+                setShowSpinModal(true);
+                soundService.playLikePop();
+              }}
+              className="p-1.5 rounded-xl bg-gradient-to-b from-yellow-500/20 to-amber-600/10 border border-yellow-500/40 hover:border-yellow-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
             >
-              <span className="text-xl group-hover:scale-110 transition">🎲</span>
-              <span className="text-[10px] font-black text-blue-300 block mt-0.5">গেমিং হাব</span>
+              <span className="text-lg group-hover:scale-110 transition">🎡</span>
+              <span className="text-[9px] font-black text-yellow-300 block mt-0.5 leading-tight">স্পিন হুইল</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('games');
+                soundService.playLikePop();
+              }}
+              className="p-1.5 rounded-xl bg-gradient-to-b from-blue-500/20 to-indigo-700/10 border border-blue-500/40 hover:border-blue-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
+            >
+              <span className="text-lg group-hover:scale-110 transition">🎲</span>
+              <span className="text-[9px] font-black text-blue-300 block mt-0.5 leading-tight">গেম হাব</span>
             </button>
 
             <button
               onClick={() => {
                 setSelectedTaskSubTab('daily_tasks');
                 setActiveTab('tasks');
+                soundService.playLikePop();
               }}
-              className="p-2 rounded-2xl bg-gradient-to-b from-purple-500/20 to-fuchsia-700/10 border border-purple-500/40 hover:border-purple-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
+              className="p-1.5 rounded-xl bg-gradient-to-b from-purple-500/20 to-fuchsia-700/10 border border-purple-500/40 hover:border-purple-300 text-center transition flex flex-col items-center justify-center cursor-pointer group"
             >
-              <span className="text-xl group-hover:scale-110 transition">🧠</span>
-              <span className="text-[10px] font-black text-purple-300 block mt-0.5">কুইজ/টাস্ক</span>
+              <span className="text-lg group-hover:scale-110 transition">🧠</span>
+              <span className="text-[9px] font-black text-purple-300 block mt-0.5 leading-tight">কুইজ/টাস্ক</span>
             </button>
           </div>
 
-          {/* Official Website Overview Button */}
-          <div className="mt-3 pt-2.5 border-t border-slate-800/80">
+          {/* Official Website Overview & Guide Buttons */}
+          <div className="mt-3 pt-2.5 border-t border-slate-800/80 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => {
+                const el = document.getElementById('work-engagement-hub');
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  setActiveTab('tasks');
+                }
+              }}
+              className="py-2 px-2.5 rounded-xl bg-gradient-to-r from-amber-500/15 to-yellow-500/10 hover:from-amber-500/25 hover:to-yellow-500/20 border border-amber-500/30 text-white font-black text-[11px] flex items-center justify-center gap-1.5 transition cursor-pointer"
+            >
+              <span className="text-amber-400">🔰</span>
+              <span className="text-amber-300">কাজের নিয়ম গাইড</span>
+            </button>
+
             <button
               onClick={() => setShowLandingPreview(true)}
-              className="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 hover:from-emerald-500/20 hover:to-cyan-500/20 border border-emerald-500/30 text-white font-bold text-xs flex items-center justify-between transition cursor-pointer group"
+              className="py-2 px-2.5 rounded-xl bg-gradient-to-r from-emerald-500/15 to-cyan-500/10 hover:from-emerald-500/25 hover:to-cyan-500/20 border border-emerald-500/30 text-white font-black text-[11px] flex items-center justify-center gap-1.5 transition cursor-pointer"
             >
-              <div className="flex items-center gap-2">
-                <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition">🌐</span>
-                <span className="text-emerald-300 font-extrabold">অফিশিয়াল ওয়েবসাইট ও পলিসি ওভারভিউ</span>
-              </div>
-              <span className="text-[11px] text-slate-300 group-hover:text-emerald-400 font-bold flex items-center gap-0.5">
-                দেখুন →
-              </span>
+              <span className="text-emerald-400">🌐</span>
+              <span className="text-emerald-300">ওয়েবসাইট বিবরণ</span>
             </button>
           </div>
         </div>
+      </div>
+
+      {/* 🚀 দ্রুত কাজ শুরু করুন (৩টি জনপ্রিয় অপশন • নতুন ও পুরাতনদের জন্য) */}
+      <div className="p-3.5 rounded-3xl bg-gradient-to-br from-[#0B1527] via-[#091120] to-[#0A1629] border border-cyan-500/40 shadow-xl space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            <h4 className="text-xs font-black text-white flex items-center gap-1">
+              <span>🚀 সহজে কাজ শুরু করুন</span>
+              <span className="text-cyan-400 font-normal">• ৩টি সেরা অপশন</span>
+            </h4>
+          </div>
+          <span className="text-[10px] text-amber-300 font-extrabold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+            প্রতিদিন ২০০-৫০০৳
+          </span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <button
+            onClick={() => handleOpenYouTubeApp()}
+            className="p-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800/90 border border-red-500/35 hover:border-red-400 transition flex flex-col items-center justify-center cursor-pointer group active:scale-95 shadow-md shadow-red-950/20"
+          >
+            <span className="text-2xl group-hover:scale-110 transition">🎬</span>
+            <span className="text-[11px] font-black text-white block mt-1">ভিডিও দেখুন</span>
+            <span className="text-[9px] text-red-400 font-bold">+২৫ কয়েন/ভিডিও</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedTaskSubTab('shortlinks');
+              setActiveTab('tasks');
+              soundService.playSuccessFanfare();
+              triggerConfetti();
+            }}
+            className="p-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800/90 border border-amber-500/35 hover:border-amber-400 transition flex flex-col items-center justify-center cursor-pointer group active:scale-95 shadow-md shadow-amber-950/20"
+          >
+            <span className="text-2xl group-hover:scale-110 transition">⚡</span>
+            <span className="text-[11px] font-black text-white block mt-1">১৫ সে. শর্টলিংক</span>
+            <span className="text-[9px] text-amber-400 font-bold">+৫০ কয়েন/টাস্ক</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedTaskSubTab('offerwall');
+              setActiveTab('tasks');
+              soundService.playSuccessFanfare();
+              triggerConfetti();
+            }}
+            className="p-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800/90 border border-cyan-500/35 hover:border-cyan-400 transition flex flex-col items-center justify-center cursor-pointer group active:scale-95 shadow-md shadow-cyan-950/20"
+          >
+            <span className="text-2xl group-hover:scale-110 transition">🚀</span>
+            <span className="text-[11px] font-black text-white block mt-1">অফারওয়াল হাব</span>
+            <span className="text-[9px] text-cyan-400 font-bold">১২০-১,০০০ কয়েন</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 🚀 📢 প্রমোট ও কাজ পোস্ট ব্যানার (ইউটিউব ভিউ, সাবস্ক্রাইব, টিকটক ফলোয়ার প্রমোশন) */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#160A2E] via-[#210D44] to-[#0D051C] border-2 border-fuchsia-500/80 p-4 sm:p-5 shadow-2xl shadow-fuchsia-950/60 space-y-3.5 group hover:border-fuchsia-400 transition-all duration-300">
+        <div className="absolute -top-12 -right-12 w-40 h-40 bg-fuchsia-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-pink-500/20 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 space-y-3">
+          {/* Header Badge */}
+          <div className="flex items-center justify-between">
+            <span className="px-3 py-1 rounded-full bg-fuchsia-500/20 border border-fuchsia-500/50 text-[10px] font-black uppercase tracking-wider text-fuchsia-300 flex items-center gap-1.5 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-fuchsia-400 animate-ping" />
+              <span>📢 বিজ্ঞাপনদাতা ও ক্রিয়েটর হাব • কাজ দিন</span>
+            </span>
+            <span className="text-[10px] font-black text-fuchsia-300 font-mono bg-fuchsia-500/15 px-2 py-0.5 rounded-md border border-fuchsia-500/30">
+              ১০০% রিয়েল ইউজার
+            </span>
+          </div>
+
+          {/* Headline & Description */}
+          <div>
+            <h3 className="text-sm sm:text-base font-black text-white leading-snug flex items-center gap-1.5">
+              <span>🚀 ইউটিউব ভিউ, সাবস্ক্রাইব বা টিকটক লাইক-ফলোয়ার লাগবে?</span>
+            </h3>
+            <p className="text-xs text-fuchsia-100/90 mt-1 leading-relaxed font-sans">
+              আপনার ইউটিউব চ্যানেল, টিকটক আইডি, ফেসবুক পেজ বা অ্যাপের জন্য হাজার হাজার রিয়েল বাংলাদেশি ইউজার দিয়ে লাইক, সাবস্ক্রাইব ও ভিউ করিয়ে নিন! সাশ্রয়ী বাজেটে বিকাশ/নগদে পেমেন্ট দিয়ে নিজেই কাজ পোস্ট করুন।
+            </p>
+          </div>
+
+          {/* Service Feature Grid */}
+          <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
+            <div className="p-2 rounded-xl bg-black/50 border border-fuchsia-500/30">
+              <span className="text-base">🎬</span>
+              <span className="text-[10px] text-fuchsia-200 font-black block mt-0.5">ইউটিউব সাব ও ভিউ</span>
+            </div>
+            <div className="p-2 rounded-xl bg-black/50 border border-pink-500/30">
+              <span className="text-base">🎵</span>
+              <span className="text-[10px] text-pink-200 font-black block mt-0.5">টিকটক ফলো ও লাইক</span>
+            </div>
+            <div className="p-2 rounded-xl bg-black/50 border border-blue-500/30">
+              <span className="text-base">👍</span>
+              <span className="text-[10px] text-blue-200 font-black block mt-0.5">ফেসবুক পেজ ফলো</span>
+            </div>
+          </div>
+
+          {/* Pricing Guarantee */}
+          <div className="flex items-center justify-between text-[11px] text-fuchsia-200/90 bg-black/40 px-3 py-1.5 rounded-xl border border-fuchsia-500/20">
+            <span className="flex items-center gap-1 font-bold">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>প্রতি কাজে মাত্র ৳১ - ৳১.৫ টাকা</span>
+            </span>
+            <span className="text-emerald-400 font-mono font-bold">১ ঘণ্টায় কাজ শুরু ⚡</span>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setShowPostJobModal(true);
+                soundService.playSuccessFanfare();
+                triggerConfetti();
+              }}
+              className="py-3 px-3 rounded-2xl bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 hover:from-fuchsia-500 hover:to-rose-500 text-white font-black text-xs shadow-lg shadow-fuchsia-600/30 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 fill-white text-white" />
+              <span>👉 কাজ পোস্ট করুন</span>
+            </button>
+
+            <a
+              href="https://wa.me/8801339223713?text=Hello,%20I%20want%20to%20order%20YouTube%20Subscribers/Views%20or%20TikTok%20promotion%20on%20Watch%20%26%20Earn%20BD"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="py-3 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-1.5 transition active:scale-95 text-center"
+            >
+              <span>💬 হোয়াটসঅ্যাপে অর্ডার</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* ⚡ ১৫ সেকেন্ড শর্টলিংক টাস্ক হাব (ShrinkMe ও DropLink - User Earning Engine) */}
+      <div 
+        onClick={() => {
+          setSelectedTaskSubTab('shortlinks');
+          setActiveTab('tasks');
+          soundService.playSuccessFanfare();
+          triggerConfetti();
+        }}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1E1202] via-[#2D1804] to-[#120801] border-2 border-amber-400/80 p-4 sm:p-5 shadow-2xl shadow-amber-950/60 space-y-3 cursor-pointer hover:border-amber-300 transition group active:scale-98"
+      >
+        <div className="absolute -top-10 -right-10 w-36 h-36 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="flex items-center justify-between">
+          <span className="px-3 py-1 rounded-full bg-amber-400/20 border border-amber-400/50 text-[10px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+            <span>⚡ ১৫ সেকেন্ড শর্টলিংক টাস্ক • হাই-পে</span>
+          </span>
+          <span className="text-[10px] font-black text-amber-300 font-mono bg-amber-400/15 px-2 py-0.5 rounded-md border border-amber-400/30">
+            +৫০ হতে +৬০ 🪙
+          </span>
+        </div>
+
+        <div>
+          <h3 className="text-sm sm:text-base font-black text-white leading-snug flex items-center gap-1.5">
+            <span>🔗 ShrinkMe ও DropLink দিয়ে প্রতি টাস্কে নগদ ইনকাম!</span>
+          </h3>
+          <p className="text-xs text-amber-100/90 mt-1 leading-relaxed">
+            মাত্র ১৫ সেকেন্ড লিংক ভিজিট করে ক্যাপচা পূরণ করুন এবং সরাসরি <strong className="text-amber-300">+৫০ থেকে +৬০ কয়েন</strong> অ্যাকাউন্টে যোগ করুন।
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="p-2 rounded-xl bg-black/50 border border-amber-500/30 flex items-center gap-2">
+            <span className="text-base">🚀</span>
+            <div>
+              <span className="text-[10px] text-slate-300 font-bold block">ShrinkMe লিংক</span>
+              <span className="text-xs font-black text-amber-300">+৫০ কয়েন • ১৫ সে.</span>
+            </div>
+          </div>
+          <div className="p-2 rounded-xl bg-black/50 border border-amber-500/30 flex items-center gap-2">
+            <span className="text-base">💧</span>
+            <div>
+              <span className="text-[10px] text-slate-300 font-bold block">DropLink স্পন্সর</span>
+              <span className="text-xs font-black text-amber-300">+৫৫ কয়েন • ১৫ সে.</span>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-400/30 flex items-center justify-center gap-1.5 group-hover:brightness-110 transition cursor-pointer"
+        >
+          <span>শর্টলিংক টাস্ক শুরু করুন (+৫০ 🪙) ➔</span>
+        </button>
       </div>
 
       {/* 🇧🇩 ২ থেকে ৩ মিনিটের সহজ কাজ ও বাংলাদেশি মাইক্রোজব কার্ড (User Requested Feature) */}
@@ -525,6 +787,43 @@ export const HomeScreen: React.FC = () => {
           className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-1.5 group-hover:brightness-110 transition cursor-pointer"
         >
           <span>২-৩ মিনিটের কাজ শুরু করুন ➔</span>
+        </button>
+      </div>
+
+      {/* 🛍️ 🔥 দারাজ ও অফিশিয়াল হট ডিলস ক্যাশব্যাক কার্ড (Affiliate Earning Engine) */}
+      <div 
+        onClick={() => {
+          setSelectedTaskSubTab('affiliate_deals');
+          setActiveTab('tasks');
+        }}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#210913] via-[#1A0710] to-[#0D0308] border-2 border-rose-500/70 p-4 sm:p-5 shadow-2xl shadow-rose-950/50 space-y-3 cursor-pointer hover:border-rose-400 transition group active:scale-98"
+      >
+        <div className="absolute -top-10 -right-10 w-36 h-36 bg-rose-500/20 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="flex items-center justify-between">
+          <span className="px-3 py-1 rounded-full bg-rose-500/20 border border-rose-500/50 text-[10px] font-black uppercase tracking-wider text-rose-300 flex items-center gap-1.5 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-rose-400 animate-ping" />
+            <span>🔥 দারাজ হট ডিলস ও কেনাকাটা ক্যাশব্যাক</span>
+          </span>
+          <span className="text-[10px] font-black text-rose-300 font-mono bg-rose-500/15 px-2 py-0.5 rounded-md border border-rose-500/30">
+            +৮০ হতে +২৫০ কয়েন
+          </span>
+        </div>
+
+        <div>
+          <h3 className="text-sm sm:text-base font-black text-white leading-snug flex items-center gap-1.5">
+            <span>🛍️ দারাজের সেরা গ্যাজেট কিনুন ও কয়েন ক্যাশব্যাক নিন!</span>
+          </h3>
+          <p className="text-xs text-rose-100/90 mt-1 leading-relaxed">
+            স্মার্টওয়াচ, ইয়ারবাডস ও গ্যাজেট কিনলে সরাসরি কয়েন ক্যাশব্যাক! কোনো গেম খেলতে হবে না—প্রয়োজনীয় জিনিস কিনেই ইনকাম।
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-600 to-red-600 text-white font-black text-xs shadow-lg shadow-rose-600/30 flex items-center justify-center gap-1.5 group-hover:brightness-110 transition cursor-pointer"
+        >
+          <span>হট ডিলস ও ক্যাশব্যাক দেখুন ➔</span>
         </button>
       </div>
 
@@ -621,16 +920,18 @@ export const HomeScreen: React.FC = () => {
       <MiniBannerAd slotId="home_offerwall_feature_spot" category="finance" />
 
       {/* 🔰 কাজের নিয়ম, অফিশিয়াল টেলিগ্রাম চ্যানেল ও পেমেন্ট প্রুফ, আজকের ৩টি মিশন ও ট্রাস্ট গ্যারান্টি হাব */}
-      <WorkEngagementHub
-        onOpenOfferwall={() => {
-          setSelectedTaskSubTab('offerwall');
-          setActiveTab('tasks');
-          soundService.playSuccessFanfare();
-          triggerConfetti();
-        }}
-        onOpenWatch={() => handleOpenYouTubeApp()}
-        onOpenSpin={() => setShowSpinModal(true)}
-      />
+      <div id="work-engagement-hub">
+        <WorkEngagementHub
+          onOpenOfferwall={() => {
+            setSelectedTaskSubTab('offerwall');
+            setActiveTab('tasks');
+            soundService.playSuccessFanfare();
+            triggerConfetti();
+          }}
+          onOpenWatch={() => handleOpenYouTubeApp()}
+          onOpenSpin={() => setShowSpinModal(true)}
+        />
+      </div>
 
       {/* 👑 PRO VIP MEMBERSHIP & 2X EARNINGS TURBO BOOSTER HUB */}
       <ProVipBoosterHub />
@@ -975,6 +1276,18 @@ export const HomeScreen: React.FC = () => {
         onClose={() => setShowLegalModal(false)}
         initialTab={legalTab}
       />
+
+      {/* 📢 পোস্ট জব / প্রমোশন মডাল (ইউটিউব ভিউ, সাবস্ক্রাইব, টিকটক ইত্যাদি) */}
+      {showPostJobModal && (
+        <PostJobModal
+          onClose={() => setShowPostJobModal(false)}
+          onJobCreated={() => {
+            setShowPostJobModal(false);
+            refreshUser();
+            showToast('✅ আপনার কাজের আবেদন সফলভাবে গ্রহণ করা হয়েছে! এডমিন যাচাই করে শীঘ্রই লাইভ করবে।', '', 'success');
+          }}
+        />
+      )}
 
       {/* 🌐 Full Website Landing Page Live Preview for Logged-in Users */}
       {showLandingPreview && (

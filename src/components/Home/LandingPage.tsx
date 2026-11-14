@@ -159,6 +159,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
     <div className="min-h-screen bg-[#05070B] text-slate-100 flex flex-col justify-between selection:bg-emerald-500 selection:text-slate-950 font-['Hind_Siliguri','Outfit',sans-serif]">
       {/* 🌟 Top Navigation Bar */}
       <header className="sticky top-0 z-40 bg-[#05070B]/90 backdrop-blur-md border-b border-white/10 px-4 py-3.5 transition-all">
+
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           {/* Logo & Brand Identity */}
           <a href="#" className="flex items-center gap-3 group">

@@ -1,0 +1,7 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/watc3110/public_html
+    - if [ -f dist/index.html ]; then /bin/cp -R dist/assets $DEPLOYPATH/ 2>/dev/null || true; /bin/cp dist/index.html $DEPLOYPATH/; fi
+    - /bin/cp -R public/* $DEPLOYPATH/ 2>/dev/null || true
+    - /bin/cp public/.htaccess $DEPLOYPATH/ 2>/dev/null || true

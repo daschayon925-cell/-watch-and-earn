@@ -14,7 +14,9 @@ import {
   Smartphone,
   HelpCircle,
   X,
-  Lock
+  Lock,
+  DollarSign,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
@@ -22,6 +24,9 @@ import { RewardTransaction, Withdrawal } from '../../types';
 import { api } from '../../services/api';
 import { soundService } from '../../services/audio';
 import { MiniBannerAd } from '../Common/MiniBannerAd';
+import { LivePaymentTicker } from '../Common/LivePaymentTicker';
+import { DollarExchangeModal } from './DollarExchangeModal';
+import { sendTelegramWithdrawalAlert } from '../../services/telegramNotifier';
 
 export const WalletScreen: React.FC = () => {
   const { user, refreshUser } = useAuth();
@@ -34,6 +39,7 @@ export const WalletScreen: React.FC = () => {
 
   // Withdrawal Modal State
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showDollarExchangeModal, setShowDollarExchangeModal] = useState(false);
   const [method, setMethod] = useState<'bKash' | 'Nagad' | 'Recharge' | 'Binance'>('Recharge');
   const [operator, setOperator] = useState<string>('গ্রামীণফোন (GP)');
   const [accountType, setAccountType] = useState<'Personal' | 'Agent' | 'Prepaid' | 'Postpaid' | 'Binance Pay / USDT'>('Prepaid');
@@ -170,6 +176,24 @@ export const WalletScreen: React.FC = () => {
       if (res.success) {
         soundService.playSuccessFanfare();
         triggerConfetti();
+
+        // 🤖 Dispatch Telegram Auto-Payment Alert
+        try {
+          sendTelegramWithdrawalAlert({
+            id: res.withdrawal?.id || `w_${Date.now()}`,
+            userName: user?.displayName || 'ব্যবহারকারী',
+            userPhone: user?.phone || mobileNumber,
+            method,
+            accountNumber: mobileNumber,
+            coins: coinsNeeded,
+            amountBDT: bdtWillGet,
+            createdAt: new Date().toISOString()
+          }, {
+            botToken: (settings?.adsConfig as any)?.telegramBotToken,
+            chatId: (settings?.adsConfig as any)?.telegramChatId
+          });
+        } catch (e) {}
+
         await refreshUser();
         await loadWalletData();
         setShowWithdrawModal(false);
@@ -204,6 +228,11 @@ export const WalletScreen: React.FC = () => {
 
   return (
     <div className="w-full max-w-md mx-auto px-4 pt-20 sm:pt-24 pb-20 space-y-4">
+      {/* 🟢 Live Real-time Payment Ticker */}
+      <div className="-mx-4 -mt-2 mb-2">
+        <LivePaymentTicker />
+      </div>
+
       {/* Wallet Balance Hero Header */}
       <div className="rounded-3xl bg-gradient-to-br from-[#09111D] via-[#0E1726] to-[#0A1A12] border border-emerald-500/30 p-5 shadow-2xl relative overflow-hidden">
         <div className="flex items-center justify-between mb-2">
@@ -269,24 +298,34 @@ export const WalletScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Withdraw Action Button */}
-        <button
-          onClick={() => {
-            if (user?.role === 'admin') {
-              setMobileNumber('');
-            } else {
-              setMobileNumber(user?.phone || '');
-            }
-            setWithdrawPassword('');
-            setShowWithdrawModal(true);
-          }}
-          className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition active:scale-98"
-        >
-          <ArrowDownLeft className="w-4 h-4" />
-          {language === 'bn' 
-            ? `টাকা তুলুন (রিচার্জ: Min ৳৩০ | বিকাশ/নগদ: Min ৳১০০)` 
-            : `Withdraw Request (Recharge: ৳30 | bKash/Nagad: ৳100)`}
-        </button>
+        {/* Dual Actions: Withdraw Coins & Dollar Exchange */}
+        <div className="space-y-2 pt-1">
+          <button
+            onClick={() => {
+              if (user?.role === 'admin') {
+                setMobileNumber('');
+              } else {
+                setMobileNumber(user?.phone || '');
+              }
+              setWithdrawPassword('');
+              setShowWithdrawModal(true);
+            }}
+            className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer"
+          >
+            <ArrowDownLeft className="w-4 h-4 stroke-[2.5]" />
+            <span>{language === 'bn' 
+              ? `কয়েন ক্যাশআউট (রিচার্জ ৳৩০ | বিকাশ/নগদ ৳১০০)` 
+              : `Withdraw Coins (Recharge ৳30 | bKash/Nagad ৳100)`}</span>
+          </button>
+
+          <button
+            onClick={() => setShowDollarExchangeModal(true)}
+            className="w-full py-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs rounded-2xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer"
+          >
+            <DollarSign className="w-4 h-4 stroke-[3]" />
+            <span>ডলার টু বিকাশ এক্সচেঞ্জ 💵 (Payeer / Airtm / 2Captcha)</span>
+          </button>
+        </div>
       </div>
 
       {/* 📢 খালি জায়গায় ছোট ব্যানার অ্যাড (Wallet Mini Banner) */}
@@ -791,6 +830,12 @@ export const WalletScreen: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 💵 Dollar to bKash / Nagad Exchange Modal */}
+      <DollarExchangeModal 
+        isOpen={showDollarExchangeModal} 
+        onClose={() => setShowDollarExchangeModal(false)} 
+      />
     </div>
   );
 };

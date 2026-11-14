@@ -36,8 +36,8 @@ interface AppContextType {
   setTargetVideoId: (id: string | null) => void;
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
-  selectedTaskSubTab: 'bd_microtasks' | 'micro_tasks' | 'daily_tasks' | 'offerwall';
-  setSelectedTaskSubTab: (tab: 'bd_microtasks' | 'micro_tasks' | 'daily_tasks' | 'offerwall') => void;
+  selectedTaskSubTab: 'bangla_daily_jobs' | 'bd_microtasks' | 'shortlinks' | 'typing_jobs' | 'affiliate_deals' | 'micro_tasks' | 'daily_tasks' | 'offerwall';
+  setSelectedTaskSubTab: (tab: 'bangla_daily_jobs' | 'bd_microtasks' | 'shortlinks' | 'typing_jobs' | 'affiliate_deals' | 'micro_tasks' | 'daily_tasks' | 'offerwall') => void;
   floatingAdsEnabled: boolean;
   setFloatingAdsEnabled: (enabled: boolean) => void;
 }
@@ -54,7 +54,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [targetVideoId, setTargetVideoId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedTaskSubTab, setSelectedTaskSubTab] = useState<'bd_microtasks' | 'micro_tasks' | 'daily_tasks' | 'offerwall'>('bd_microtasks');
+  const [selectedTaskSubTab, setSelectedTaskSubTab] = useState<'bangla_daily_jobs' | 'bd_microtasks' | 'shortlinks' | 'typing_jobs' | 'affiliate_deals' | 'micro_tasks' | 'daily_tasks' | 'offerwall'>('bangla_daily_jobs');
   const [floatingAdsEnabled, setFloatingAdsEnabledState] = useState<boolean>(() => {
     return localStorage.getItem('we_floating_ads_enabled') !== 'false';
   });
@@ -111,7 +111,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const showToast = (title: string, message: string, type: 'success' | 'error' | 'info' | 'coin' = 'info') => {
     const id = 'toast_' + Date.now() + '_' + Math.random();
-    setToasts(prev => [...prev, { id, title, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => [...prev, { id, title, message, type }]);
+    }, 0);
 
     // 🔊 Sound & Haptic Vibration Feedback on Toast Notification
     try {

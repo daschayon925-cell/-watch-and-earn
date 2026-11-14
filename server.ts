@@ -4,12 +4,31 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import fs from 'fs';
+import { aiSentinelService } from './src/server/aiSentinelService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+
+const args = process.argv.slice(2);
+const portIndex = args.indexOf('--port');
+const cliPort = portIndex !== -1 && args[portIndex + 1] ? Number(args[portIndex + 1]) : null;
+const hostIndex = args.indexOf('--host');
+const cliHost = hostIndex !== -1 && args[hostIndex + 1] ? args[hostIndex + 1] : '0.0.0.0';
+
+const rawEnvPort = process.env.PORT;
+const isSocketPort = typeof rawEnvPort === 'string' && rawEnvPort.trim() !== '' && Number.isNaN(Number(rawEnvPort));
+const PORT: number | string = isSocketPort ? rawEnvPort! : (Number(rawEnvPort) || cliPort || 3000);
+const HOST = process.env.HOST || cliHost || '0.0.0.0';
+
+// Global process error handlers to prevent unexpected server termination
+process.on('uncaughtException', (err) => {
+  console.error('⚠️ Uncaught Exception in server process:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️ Unhandled Rejection in server process at:', promise, 'reason:', reason);
+});
 
 // 🛡️ International Enterprise-Grade Security Headers & Anti-Tamper Guard
 app.use((req, res, next) => {
@@ -21,6 +40,25 @@ app.use((req, res, next) => {
   res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('X-Robots-Tag', 'all, index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
+
+  const origin = req.headers.origin;
+  if (
+    origin &&
+    (origin.endsWith('.bdz1.top') ||
+      origin === 'https://watchearnbd.bdz1.top' ||
+      origin === 'http://watchearnbd.bdz1.top' ||
+      origin.endsWith('.onrender.com') ||
+      origin.endsWith('.run.app') ||
+      origin.startsWith('http://localhost:'))
+  ) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-user-id, x-user-coins');
+  }
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
   next();
 });
 
@@ -55,6 +93,34 @@ Allow: /
 Sitemap: https://${host}/sitemap.xml
 `);
 });
+
+// Offerwall.GG site verification endpoint
+app.get(['/offerwall.txt', '/.well-known/offerwall.txt'], (req, res) => {
+  res.type('text/plain');
+  res.send(`offerwall-verification=ow-426ee7fc2d9f872a6a0a\n# Offerwall.GG site verification - https://offerwall.gg\n`);
+});
+
+// Production Deployment Download Routes for cPanel
+app.get('/dist.zip', (req, res) => {
+  const filePath = path.resolve(process.cwd(), 'public/dist.zip');
+  if (fs.existsSync(filePath)) {
+    res.download(filePath, 'dist.zip');
+  } else {
+    res.status(404).send('Build file dist.zip not found');
+  }
+});
+
+app.get('/dist.tar.gz', (req, res) => {
+  const filePath = path.resolve(process.cwd(), 'public/dist.tar.gz');
+  if (fs.existsSync(filePath)) {
+    res.download(filePath, 'dist.tar.gz');
+  } else {
+    res.status(404).send('Build file dist.tar.gz not found');
+  }
+});
+
+app.use(express.static(path.resolve(process.cwd(), 'public')));
+
 
 app.get('/sitemap.xml', (req, res) => {
   res.type('application/xml');
@@ -139,13 +205,21 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 // In-Memory & Disk-Persisted Database for Permanent Data Storage
-const DB_FILE = path.resolve(process.cwd(), 'database_data.json');
+const REPO_SEED_DB_FILE = path.resolve(process.cwd(), 'database_data.json');
+const DEFAULT_DB_FILE = process.cwd().includes(`${path.sep}repositories${path.sep}`)
+  ? path.resolve(process.cwd(), '../../watchearn_data/database_data.json')
+  : REPO_SEED_DB_FILE;
+const DB_FILE = process.env.DB_FILE_PATH
+  ? path.resolve(process.env.DB_FILE_PATH)
+  : DEFAULT_DB_FILE;
 
 function saveDbToDisk() {
   try {
-    const tmpFile = `${DB_FILE}.tmp`;
-    fs.writeFileSync(tmpFile, JSON.stringify(db, null, 2), 'utf-8');
-    fs.renameSync(tmpFile, DB_FILE);
+    const parentDir = path.dirname(DB_FILE);
+    if (!fs.existsSync(parentDir)) {
+      fs.mkdirSync(parentDir, { recursive: true });
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
   } catch (err) {
     console.error('Failed to save db to disk', err);
   }
@@ -153,15 +227,18 @@ function saveDbToDisk() {
 
 function loadDbFromDisk() {
   try {
-    if (fs.existsSync(DB_FILE)) {
-      const raw = fs.readFileSync(DB_FILE, 'utf-8');
+    const sourceFile = fs.existsSync(DB_FILE)
+      ? DB_FILE
+      : (DB_FILE !== REPO_SEED_DB_FILE && fs.existsSync(REPO_SEED_DB_FILE) ? REPO_SEED_DB_FILE : null);
+    if (sourceFile) {
+      const raw = fs.readFileSync(sourceFile, 'utf-8');
       const loaded = JSON.parse(raw);
       if (loaded && loaded.users && Array.isArray(loaded.users)) {
         // Merge or copy
         db.settings = { ...db.settings, ...(loaded.settings || {}) };
         db.settings.videoReward = 50;
         db.settings.rewardedAdBonus = 50;
-        db.settings.dailyRewardLimit = 1200;
+        db.settings.dailyRewardLimit = Number(loaded.settings?.dailyRewardLimit) || 20000;
         db.settings.dailyMaxVideos = 40;
         db.settings.dailyRewardedAdLimit = 25;
         db.settings.referralBonus = 50;
@@ -173,7 +250,17 @@ function loadDbFromDisk() {
         db.settings.adsConfig.monetagZoneId = db.settings.adsConfig.monetagZoneId || '11948885';
         db.settings.adsConfig.monetagTagCode = db.settings.adsConfig.monetagTagCode || '<script src="https://5gvci.com/act/files/tag.min.js?z=11948885" data-cfasync="false" async></script>';
         db.settings.adsConfig.monetagDirectLink = loaded.settings?.adsConfig?.monetagDirectLink || 'https://uplcm.com/4/11971342';
+        db.settings.adsConfig.videoWatchSeconds = loaded.settings?.adsConfig?.videoWatchSeconds || 60;
+        db.settings.adsConfig.autoAdAfterEveryVideo = true;
         if (!db.settings.offerwallsConfig) db.settings.offerwallsConfig = {};
+        db.settings.offerwallsConfig.bitcotasksEnabled = true;
+        db.settings.offerwallsConfig.bitcotasksApiKey = loaded.settings?.offerwallsConfig?.bitcotasksApiKey || 'el15zv6b8o9kz3i9haq63pgtpdiivh';
+        db.settings.offerwallsConfig.bitcotasksSecretKey = loaded.settings?.offerwallsConfig?.bitcotasksSecretKey || 'f1d36264b0fa90900bda3aaf5ef7847c';
+        db.settings.offerwallsConfig.bitcotasksUrl = loaded.settings?.offerwallsConfig?.bitcotasksUrl || 'https://bitcotasks.com/offerwall/el15zv6b8o9kz3i9haq63pgtpdiivh';
+        db.settings.offerwallsConfig.affmineEnabled = true;
+        db.settings.offerwallsConfig.affmineOfferwallId = loaded.settings?.offerwallsConfig?.affmineOfferwallId || '6741';
+        db.settings.offerwallsConfig.affmineOfferwallCode = loaded.settings?.offerwallsConfig?.affmineOfferwallCode || 'ow_6aee0425704f4';
+        db.settings.offerwallsConfig.affmineUrl = loaded.settings?.offerwallsConfig?.affmineUrl || 'https://affgo.xyz/offerwall/?o=ow_6aee0425704f4';
         db.settings.offerwallsConfig.offerwallMeEnabled = true;
         db.settings.offerwallsConfig.offerwallMePlacementId = db.settings.offerwallsConfig.offerwallMePlacementId || '6aca33472eaa6484016c37d7';
         db.settings.offerwallsConfig.offerwallMeApiKey = db.settings.offerwallsConfig.offerwallMeApiKey || '6yHRmktW7Ouf75SHc826oSbiYGu06W';
@@ -189,8 +276,17 @@ function loadDbFromDisk() {
         db.settings.offerwallsConfig.adgemEnabled = true;
         db.settings.offerwallsConfig.adgemAppId = db.settings.offerwallsConfig.adgemAppId || '';
         db.settings.offerwallsConfig.adgemWallUrl = db.settings.offerwallsConfig.adgemWallUrl || '';
+        db.settings.offerwallsConfig.adgemPostbackKey = db.settings.offerwallsConfig.adgemPostbackKey || '7429809lf0jdd2mb22e2mhad';
         db.settings.offerwallsConfig.cpxEnabled = true;
         db.settings.offerwallsConfig.cpxAppId = db.settings.offerwallsConfig.cpxAppId || '36966';
+        // Zeydoo Verified SmartLink & Postback
+        db.settings.offerwallsConfig.zeydooEnabled = true;
+        db.settings.offerwallsConfig.zeydooSmartLink = 'https://nya5.com/link?z=12138356';
+        // TimeWall configuration (preserve user's settings if configured)
+        db.settings.offerwallsConfig.timewallEnabled = Boolean(loaded.settings?.offerwallsConfig?.timewallEnabled);
+        db.settings.offerwallsConfig.timewallPlacementId = loaded.settings?.offerwallsConfig?.timewallPlacementId || '';
+        db.settings.offerwallsConfig.timewallSecretKey = loaded.settings?.offerwallsConfig?.timewallSecretKey || '';
+        db.settings.offerwallsConfig.timewallUrl = loaded.settings?.offerwallsConfig?.timewallUrl || '';
         // Disable platforms where the user has no accounts
         db.settings.offerwallsConfig.adscendEnabled = false;
         db.settings.offerwallsConfig.offerwallDotComEnabled = false;
@@ -198,10 +294,8 @@ function loadDbFromDisk() {
         db.settings.offerwallsConfig.wannadsEnabled = false;
         db.settings.offerwallsConfig.cpaleadEnabled = false;
         db.settings.offerwallsConfig.monlixEnabled = false;
-        db.settings.offerwallsConfig.timewallEnabled = false;
         db.settings.offerwallsConfig.toroxEnabled = false;
         db.settings.offerwallsConfig.lootablyEnabled = false;
-        db.settings.offerwallsConfig.bitlabsEnabled = false;
         db.users = loaded.users || db.users;
         db.videos = loaded.videos || db.videos;
         db.transactions = loaded.transactions || db.transactions;
@@ -209,6 +303,40 @@ function loadDbFromDisk() {
         db.reports = loaded.reports || db.reports;
         db.notifications = loaded.notifications || db.notifications;
         db.comments = loaded.comments || db.comments;
+        db.postedJobs = loaded.postedJobs || db.postedJobs || [];
+        db.affiliateDeals = loaded.affiliateDeals || db.affiliateDeals || [];
+        db.dollarExchanges = loaded.dollarExchanges || db.dollarExchanges || [];
+        if (!db.settings.affiliateConfig) {
+          db.settings.affiliateConfig = {
+            enabled: true,
+            darazAffiliateId: '167492337',
+            darazDefaultUrl: 'https://s.daraz.com.bd/s.Y39Ff?cc'
+          };
+        } else {
+          db.settings.affiliateConfig.darazAffiliateId = db.settings.affiliateConfig.darazAffiliateId || '167492337';
+          if (!db.settings.affiliateConfig.darazDefaultUrl || db.settings.affiliateConfig.darazDefaultUrl === 'https://www.daraz.com.bd') {
+            db.settings.affiliateConfig.darazDefaultUrl = 'https://s.daraz.com.bd/s.Y39Ff?cc';
+          }
+        }
+        // Ensure all Daraz deals point to user's affiliate URL
+        if (db.affiliateDeals && Array.isArray(db.affiliateDeals)) {
+          db.affiliateDeals.forEach(d => {
+            if (d.storeName === 'Daraz' && (!d.affiliateUrl || d.affiliateUrl === 'https://www.daraz.com.bd')) {
+              d.affiliateUrl = db.settings.affiliateConfig.darazDefaultUrl;
+            }
+          });
+        }
+        if (!db.settings.jobPostingConfig) {
+          db.settings.jobPostingConfig = {
+            enabled: true,
+            bkashNumber: '01339223713',
+            nagadNumber: '01339223713',
+            rocketNumber: '01339223713',
+            pricePerWorkerBDT: 1.5,
+            workerRewardCoins: 25,
+            minWorkers: 20
+          };
+        }
         console.log(`[DB] Successfully loaded ${db.users.length} users and ${db.transactions.length} transactions from storage.`);
       }
     }
@@ -278,6 +406,13 @@ function loadDbFromDisk() {
     }
   });
 
+  aiSentinelService.ensureInitialized(db);
+  try {
+    aiSentinelService.performDeepAudit(db);
+  } catch (auditErr) {
+    console.warn('[AI Sentinel] Startup audit notice:', auditErr);
+  }
+
   saveDbToDisk();
 }
 
@@ -304,6 +439,10 @@ const db: {
   reports: any[];
   notifications: any[];
   comments: any[];
+  affiliateDeals?: any[];
+  postedJobs?: any[];
+  dollarExchanges?: any[];
+  aiAgentState?: any;
 } = {
   settings: {
     coinToBDTRate: 0.008, // ১০০০ কয়েন = ৮ টাকা
@@ -347,10 +486,21 @@ const db: {
       hilltopAdsEnabled: true,
       hilltopAdsDirectLink: 'https://affectionatestorage.com/Ah6g5c',
       hilltopAdsZoneId: '7488677',
-      hilltopAdsBannerCode: ''
+      hilltopAdsBannerCode: '',
+      shortlinksEnabled: true,
+      shrinkmeShortlinkUrl: 'https://shrinkme.click/pipw',
+      droplinkShortlinkUrl: 'https://droplink.co/dmWjV8x7'
     },
     offerwallsConfig: {
       enabled: true,
+      bitcotasksEnabled: true,
+      bitcotasksApiKey: 'el15zv6b8o9kz3i9haq63pgtpdiivh',
+      bitcotasksSecretKey: 'f1d36264b0fa90900bda3aaf5ef7847c',
+      bitcotasksUrl: 'https://bitcotasks.com/offerwall/el15zv6b8o9kz3i9haq63pgtpdiivh',
+      affmineEnabled: true,
+      affmineOfferwallId: '6741',
+      affmineOfferwallCode: 'ow_6aee0425704f4',
+      affmineUrl: 'https://affgo.xyz/offerwall/?o=ow_6aee0425704f4',
       cpaleadEnabled: false,
       cpaleadApiKey: '6879945464ff4be390fdabff423e4eb0',
       cpaleadPublisherId: '3364429',
@@ -382,6 +532,20 @@ const db: {
       senderId: process.env.SMS_SENDER_ID || 'WatchEarnBD',
       apiUrl: 'https://api.greenweb.com.bd/api.php',
       enabled: false
+    },
+    affiliateConfig: {
+      enabled: true,
+      darazAffiliateId: '167492337',
+      darazDefaultUrl: 'https://s.daraz.com.bd/s.Y39Ff?cc'
+    },
+    jobPostingConfig: {
+      enabled: true,
+      bkashNumber: '01339223713',
+      nagadNumber: '01339223713',
+      rocketNumber: '01339223713',
+      pricePerWorkerBDT: 1.5,
+      workerRewardCoins: 25,
+      minWorkers: 20
     }
   },
   users: [
@@ -728,7 +892,82 @@ const db: {
   withdrawals: [],
   reports: [],
   notifications: [],
-  comments: []
+  comments: [],
+  affiliateDeals: [
+    {
+      id: 'deal_smartwatch_t900',
+      titleBn: 'T900 Ultra স্মার্টওয়াচ (HD Display, Bluetooth Calling) ⌚',
+      category: 'gadget',
+      priceBDT: 799,
+      originalPriceBDT: 1450,
+      cashbackCoins: 120,
+      imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=80',
+      affiliateUrl: 'https://s.daraz.com.bd/s.Y39Ff?cc',
+      storeName: 'Daraz',
+      badgeBn: 'হট ডিল • ৪৫% ছাড়',
+      clicksCount: 34
+    },
+    {
+      id: 'deal_earbuds_m10',
+      titleBn: 'M10 TWS ট্রু ওয়্যারলেস ব্লুটুথ ইয়ারবাডস 🎧',
+      category: 'gadget',
+      priceBDT: 399,
+      originalPriceBDT: 850,
+      cashbackCoins: 80,
+      imageUrl: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500&auto=format&fit=crop&q=80',
+      affiliateUrl: 'https://s.daraz.com.bd/s.Y39Ff?cc',
+      storeName: 'Daraz',
+      badgeBn: 'বেস্টসেলার • ৫৩% ছাড়',
+      clicksCount: 52
+    },
+    {
+      id: 'deal_mic_k9',
+      titleBn: 'K9 ডুয়াল ওয়্যারলেস কলার মাইক্রোফোন (ভিডিও ও ব্লগের জন্য) 🎙️',
+      category: 'tech',
+      priceBDT: 650,
+      originalPriceBDT: 1200,
+      cashbackCoins: 100,
+      imageUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=500&auto=format&fit=crop&q=80',
+      affiliateUrl: 'https://s.daraz.com.bd/s.Y39Ff?cc',
+      storeName: 'Daraz',
+      badgeBn: 'ইউটিউবার স্পেশাল',
+      clicksCount: 19
+    },
+    {
+      id: 'deal_binance_free',
+      titleBn: 'Binance অফিশিয়াল ফ্রি সাইন-আপ ও $১০০ ট্রেডিং ভাউচার বোনাস 🎁',
+      category: 'app',
+      priceBDT: 0,
+      originalPriceBDT: 0,
+      cashbackCoins: 250,
+      imageUrl: 'https://images.unsplash.com/photo-1622979135225-d2ba269bc1df?w=500&auto=format&fit=crop&q=80',
+      affiliateUrl: 'https://accounts.binance.com/register',
+      storeName: 'Binance',
+      badgeBn: '১০০% ফ্রি বোনাস',
+      clicksCount: 88
+    }
+  ],
+  postedJobs: [
+    {
+      id: 'job_sample_yt_sub',
+      userId: 'usr_admin_owner',
+      userName: 'WatchEarn Official',
+      userPhone: '01339223713',
+      title: 'অফিসিয়াল ইউটিউব চ্যানেল সাবস্ক্রাইব ও বেল আইকন অন 🔔',
+      category: 'youtube',
+      targetUrl: 'https://www.youtube.com',
+      instructions: 'চ্যানেলে গিয়ে লাল সাবস্ক্রাইব বাটনে চাপ দিয়ে স্ক্রিনশট নিন এবং সাবমিট করুন।',
+      targetWorkers: 100,
+      completedWorkers: 32,
+      costBDT: 150,
+      rewardCoinsPerWorker: 25,
+      paymentMethod: 'bkash',
+      senderPhone: '01339223713',
+      trxId: 'BKT9284102',
+      status: 'approved',
+      createdAt: new Date().toISOString()
+    }
+  ]
 };
 
 // Active watch sessions to prevent fraud / time manipulation
@@ -1230,14 +1469,7 @@ app.post('/api/user/sync-coins', (req, res) => {
     return res.status(401).json({ success: false, message: 'ব্যবহারকারী পাওয়া যায়নি' });
   }
 
-  const { coins } = req.body;
-  if (typeof coins === 'number' && !isNaN(coins) && coins > user.coins) {
-    user.coins = Math.floor(coins);
-    user.lifetimeCoins = Math.max(user.lifetimeCoins || 0, user.coins);
-    user.updatedAt = new Date().toISOString();
-    saveDbToDisk();
-  }
-
+  // Server is strictly authoritative; client cannot unilaterally overwrite coin balance
   res.json({
     success: true,
     coins: user.coins
@@ -1487,7 +1719,23 @@ app.post('/api/reward/claim', (req, res) => {
     if (!user) {
       return res.status(401).json({ success: false, message: 'লগইন আবশ্যক' });
     }
-    const { sessionId } = req.body;
+    const { sessionId, antiBotProof } = req.body;
+
+    // 🛡️ AI Sentinel Anti-Script & Anti-Bot Exploit Guard
+    if (antiBotProof && antiBotProof.isHuman === false && db.aiAgentState?.settings?.antiScriptShield) {
+      user.riskScore = Math.min(100, (user.riskScore || 0) + 30);
+      aiSentinelService.recordLog(db, {
+        type: 'BOT_DETECTED',
+        messageBn: `বট বা হেডলেস স্ক্রিপ্ট প্রতিরোধ করা হয়েছে (${user.displayName || user.uid})। রিওয়ার্ড দাবি বাতিল করা হয়েছে।`,
+        severity: 'critical',
+        targetUid: user.uid
+      });
+      return res.status(403).json({
+        success: false,
+        message: 'স্বয়ংক্রিয় স্ক্রিপ্ট বা বট প্রতিরোধ সক্রিয় রয়েছে। অনুগ্রহ করে সাধারণ ব্রাউজার ব্যবহার করুন।'
+      });
+    }
+
     const session = activeSessions.get(sessionId);
 
     if (!session) {
@@ -1702,8 +1950,8 @@ app.post('/api/reward/ad-reward', (req, res) => {
     });
   }
 
-  // ⏱️ Guard 1b: Apply sponsor ad interval ONLY to manual sponsor bonus buttons, NEVER to video reel watchers!
-  const isVideoWatchSession = adToken === 'reel_auto_loop' || adToken === 'video_feed_reward' || adToken === 'watch_reel';
+  // ⏱️ Guard 1b: Apply sponsor ad interval ONLY to manual sponsor bonus buttons, NEVER to video reel watchers or Rewarded Video Ads!
+  const isVideoWatchSession = adToken === 'reel_auto_loop' || adToken === 'video_feed_reward' || adToken === 'watch_reel' || adToken === 'rewarded_video_ad' || adToken === 'rewarded_video_hub';
   const sponsorIntervalMinutes = Number(db.settings.sponsorAdIntervalMinutes) || 150;
   const intervalMs = sponsorIntervalMinutes * 60 * 1000;
   if (!isVideoWatchSession && user.lastSponsoredAdTimestamp) {
@@ -1878,9 +2126,9 @@ app.post('/api/reward/task-reward', (req, res) => {
   const user = getUser(req);
   if (!user) return res.status(401).json({ success: false, message: 'লগইন আবশ্যক' });
   const { taskType, taskName, coinsEarned } = req.body;
-  const reward = Math.min(20, Math.max(5, Number(coinsEarned) || 8));
+  const reward = Math.min(4500, Math.max(5, Number(coinsEarned) || 8));
 
-  const dailyLimit = db.settings.dailyRewardLimit || 1200;
+  const dailyLimit = db.settings.dailyRewardLimit || 20000;
   if ((user.todayCoins || 0) + reward > dailyLimit) {
     return res.status(400).json({ success: false, message: 'আজকের উপার্জনের সীমা পূর্ণ হয়েছে।' });
   }
@@ -1908,8 +2156,8 @@ app.post('/api/reward/task-reward', (req, res) => {
   });
 });
 
-// 6c-2. Universal & Freecash CPA Offerwall Postback Webhook (Freecash, CPALead, Monlix, TimeWall, AdGate Media, Torox, CPX, Lootably)
-app.all(['/api/postback/freecash', '/api/postback/offerwall', '/api/postback/cpalead', '/api/postback/monlix', '/api/postback/timewall', '/api/postback/torox', '/api/postback/cpx', '/api/postback/lootably'], (req, res) => {
+// 6c-2. Freecash & Monlix Offerwall Postback Webhook (kept separate so dedicated TimeWall/CPX/Lootly/BitcoTasks routes below are never shadowed)
+app.all(['/api/postback/freecash', '/api/postback/monlix'], (req, res) => {
   const params = { ...req.query, ...req.body };
   const subid = (params.subid || params.user_id || params.ext_user_id || params.userId || params.uid || params.sub_id || '') as string;
   const payout = parseFloat((params.payout || params.amount || params.payout_usd || params.amount_usd || params.reward || '0') as string);
@@ -2374,6 +2622,19 @@ app.post('/api/wallet/withdraw', (req, res) => {
     adminNote: 'পেমেন্ট প্রক্রিয়াধীন রয়েছে।'
   };
 
+  // 🛡️ AI Sentinel Real-time Risk & Quarantine Check
+  const userRisk = user.riskScore || 0;
+  if (userRisk >= 60 && db.aiAgentState?.settings?.autoQuarantineFraud) {
+    withdrawal.aiQuarantined = true;
+    withdrawal.aiQuarantineReason = `এআই অভিভাবক সতর্কতা: উচ্চ ঝুঁকি স্কোর (${userRisk}%)`;
+    aiSentinelService.recordLog(db, {
+      type: 'WITHDRAWAL_QUARANTINED',
+      messageBn: `উইথড্রয়াল #${withdrawal.withdrawalId} (${withdrawal.userName} - ৳${withdrawal.bdtAmount}) স্বয়ংক্রিয়ভাবে কোয়ারেন্টাইনে রাখা হয়েছে (ঝুঁকি: ${userRisk}%)`,
+      severity: 'warning',
+      targetUid: user.uid
+    });
+  }
+
   db.withdrawals.unshift(withdrawal);
 
   // Add ledger entry
@@ -2485,6 +2746,285 @@ app.post('/api/user/dismiss-private-notice', (req, res) => {
   saveDbToDisk();
   res.json({ success: true });
 });
+
+// ---------------- 10.1 AFFILIATE & CASHBACK DEALS API ---------------- //
+app.get('/api/affiliate/deals', (req, res) => {
+  const defaultDarazUrl = db.settings.affiliateConfig?.darazDefaultUrl?.trim() || 'https://s.daraz.com.bd/s.Y39Ff?cc';
+  const deals = (db.affiliateDeals || []).map(deal => {
+    if (deal.storeName === 'Daraz') {
+      const url = (!deal.affiliateUrl || deal.affiliateUrl === 'https://www.daraz.com.bd') 
+        ? defaultDarazUrl 
+        : deal.affiliateUrl;
+      return { ...deal, affiliateUrl: url };
+    }
+    return deal;
+  });
+  res.json({
+    success: true,
+    deals,
+    config: db.settings.affiliateConfig
+  });
+});
+
+app.post('/api/affiliate/click', (req, res) => {
+  const { dealId } = req.body;
+  const defaultDarazUrl = db.settings.affiliateConfig?.darazDefaultUrl?.trim() || 'https://s.daraz.com.bd/s.Y39Ff?cc';
+  const deal = (db.affiliateDeals || []).find(d => d.id === dealId);
+  if (deal) {
+    deal.clicksCount = (deal.clicksCount || 0) + 1;
+    saveDbToDisk();
+  }
+  let targetUrl = deal?.affiliateUrl;
+  if (!targetUrl || targetUrl === 'https://www.daraz.com.bd' || deal?.storeName === 'Daraz') {
+    targetUrl = deal?.affiliateUrl && deal.affiliateUrl !== 'https://www.daraz.com.bd' 
+      ? deal.affiliateUrl 
+      : defaultDarazUrl;
+  }
+  res.json({ success: true, trackingUrl: targetUrl });
+});
+
+// ---------------- 10.2 COMMUNITY JOB POSTING & BKASH DEPOSIT API ---------------- //
+app.get('/api/jobs/active', (req, res) => {
+  const approvedJobs = (db.postedJobs || []).filter(j => j.status === 'approved' && j.completedWorkers < j.targetWorkers);
+  res.json({
+    success: true,
+    jobs: approvedJobs,
+    config: db.settings.jobPostingConfig
+  });
+});
+
+app.post('/api/jobs/create', (req, res) => {
+  const user = getUser(req);
+  const { 
+    title, 
+    category, 
+    targetUrl, 
+    instructions, 
+    targetWorkers, 
+    paymentMethod, 
+    senderPhone, 
+    trxId 
+  } = req.body;
+
+  if (!title || !targetUrl || !trxId || !senderPhone) {
+    return res.status(400).json({
+      success: false,
+      message: 'অনুগ্রহ করে কাজের শিরোনাম, লিংক, প্রেরক মোবাইল নম্বর ও TrxID প্রদান করুন।'
+    });
+  }
+
+  const workers = Math.max(Number(targetWorkers) || 20, 10);
+  const pricePerWorker = db.settings.jobPostingConfig?.pricePerWorkerBDT || 1.5;
+  const totalCost = Math.round(workers * pricePerWorker);
+  const rewardCoins = db.settings.jobPostingConfig?.workerRewardCoins || 25;
+
+  const newJob = {
+    id: `job_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    userId: user.uid,
+    userName: user.displayName || 'সম্মানিত প্রোমোটার',
+    userPhone: user.phone || senderPhone,
+    title: title.trim(),
+    category: category || 'youtube',
+    targetUrl: targetUrl.trim(),
+    instructions: (instructions || 'কাজটি সম্পন্ন করে স্ক্রিনশট বা প্রমাণ দিন।').trim(),
+    targetWorkers: workers,
+    completedWorkers: 0,
+    costBDT: totalCost,
+    rewardCoinsPerWorker: rewardCoins,
+    paymentMethod: paymentMethod || 'bkash',
+    senderPhone: senderPhone.trim(),
+    trxId: trxId.trim().toUpperCase(),
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+
+  if (!db.postedJobs) db.postedJobs = [];
+  db.postedJobs.unshift(newJob);
+
+  // Send admin notification
+  db.notifications.unshift({
+    id: `notif_job_${Date.now()}`,
+    userId: 'usr_admin_owner',
+    title: '💼 নতুন কাজ পোস্ট ও ডিপোজিট জমা হয়েছে!',
+    message: `${user.displayName || 'ইউজার'} "${title}" কাজের জন্য ${(paymentMethod || 'BKASH').toUpperCase()}-এ ৳${totalCost} পেমেন্ট সাবমিট করেছেন (TrxID: ${trxId})। ভেরিফাই করে অ্যাপ্রুভ করুন।`,
+    type: 'system',
+    read: false,
+    createdAt: new Date().toISOString()
+  });
+
+  saveDbToDisk();
+
+  res.json({
+    success: true,
+    message: 'আপনার কাজের আবেদন ও ডিপোজিট তথ্য সফলভাবে জমা হয়েছে! অ্যাডমিন ভেরিফাই করে কাজ লাইভ করে দিবেন।',
+    job: newJob
+  });
+});
+
+app.post('/api/jobs/complete-worker', (req, res) => {
+  const user = getUser(req);
+  const { jobId } = req.body;
+  const job = (db.postedJobs || []).find(j => j.id === jobId);
+
+  if (!job) {
+    return res.status(404).json({ success: false, message: 'কাজটি খুঁজে পাওয়া যায়নি।' });
+  }
+
+  if (job.status !== 'approved' || job.completedWorkers >= job.targetWorkers) {
+    return res.status(400).json({ success: false, message: 'কাজটির কোটা ইতিমধ্যে পূর্ণ হয়ে গেছে।' });
+  }
+
+  // Credit worker coins
+  const earned = job.rewardCoinsPerWorker || 25;
+  user.coins = (user.coins || 0) + earned;
+  user.todayCoins = (user.todayCoins || 0) + earned;
+  user.lifetimeCoins = (user.lifetimeCoins || 0) + earned;
+
+  job.completedWorkers = (job.completedWorkers || 0) + 1;
+  if (job.completedWorkers >= job.targetWorkers) {
+    job.status = 'completed';
+  }
+
+  db.transactions.unshift({
+    id: `tx_job_${Date.now()}_${user.uid.slice(-4)}`,
+    userId: user.uid,
+    amount: earned,
+    type: 'earn',
+    category: 'micro_job',
+    description: `কমিউনিটি টাস্ক সম্পন্ন: ${job.title}`,
+    createdAt: new Date().toISOString()
+  });
+
+  saveDbToDisk();
+
+  res.json({
+    success: true,
+    message: `অভিনন্দন! +${earned} কয়েন আপনার অ্যাকাউন্টে যোগ হয়েছে।`,
+    earnedCoins: earned,
+    newBalance: user.coins
+  });
+});
+
+app.get('/api/admin/jobs', (req, res) => {
+  res.json({
+    success: true,
+    jobs: db.postedJobs || []
+  });
+});
+
+app.post('/api/admin/jobs/status', (req, res) => {
+  const { jobId, status } = req.body;
+  const job = (db.postedJobs || []).find(j => j.id === jobId);
+  if (!job) {
+    return res.status(404).json({ success: false, message: 'কাজটি খুঁজে পাওয়া যায়নি।' });
+  }
+  job.status = status;
+  saveDbToDisk();
+  res.json({ success: true, message: `কাজের স্ট্যাটাস ${status} করা হয়েছে।`, job });
+});
+
+// 10.5 DOLLAR TO BKASH / NAGAD P2P EXCHANGE
+app.get('/api/exchange/my-requests', (req, res) => {
+  const user = getUser(req);
+  if (!db.dollarExchanges) db.dollarExchanges = [];
+  const myRequests = db.dollarExchanges.filter((e: any) => e.userId === user.uid);
+  res.json({ success: true, requests: myRequests });
+});
+
+app.post('/api/exchange/create', (req, res) => {
+  const user = getUser(req);
+  const { platform, usdAmount, bdtAmount, paymentMethod, mobileNumber, trxId, senderAccount } = req.body;
+  if (!platform || !usdAmount || !bdtAmount || !mobileNumber || !trxId) {
+    return res.status(400).json({ success: false, message: 'সবগুলো প্রয়োজনীয় তথ্য পূরণ করুন।' });
+  }
+
+  if (!db.dollarExchanges) db.dollarExchanges = [];
+  const exchangeRequest = {
+    id: `exc_${Date.now()}_${user.uid.slice(-4)}`,
+    userId: user.uid,
+    userName: user.displayName || 'ইউজার',
+    userPhone: user.phone || mobileNumber,
+    platform,
+    usdAmount: parseFloat(usdAmount) || 1,
+    bdtAmount: parseInt(bdtAmount, 10) || Math.round(parseFloat(usdAmount) * 110),
+    paymentMethod: paymentMethod || 'bKash',
+    mobileNumber: mobileNumber.trim(),
+    trxId: trxId.trim(),
+    senderAccount: (senderAccount || '').trim(),
+    status: 'Pending',
+    createdAt: new Date().toISOString()
+  };
+
+  db.dollarExchanges.unshift(exchangeRequest);
+
+  // Notify admins
+  const adminUsers = db.users.filter(u => u.role === 'admin');
+  adminUsers.forEach(a => {
+    db.notifications.unshift({
+      id: `notif_exc_${Date.now()}_${a.uid.slice(-4)}`,
+      userId: a.uid,
+      title: '💵 নতুন ডলার এক্সচেঞ্জ আবেদন!',
+      message: `${user.displayName || 'ইউজার'} $${usdAmount} ডলার (${platform}) বিক্রয় করে ৳${bdtAmount} পাওয়ার আবেদন করেছেন।`,
+      type: 'withdrawal',
+      read: false,
+      createdAt: new Date().toISOString(),
+      linkTab: 'admin'
+    });
+  });
+
+  saveDbToDisk();
+
+  res.json({
+    success: true,
+    message: 'আপনার ডলার এক্সচেঞ্জ রিকোয়েস্ট জমা হয়েছে! অ্যাডমিন যাচাই করে আপনার বিকাশ/নগদে টাকা পাঠিয়ে দেবে।',
+    request: exchangeRequest
+  });
+});
+
+app.get('/api/admin/exchanges', (req, res) => {
+  const user = getUser(req);
+  if (user.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Admin access required' });
+  }
+  if (!db.dollarExchanges) db.dollarExchanges = [];
+  res.json({ success: true, exchanges: db.dollarExchanges });
+});
+
+app.post('/api/admin/exchange/status', (req, res) => {
+  const user = getUser(req);
+  if (user.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Admin access required' });
+  }
+  const { exchangeId, status, payoutTrxId, note } = req.body;
+  if (!db.dollarExchanges) db.dollarExchanges = [];
+  const reqItem = db.dollarExchanges.find((e: any) => e.id === exchangeId);
+  if (!reqItem) {
+    return res.status(404).json({ success: false, message: 'রিকোয়েস্টটি পাওয়া যায়নি।' });
+  }
+
+  reqItem.status = status;
+  if (payoutTrxId) reqItem.payoutTrxId = payoutTrxId;
+  if (note) reqItem.note = note;
+  reqItem.processedAt = new Date().toISOString();
+
+  // Notify user
+  db.notifications.unshift({
+    id: `notif_exc_user_${Date.now()}`,
+    userId: reqItem.userId,
+    title: status === 'Paid' ? '🎉 ডলার এক্সচেঞ্জ পেমেন্ট সম্পন্ন!' : '⚠️ ডলার এক্সচেঞ্জ বাতিল হয়েছে',
+    message: status === 'Paid' 
+      ? `আপনার $${reqItem.usdAmount} (${reqItem.platform}) ডলারের বিনিময়ে ৳${reqItem.bdtAmount} আপনার ${reqItem.paymentMethod} (${reqItem.mobileNumber}) নম্বরে পাঠানো হয়েছে! TrxID: ${payoutTrxId || 'N/A'}`
+      : `আপনার ডলার এক্সচেঞ্জ আবেদনটি বাতিল করা হয়েছে। কারণ: ${note || 'লেনদেন ভেরিফাই করা যায়নি'}`,
+    type: status === 'Paid' ? 'coin' : 'withdrawal',
+    read: false,
+    createdAt: new Date().toISOString(),
+    linkTab: 'wallet'
+  });
+
+  saveDbToDisk();
+  res.json({ success: true, message: `স্ট্যাটাস ${status} আপডেট করা হয়েছে।`, request: reqItem });
+});
+
 
 // 11. ADMIN DASHBOARD & MANAGEMENT
 // Overview KPIs
@@ -2711,6 +3251,7 @@ app.post('/api/admin/withdrawals/:id/status', (req, res) => {
     }
   }
 
+  saveDbToDisk();
   res.json({ success: true, withdrawal });
 });
 
@@ -2851,6 +3392,18 @@ app.post('/api/admin/settings', (req, res) => {
     db.settings.smsGateway = {
       ...db.settings.smsGateway,
       ...req.body.smsGateway
+    };
+  }
+  if (req.body.affiliateConfig !== undefined) {
+    db.settings.affiliateConfig = {
+      ...db.settings.affiliateConfig,
+      ...req.body.affiliateConfig
+    };
+  }
+  if (req.body.jobPostingConfig !== undefined) {
+    db.settings.jobPostingConfig = {
+      ...db.settings.jobPostingConfig,
+      ...req.body.jobPostingConfig
     };
   }
 
@@ -3031,33 +3584,83 @@ app.get('/api/admin/reports', (req, res) => {
 });
 
 // 12. OFFERWALL POSTBACK WEBHOOKS
-// TimeWall Official Postback
+// TimeWall Official Postback (Supports SHA256 hash, credit/chargeback types, and exact TimeWall macros)
 app.all(['/api/postback/timewall', '/api/postbacks/timewall'], (req, res) => {
   try {
     const params = { ...req.query, ...req.body };
-    const userId = (params.userID || params.userId || params.userid || params.subid || '').toString().trim();
-    const txid = (params.txid || params.transactionID || params.transactionId || 'tx_' + Date.now()).toString();
-    const revenue = parseFloat(params.revenue || '0');
-    const currencyAmount = parseInt(params.currencyAmount || params.currency || '0', 10) || Math.round(revenue * 1000);
+    const userId = (params.userid || params.userID || params.userId || params.subid || '').toString().trim();
+    const txid = (params.txid || params.transactionID || params.transactionId || 'tx_' + Date.now()).toString().trim();
+    const revenueRaw = (params.revenue || '0').toString().trim();
+    const revenue = parseFloat(revenueRaw) || 0;
+    const currencyAmount = Math.round(parseFloat((params.currencyAmount || params.currency || '0').toString()) || (revenue * 1000));
+    const txType = (params.type || 'credit').toString().toLowerCase();
+    const offerName = (params.offername || params.offerdetail || 'মাইক্রো-টাস্ক ও ক্লিক').toString().trim();
+    const receivedHash = (params.hash || '').toString().trim().toLowerCase();
+    const configuredSecret = (db.settings?.offerwallsConfig?.timewallSecretKey || '').trim();
 
-    console.log(`[TimeWall Postback] Received: User=${userId}, TxID=${txid}, Revenue=$${revenue}, Coins=${currencyAmount}`);
+    console.log(`[TimeWall Postback] User=${userId}, TxID=${txid}, Type=${txType}, Revenue=$${revenueRaw}, Coins=${currencyAmount}`);
+
+    // Optional SHA-256 signature verification if SecretKey is saved in Admin Settings
+    if (configuredSecret && receivedHash && userId && revenueRaw) {
+      const expectedHash = crypto
+        .createHash('sha256')
+        .update(`${userId}${revenueRaw}${configuredSecret}`)
+        .digest('hex')
+        .toLowerCase();
+      if (receivedHash !== expectedHash) {
+        console.warn(`[TimeWall Postback] Invalid SHA256 hash for User=${userId}, TxID=${txid}`);
+        aiSentinelService.recordLog(db, {
+          type: 'SECURITY_SHIELD',
+          messageBn: `TimeWall পোস্টব্যাকে অবৈধ সিকিউরিটি হ্যাশ শনাক্ত হয়েছে (TxID: ${txid})।`,
+          severity: 'warning',
+          targetUid: userId
+        });
+        return res.status(403).send('INVALID_HASH');
+      }
+    }
 
     if (userId) {
       const targetUser = db.users.find(u => u.uid === userId || u.id === userId || u.phone === userId);
       if (targetUser) {
-        // Prevent duplicate transaction
-        const alreadyCredited = (db.transactions || []).some(t => t.id === `timewall_${txid}`);
-        if (!alreadyCredited && currencyAmount > 0) {
+        const externalKey = `timewall_${txid}`;
+        const alreadyProcessed = (db.transactions || []).some(
+          t => t.id === externalKey || t.externalTransactionId === externalKey
+        );
+
+        if (txType === 'chargeback') {
+          if (!alreadyProcessed && currencyAmount > 0) {
+            targetUser.coins = Math.max(0, (targetUser.coins || 0) - currencyAmount);
+            targetUser.riskScore = Math.min(100, (targetUser.riskScore || 0) + 20);
+            db.transactions.unshift({
+              transactionId: `tw_cb_${Date.now()}`,
+              id: `${externalKey}_cb`,
+              externalTransactionId: `${externalKey}_cb`,
+              userId: targetUser.uid,
+              type: 'CPA_CHARGEBACK',
+              amount: -currencyAmount,
+              bdtEquivalent: -currencyAmount * (db.settings.coinToBDTRate || 0.015),
+              source: `⚠️ TimeWall চার্জব্যাক (${offerName})`,
+              status: 'COMPLETED',
+              createdAt: new Date().toISOString()
+            });
+            saveDbToDisk();
+          }
+        } else if (!alreadyProcessed && currencyAmount > 0) {
           targetUser.coins = (targetUser.coins || 0) + currencyAmount;
           targetUser.lifetimeCoins = (targetUser.lifetimeCoins || 0) + currencyAmount;
           targetUser.todayCoins = (targetUser.todayCoins || 0) + currencyAmount;
+          targetUser.updatedAt = new Date().toISOString();
 
           db.transactions.unshift({
-            id: `timewall_${txid}`,
+            transactionId: `tw_${Date.now()}`,
+            id: externalKey,
+            externalTransactionId: externalKey,
             userId: targetUser.uid,
             type: 'CPA_OFFER_COMPLETED',
             amount: currencyAmount,
-            source: `🎯 TimeWall অফার রিওয়ার্ড (+${currencyAmount} কয়েন)`,
+            bdtEquivalent: currencyAmount * (db.settings.coinToBDTRate || 0.015),
+            revenueUsd: revenue,
+            source: `⏱️ TimeWall: ${offerName} (+${currencyAmount} কয়েন)`,
             status: 'COMPLETED',
             createdAt: new Date().toISOString()
           });
@@ -3065,9 +3668,9 @@ app.all(['/api/postback/timewall', '/api/postbacks/timewall'], (req, res) => {
           db.notifications.unshift({
             id: 'notif_tw_' + Date.now(),
             userId: targetUser.uid,
-            title: '🎉 TimeWall রিওয়ার্ড সফল!',
-            message: `TimeWall থেকে অফার সম্পন্ন করার জন্য আপনার একাউন্টে ${currencyAmount} কয়েন যোগ করা হয়েছে!`,
-            type: 'coin',
+            title: '🎉 TimeWall কয়েন যুক্ত হয়েছে!',
+            message: `TimeWall-এ "${offerName}" কাজ সম্পন্ন করার জন্য আপনার ওয়ালেটে +${currencyAmount} কয়েন যোগ হয়েছে।`,
+            type: 'reward',
             read: false,
             createdAt: new Date().toISOString(),
             linkTab: 'wallet'
@@ -3082,7 +3685,7 @@ app.all(['/api/postback/timewall', '/api/postbacks/timewall'], (req, res) => {
     return res.status(200).send('OK');
   } catch (err) {
     console.error('[TimeWall Postback] Error:', err);
-    return res.status(200).send('OK'); // Always return 200 so TimeWall doesn't retry infinitely
+    return res.status(200).send('OK');
   }
 });
 
@@ -3191,45 +3794,64 @@ app.all(['/api/postback/adgem', '/api/postbacks/adgem'], (req, res) => {
   }
 });
 
-// Offerwall.me, Lootly, Bitswall & Torox Official Postback Webhook
+// BitcoTasks, Affmine, Offerwall.me, Zeydoo, CPAGrip, CPALead, Lootly, Bitswall & Torox Official Postback Webhook
 app.all([
+  '/api/postback/bitcotasks', '/api/postbacks/bitcotasks',
+  '/api/postback/affmine', '/api/postbacks/affmine',
+  '/api/postback/zeydoo', '/api/postbacks/zeydoo',
+  '/api/postback/cpagrip', '/api/postbacks/cpagrip',
+  '/api/postback/cpalead', '/api/postbacks/cpalead',
   '/api/postback/offerwallme', '/api/postback/offerwall', '/api/postback/torox', 
   '/api/postback/offerwall-me', '/api/postbacks/offerwallme', '/api/postbacks/offerwall',
-  '/api/postback/lootly', '/api/postback/lootably', '/api/postback/bitswall', '/api/postbacks/lootly'
+  '/api/postback/lootly', '/api/postback/lootably', '/api/postback/bitswall', '/api/postbacks/lootly',
+  '/api/postback/offerwallgg', '/api/postback/offerwall-gg', '/api/postbacks/offerwallgg'
 ], (req, res) => {
   try {
     const params = { ...req.query, ...req.body };
-    const userId = (params.subId || params.subid || params.userId || params.user_id || params.uid || '').toString().trim();
-    const transId = (params.transId || params.txId || params.transaction_id || params.txid || 'owm_' + Date.now()).toString();
+    const userId = (params.user_id || params.userId || params.s1 || params.subId || params.subid || params.sub_id || params.tracking_id || params.uid || params.var || '').toString().trim();
+    const transId = (params.trans_id || params.transId || params.txId || params.transaction_id || params.txid || params.lead_id || params.offer_id || params.click_id || params.ymid || 'cpa_' + Date.now()).toString();
     const status = (params.status || '1').toString().toLowerCase();
-    const amountCoins = parseInt(params.amount || params.reward || params.currency || params.coins || '0', 10) || Math.round(parseFloat(params.payout || params.revenue || '0') * 1000);
+    const isBitcoTasks = req.path.includes('bitcotasks');
+    const isAffmine = req.path.includes('affmine');
+    const isZeydoo = req.path.includes('zeydoo');
+    const isCpaGrip = req.path.includes('cpagrip');
+    const isCpaLead = req.path.includes('cpalead');
+    const networkName = isBitcoTasks ? 'BitcoTasks' : (isAffmine ? 'Affmine' : (isZeydoo ? 'Zeydoo' : (isCpaGrip ? 'CPAGrip' : (isCpaLead ? 'CPALead' : 'Offerwall.me'))));
+    let amountCoins = parseInt(params.amount || params.reward || params.currency || params.coins || '0', 10);
+    if (!amountCoins || amountCoins <= 0) {
+      const payoutFloat = parseFloat(params.payout || params.revenue || '0');
+      // Affmine & BitcoTasks rate: 3000 coins per $1 USD ($1 USD ≈ ৳122, 3000 coins ≈ ৳45)
+      const multiplier = (isAffmine || isBitcoTasks) ? 3000 : 1000;
+      amountCoins = payoutFloat > 0 ? Math.round(payoutFloat * multiplier) : (isZeydoo ? 150 : (isAffmine ? 300 : (isBitcoTasks ? 300 : 0)));
+    }
 
-    console.log(`[Offerwall.me Postback] Received: User=${userId}, TransID=${transId}, Status=${status}, Coins=${amountCoins}`);
+    console.log(`[${networkName} Postback] Received: User=${userId}, TransID=${transId}, Status=${status}, Coins=${amountCoins}`);
 
     if (userId) {
       const targetUser = db.users.find(u => u.uid === userId || u.id === userId || u.phone === userId);
-      if (targetUser && (status === '1' || status === 'complete' || status === 'approved') && amountCoins > 0) {
-        const alreadyCredited = (db.transactions || []).some(t => t.id === `owm_${transId}`);
+      if (targetUser && (status === '1' || status === 'complete' || status === 'approved' || isZeydoo || isAffmine || isBitcoTasks) && amountCoins > 0) {
+        const prefix = isBitcoTasks ? 'bitcotasks' : (isAffmine ? 'affmine' : (isZeydoo ? 'zeydoo' : (isCpaGrip ? 'cpagrip' : (isCpaLead ? 'cpalead' : 'owm'))));
+        const alreadyCredited = (db.transactions || []).some(t => t.id === `${prefix}_${transId}`);
         if (!alreadyCredited) {
           targetUser.coins = (targetUser.coins || 0) + amountCoins;
           targetUser.lifetimeCoins = (targetUser.lifetimeCoins || 0) + amountCoins;
           targetUser.todayCoins = (targetUser.todayCoins || 0) + amountCoins;
 
           db.transactions.unshift({
-            id: `owm_${transId}`,
+            id: `${prefix}_${transId}`,
             userId: targetUser.uid,
             type: 'CPA_OFFER_COMPLETED',
             amount: amountCoins,
-            source: `🎯 Offerwall.me টাস্ক রিওয়ার্ড (+${amountCoins} কয়েন)`,
+            source: `🎯 ${networkName} অফার রিওয়ার্ড (+${amountCoins} কয়েন)`,
             status: 'COMPLETED',
             createdAt: new Date().toISOString()
           });
 
           db.notifications.unshift({
-            id: 'notif_owm_' + Date.now(),
+            id: `notif_${prefix}_` + Date.now(),
             userId: targetUser.uid,
-            title: '🎉 Offerwall.me রিওয়ার্ড সফল!',
-            message: `Offerwall.me থেকে টাস্ক সম্পন্ন করায় আপনার একাউন্টে ${amountCoins} কয়েন যোগ করা হয়েছে!`,
+            title: `🎉 ${networkName} রিওয়ার্ড সফল!`,
+            message: `${networkName} থেকে টাস্ক সম্পন্ন করায় আপনার একাউন্টে ${amountCoins} কয়েন যোগ করা হয়েছে!`,
             type: 'coin',
             read: false,
             createdAt: new Date().toISOString(),
@@ -3275,6 +3897,170 @@ app.get('/api/offerwall/get-signed-url', (req, res) => {
   }
 });
 
+// ==================== 🤖 AI SENTINEL AUTONOMOUS GUARDIAN API ROUTES ====================
+// 1. Real-time Status, Audit Summary & Recent Logs
+app.get('/api/admin/ai-sentinel/status', (req, res) => {
+  aiSentinelService.ensureInitialized(db);
+  res.json({
+    success: true,
+    settings: db.aiAgentState.settings,
+    summary: db.aiAgentState.summary,
+    flaggedUsers: db.aiAgentState.flaggedUsers,
+    recentLogs: (db.aiAgentState.autonomousLogs || []).slice(0, 40),
+    reportsCount: (db.aiAgentState.dailyReports || []).length
+  });
+});
+
+// 2. Trigger Instant Full Deep Audit
+app.post('/api/admin/ai-sentinel/audit', (req, res) => {
+  try {
+    const summary = aiSentinelService.performDeepAudit(db);
+    saveDbToDisk();
+    res.json({
+      success: true,
+      summary,
+      flaggedUsers: db.aiAgentState.flaggedUsers,
+      recentLogs: (db.aiAgentState.autonomousLogs || []).slice(0, 40)
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 3. Get Daily Intelligence Reports Archive
+app.get('/api/admin/ai-sentinel/daily-reports', (req, res) => {
+  aiSentinelService.ensureInitialized(db);
+  res.json({
+    success: true,
+    reports: db.aiAgentState.dailyReports || []
+  });
+});
+
+// 4. Force Generate Today's Daily Intelligence Report
+app.post('/api/admin/ai-sentinel/generate-daily-report', async (req, res) => {
+  try {
+    const report = await aiSentinelService.generateDailyReport(db, 'Admin-Manual');
+    saveDbToDisk();
+    res.json({
+      success: true,
+      report
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 5. Interactive Chat Co-Pilot for Owner
+app.post('/api/admin/ai-sentinel/chat', async (req, res) => {
+  try {
+    const { query } = req.body;
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ success: false, message: 'প্রশ্ন আবশ্যক' });
+    }
+    const answer = await aiSentinelService.askAiSentinel(query.trim(), db);
+    res.json({
+      success: true,
+      answer
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 6. Update AI Agent Autonomous Settings
+app.post('/api/admin/ai-sentinel/settings', (req, res) => {
+  try {
+    aiSentinelService.ensureInitialized(db);
+    db.aiAgentState.settings = {
+      ...db.aiAgentState.settings,
+      ...req.body
+    };
+    aiSentinelService.recordLog(db, {
+      type: 'SECURITY_SHIELD',
+      messageBn: 'এআই সেন্টিনেল অটোনোমাস সেটিংস আপডেট করা হয়েছে।',
+      severity: 'info'
+    });
+    saveDbToDisk();
+    res.json({ success: true, settings: db.aiAgentState.settings });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 7. Resolve or Ban Flagged User
+app.post('/api/admin/ai-sentinel/resolve-flag', (req, res) => {
+  try {
+    const { uid, action } = req.body;
+    aiSentinelService.ensureInitialized(db);
+    const targetUser = db.users.find((u: any) => u.uid === uid);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'ইউজার পাওয়া যায়নি' });
+    }
+
+    if (action === 'BAN') {
+      targetUser.accountStatus = 'suspended';
+      targetUser.riskScore = 100;
+      aiSentinelService.recordLog(db, {
+        type: 'BOT_DETECTED',
+        messageBn: `অ্যাডমিন নির্দেশে ইউজার ${targetUser.displayName} (${targetUser.uid}) স্থায়ীভাবে নিষিদ্ধ (Banned) করা হয়েছে।`,
+        severity: 'critical',
+        targetUid: targetUser.uid
+      });
+    } else {
+      // CLEAR / FORGIVE
+      targetUser.accountStatus = 'active';
+      targetUser.riskScore = 0;
+      db.aiAgentState.flaggedUsers = (db.aiAgentState.flaggedUsers || []).filter((f: any) => f.uid !== uid);
+      aiSentinelService.recordLog(db, {
+        type: 'TASK_AUDITED',
+        messageBn: `ইউজার ${targetUser.displayName} (${targetUser.uid}) এর ফ্ল্যাগ ক্লিয়ার করে স্বাভাবিক স্ট্যাটাস ফিরিয়ে দেওয়া হয়েছে।`,
+        severity: 'info',
+        targetUid: targetUser.uid
+      });
+    }
+
+    saveDbToDisk();
+    res.json({ success: true, message: 'সফলভাবে সম্পন্ন হয়েছে' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ==================== 🌐 USER AI TASK ASSISTANT & BANGLA TRANSLATOR ROUTES ====================
+// 1. Translate & Explain English Offerwall/Task into simple step-by-step Bengali
+app.post('/api/ai-assistant/translate-task', async (req, res) => {
+  try {
+    const { englishText } = req.body;
+    if (!englishText || typeof englishText !== 'string') {
+      return res.status(400).json({ success: false, message: 'ইংরেজি কাজের বিবরণ প্রয়োজন' });
+    }
+    const result = await aiSentinelService.translateAndExplainTask(englishText);
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 2. Chat with Bengali Task Assistant (Answers questions about offers & tasks)
+app.post('/api/ai-assistant/chat', async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ success: false, message: 'প্রশ্ন প্রয়োজন' });
+    }
+    const reply = await aiSentinelService.chatWithUserAssistant(message);
+    res.json({
+      success: true,
+      reply
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Explicit 404 for unhandled API endpoints so they never return HTML
 app.all('/api/*', (req, res) => {
   res.status(404).json({ success: false, message: `API route not found: ${req.method} ${req.originalUrl}` });
@@ -3289,9 +4075,24 @@ async function startServer() {
     saveDbToDisk();
   }, 5000);
 
+  // 🛡️ Autonomous AI Sentinel Watchdog Loop (Runs every 15 minutes)
+  setInterval(() => {
+    try {
+      if (db.aiAgentState?.settings?.enabled) {
+        aiSentinelService.performDeepAudit(db);
+        saveDbToDisk();
+      }
+    } catch (err) {
+      console.error('[AI Sentinel Watchdog] Error in audit interval:', err);
+    }
+  }, 15 * 60 * 1000);
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: process.env.DISABLE_HMR === 'true' ? false : undefined,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
@@ -3309,9 +4110,17 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`WATCH & EARN BD server running on port ${PORT}`);
-  });
+  if (typeof PORT === 'string') {
+    app.listen(PORT, () => {
+      console.log(`WATCH & EARN BD server running on socket ${PORT}`);
+    });
+  } else {
+    app.listen(PORT, HOST, () => {
+      console.log(`WATCH & EARN BD server running on http://${HOST}:${PORT}`);
+    });
+  }
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error('Fatal error starting server:', err);
+});

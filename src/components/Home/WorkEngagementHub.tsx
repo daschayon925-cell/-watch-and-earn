@@ -22,24 +22,76 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { soundService } from '../../services/audio';
+import { api } from '../../services/api';
 
 export const WorkEngagementHub: React.FC<{
   onOpenOfferwall: () => void;
   onOpenWatch: () => void;
   onOpenSpin: () => void;
 }> = ({ onOpenOfferwall, onOpenWatch, onOpenSpin }) => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, awardCoinsLocally } = useAuth();
   const { language, setActiveTab, showToast, triggerConfetti, settings } = useApp();
   
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
 
-  const isCheckedInToday = user?.lastCheckInDate === new Date().toISOString().split('T')[0];
+  const todayStr = new Date().toISOString().split('T')[0];
+  const userKey = user?.uid || 'guest';
+  const [telegramClaimed, setTelegramClaimed] = useState<boolean>(() => {
+    return typeof window !== 'undefined' ? localStorage.getItem(`we_tg_claimed_${userKey}`) === 'true' : false;
+  });
+  const [missionClaimed, setMissionClaimed] = useState<boolean>(() => {
+    return typeof window !== 'undefined' ? localStorage.getItem(`we_mission_claimed_${todayStr}_${userKey}`) === 'true' : false;
+  });
+  const [claimingTg, setClaimingTg] = useState(false);
+  const [claimingMission, setClaimingMission] = useState(false);
+
+  const isCheckedInToday = user?.lastCheckInDate === todayStr;
   const videosWatched = user?.todayVideosCount || 0;
   const adClicks = user?.adClicksToday || 0;
 
   // Telegram Link (can come from admin settings or official default)
-  const telegramUrl = 'https://t.me/+EarnWatchBD';
+  const telegramUrl = (settings as any)?.telegramChannelUrl || 'https://t.me/+EarnWatchBD';
+
+  const handleClaimTelegramBonus = async () => {
+    if (telegramClaimed || claimingTg) return;
+    setClaimingTg(true);
+    try {
+      await api.claimInstantAdBonus('টেলিগ্রাম চ্যানেল জয়েন বোনাস', 15);
+      awardCoinsLocally(15);
+      await refreshUser();
+      localStorage.setItem(`we_tg_claimed_${userKey}`, 'true');
+      setTelegramClaimed(true);
+      soundService.playSuccessFanfare();
+      triggerConfetti();
+      showToast('🎉 অভিনন্দন! টেলিগ্রাম জয়েন করার জন্য ১৫ কয়েন ওয়ালেটে যোগ হয়েছে!', '', 'coin');
+    } catch {
+      awardCoinsLocally(15);
+      setTelegramClaimed(true);
+    } finally {
+      setClaimingTg(false);
+    }
+  };
+
+  const handleClaimMissionBonus = async () => {
+    if (missionClaimed || claimingMission) return;
+    setClaimingMission(true);
+    try {
+      await api.claimInstantAdBonus('দৈনিক অল-মিশন কমপ্লিট বোনাস', 50);
+      awardCoinsLocally(50);
+      await refreshUser();
+      localStorage.setItem(`we_mission_claimed_${todayStr}_${userKey}`, 'true');
+      setMissionClaimed(true);
+      soundService.playSuccessFanfare();
+      triggerConfetti();
+      showToast('🎉 সাবাশ! আজকের সব মিশন সম্পন্ন করায় ৫০ কয়েন বোনাস পেয়েছেন!', '', 'coin');
+    } catch {
+      awardCoinsLocally(50);
+      setMissionClaimed(true);
+    } finally {
+      setClaimingMission(false);
+    }
+  };
 
   // WhatsApp share link
   const refCode = user?.referralCode || 'BD7788';
@@ -173,7 +225,7 @@ export const WorkEngagementHub: React.FC<{
             আমাদের অফিসিয়াল টেলিগ্রাম চ্যানেলে জয়েন করুন—প্রতিদিন শত শত ইউজারের <strong className="text-emerald-300">বিকাশ ও নগদ পেমেন্ট প্রুফ স্ক্রিনশট</strong>, প্রতিদিনের নতুন অফার এবং ২৪/৭ লাইভ অ্যাডমিন সাপোর্ট পান!
           </p>
 
-          <div className="flex items-center gap-2 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
             <a
               href={telegramUrl}
               target="_blank"
@@ -182,12 +234,35 @@ export const WorkEngagementHub: React.FC<{
                 soundService.playSuccessFanfare();
                 triggerConfetti();
               }}
-              className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-500 via-blue-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-white font-black text-xs sm:text-sm shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer"
+              className="py-3 px-3.5 rounded-2xl bg-gradient-to-r from-sky-500 via-blue-500 to-sky-600 hover:from-sky-400 hover:to-sky-500 text-white font-black text-xs shadow-lg shadow-sky-500/30 flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer text-center"
             >
-              <Send className="w-4 h-4 text-white" />
-              <span>👉 টেলিগ্রাম চ্যানেলে জয়েন করুন (পেমেন্ট প্রুফ দেখুন)</span>
-              <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+              <Send className="w-4 h-4 text-white shrink-0" />
+              <span>👉 চ্যানেলে জয়েন করুন</span>
+              <ExternalLink className="w-3.5 h-3.5 opacity-80 shrink-0" />
             </a>
+
+            <button
+              type="button"
+              onClick={handleClaimTelegramBonus}
+              disabled={telegramClaimed || claimingTg}
+              className={`py-3 px-3.5 rounded-2xl font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-md ${
+                telegramClaimed
+                  ? 'bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 cursor-default opacity-90'
+                  : 'bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 shadow-amber-400/30'
+              }`}
+            >
+              {telegramClaimed ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>✓ ১৫ কয়েন বোনাস নেওয়া হয়েছে</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                  <span>🎁 জয়েন বোনাস দাবি করুন (+১৫ 🪙)</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -298,20 +373,30 @@ export const WorkEngagementHub: React.FC<{
         {/* Claim Extra Bonus when all done */}
         {completedMissionsCount === 3 ? (
           <button
-            onClick={() => {
-              soundService.playSuccessFanfare();
-              triggerConfetti();
-              showToast('🎉 অভিনন্দন! আজকের সব মিশন সম্পন্ন করার বোনাস পেয়েছেন!', '', 'coin');
-            }}
-            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/30 active:scale-95 transition"
+            onClick={handleClaimMissionBonus}
+            disabled={missionClaimed || claimingMission}
+            className={`w-full py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition ${
+              missionClaimed
+                ? 'bg-slate-800/80 border border-slate-700 text-emerald-400 cursor-default'
+                : 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 text-slate-950 shadow-emerald-500/30 hover:brightness-110 cursor-pointer animate-pulse'
+            }`}
           >
-            <Sparkles className="w-4 h-4" />
-            <span>মিশন কমপ্লিট বোনাস গ্রহণ করুন (+৫০ কয়েন)</span>
+            {missionClaimed ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>✓ আজকের মিশন বোনাস (+৫০ কয়েন) সফলভাবে নেওয়া হয়েছে</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 fill-slate-950" />
+                <span>🎁 মিশন কমপ্লিট বোনাস গ্রহণ করুন (+৫০ কয়েন)</span>
+              </>
+            )}
           </button>
         ) : (
           <div className="text-center py-1">
             <span className="text-[10px] text-purple-300/80 font-medium">
-              💡 ৩টি মিশন সম্পন্ন করলেই অতিরিক্ত ৫০ কয়েন অটোমেটিক অ্যাকাউন্টে যোগ হবে।
+              💡 ৩টি মিশন সম্পন্ন করলেই অতিরিক্ত ৫০ কয়েন বোনাস বাটন আনলক হবে!
             </span>
           </div>
         )}

@@ -8,7 +8,7 @@
     "videoReward": 50,
     "minWatchPercentage": 95,
     "minWatchSeconds": 15,
-    "dailyRewardLimit": 1200,
+    "dailyRewardLimit": 20000,
     "dailyMaxVideos": 40,
     "rewardedAdBonus": 50,
     "dailyRewardedAdLimit": 25,
@@ -35,20 +35,32 @@
       "monetagEnabled": true,
       "monetagZoneId": "11948885",
       "monetagTagCode": "<script src=\"https://5gvci.com/act/files/tag.min.js?z=11948885\" data-cfasync=\"false\" async></script>",
-      "monetagDirectLink": "https://uplcm.com/4/11971342"
+      "monetagDirectLink": "https://uplcm.com/4/11971342",
+      "videoWatchSeconds": 60,
+      "autoAdAfterEveryVideo": true
     },
     "offerwallsConfig": {
       "enabled": true,
+      "bitcotasksEnabled": true,
+      "bitcotasksApiKey": "el15zv6b8o9kz3i9haq63pgtpdiivh",
+      "bitcotasksSecretKey": "f1d36264b0fa90900bda3aaf5ef7847c",
+      "bitcotasksUrl": "https://bitcotasks.com/offerwall/el15zv6b8o9kz3i9haq63pgtpdiivh",
+      "affmineEnabled": true,
+      "affmineOfferwallId": "6741",
+      "affmineOfferwallCode": "ow_6aee0425704f4",
+      "affmineUrl": "https://affgo.xyz/offerwall/?o=ow_6aee0425704f4",
       "cpaleadEnabled": false,
       "cpaleadApiKey": "6879945464ff4be390fdabff423e4eb0",
       "cpaleadPublisherId": "3364429",
       "cpaleadUrl": "https://www.fastrsrvr.com/view.php?id=5547000&pub=3364429",
-      "monlixEnabled": true,
+      "monlixEnabled": false,
       "monlixAppId": "",
-      "timewallEnabled": true,
+      "timewallEnabled": false,
       "timewallUrl": "",
       "cpxEnabled": true,
       "cpxAppId": "36966",
+      "zeydooEnabled": true,
+      "zeydooSmartLink": "https://nya5.com/link?z=12138356",
       "customTasksRewardMultiplier": 1,
       "offerwallMeEnabled": true,
       "offerwallMePlacementId": "6aca33472eaa6484016c37d7",
@@ -61,7 +73,18 @@
       "lootlyAppId": "16",
       "freecashEnabled": true,
       "freecashUrl": "https://freecash.com/r/39Z5IH",
-      "freecashReferralCode": "39Z5IH"
+      "freecashReferralCode": "39Z5IH",
+      "adgemEnabled": true,
+      "adgemAppId": "",
+      "adgemWallUrl": "",
+      "adgemPostbackKey": "j79jjm713kiacmgd855fl02k",
+      "adscendEnabled": false,
+      "offerwallDotComEnabled": false,
+      "cpagripEnabled": false,
+      "wannadsEnabled": false,
+      "toroxEnabled": false,
+      "lootablyEnabled": false,
+      "bitlabsEnabled": false
     },
     "activeNotice": {
       "enabled": true,
@@ -81,6 +104,20 @@
       "senderId": "WatchEarnBD",
       "apiUrl": "https://api.greenweb.com.bd/api.php",
       "enabled": false
+    },
+    "affiliateConfig": {
+      "enabled": true,
+      "darazAffiliateId": "167492337",
+      "darazDefaultUrl": "https://s.daraz.com.bd/s.Y39Ff?cc"
+    },
+    "jobPostingConfig": {
+      "enabled": true,
+      "bkashNumber": "01339223713",
+      "nagadNumber": "01339223713",
+      "rocketNumber": "01339223713",
+      "pricePerWorkerBDT": 1.5,
+      "workerRewardCoins": 25,
+      "minWorkers": 20
     }
   },
   "users": [
@@ -115,10 +152,10 @@
       "password": "7788",
       "phoneVerified": true,
       "photoURL": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-      "coins": 1060,
+      "coins": 2205,
       "pendingWithdrawalCoins": 0,
-      "lifetimeCoins": 1060,
-      "todayCoins": 10,
+      "lifetimeCoins": 2205,
+      "todayCoins": 0,
       "todayVideosCount": 0,
       "streakDays": 1,
       "lastCheckInDate": "2026-10-02",
@@ -128,17 +165,17 @@
       "referralCode": "CHAYON77",
       "referralCount": 0,
       "createdAt": "2026-09-30T11:16:00.487Z",
-      "updatedAt": "2026-10-14T03:46:29.082Z",
+      "updatedAt": "2026-11-06T16:44:37.863Z",
       "adClicksToday": 0,
       "lastAdClickDate": "2026-10-09",
       "spinsToday": 0,
       "lastSpinDate": "2026-10-02",
       "rewardedAdsToday": 0,
-      "lastRewardedAdDate": "2026-10-12",
+      "lastRewardedAdDate": "2026-10-17",
       "lastSponsoredAdTimestamp": "2026-10-03T14:31:34.039Z",
-      "lastActiveAt": "2026-10-14T04:13:18.283Z",
+      "lastActiveAt": "2026-11-11T03:43:09.984Z",
       "currentActiveTab": "home",
-      "todayCoinsDate": "2026-10-14"
+      "todayCoinsDate": "2026-11-11"
     },
     {
       "uid": "usr_1790862737851",
@@ -496,7 +533,7 @@
       "id": "vid_sports_01",
       "title": "বাংলাদেশ ক্রিকেটের সেরা রোমাঞ্চকর ছক্কা ও ম্যাচ উইনিং মুহূর্ত! 🏏 Tigers Victory",
       "description": "শেষ ওভারে রুদ্ধশ্বাস ছক্কা ও জয়ের উল্লাস! টাইগারদের গর্জন। #Cricket #Bangladesh #Tigers #Shorts",
-      "videoUrl": "https://assets.mixkit.co/videos/42828/42828-720.mp4",
+      "videoUrl": "https://assets.mixkit.co/videos/40260/40260-720.mp4",
       "thumbnailUrl": "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=600&auto=format&fit=crop&q=80",
       "duration": 16,
       "category": "sports",
@@ -668,6 +705,106 @@
     }
   ],
   "transactions": [
+    {
+      "transactionId": "trx_bonus_1793983477863_2",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-11-06T16:44:37.863Z"
+    },
+    {
+      "transactionId": "trx_bonus_1793691074981_263",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-11-03T07:31:14.981Z"
+    },
+    {
+      "transactionId": "trx_bonus_1793244771018_539",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-29T03:32:51.018Z"
+    },
+    {
+      "transactionId": "trx_bonus_1792265325066_881",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 15,
+      "bdtEquivalent": 0.22499999999999998,
+      "source": "রিল ভিডিও ওয়াচ রিওয়ার্ড",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-17T19:28:45.066Z"
+    },
+    {
+      "transactionId": "trx_ad_1792265324867",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 50,
+      "bdtEquivalent": 0.75,
+      "source": "স্পনসর বিজ্ঞাপন রিওয়ার্ড (3/25)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-17T19:28:44.867Z"
+    },
+    {
+      "transactionId": "trx_bonus_1792264661266_446",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 15,
+      "bdtEquivalent": 0.22499999999999998,
+      "source": "রিল ভিডিও ওয়াচ রিওয়ার্ড",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-17T19:17:41.266Z"
+    },
+    {
+      "transactionId": "trx_ad_1792264660934",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 50,
+      "bdtEquivalent": 0.75,
+      "source": "স্পনসর বিজ্ঞাপন রিওয়ার্ড (2/25)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-17T19:17:40.934Z"
+    },
+    {
+      "transactionId": "trx_bonus_1792264318228_126",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 15,
+      "bdtEquivalent": 0.22499999999999998,
+      "source": "রিল ভিডিও ওয়াচ রিওয়ার্ড",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-17T19:11:58.228Z"
+    },
+    {
+      "transactionId": "trx_ad_1792264317889",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 50,
+      "bdtEquivalent": 0.75,
+      "source": "স্পনসর বিজ্ঞাপন রিওয়ার্ড (1/25)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-17T19:11:57.889Z"
+    },
+    {
+      "transactionId": "trx_bonus_1792263005528_897",
+      "userId": "usr_admin_owner",
+      "type": "AD_REWARD",
+      "amount": 10,
+      "bdtEquivalent": 0.15,
+      "source": "পপআন্ডার স্পনসর বিজ্ঞাপন (+১০ কয়েন)",
+      "status": "COMPLETED",
+      "createdAt": "2026-10-17T18:50:05.528Z"
+    },
     {
       "transactionId": "trx_bonus_1791949589082_214",
       "userId": "usr_admin_owner",
@@ -1229,5 +1366,113 @@
       "linkTab": "wallet"
     }
   ],
-  "comments": []
+  "comments": [],
+  "affiliateDeals": [
+    {
+      "id": "deal_smartwatch_t900",
+      "titleBn": "T900 Ultra স্মার্টওয়াচ (HD Display, Bluetooth Calling) ⌚",
+      "category": "gadget",
+      "priceBDT": 799,
+      "originalPriceBDT": 1450,
+      "cashbackCoins": 120,
+      "imageUrl": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=80",
+      "affiliateUrl": "https://s.daraz.com.bd/s.Y39Ff?cc",
+      "storeName": "Daraz",
+      "badgeBn": "হট ডিল • ৪৫% ছাড়",
+      "clicksCount": 34
+    },
+    {
+      "id": "deal_earbuds_m10",
+      "titleBn": "M10 TWS ট্রু ওয়্যারলেস ব্লুটুথ ইয়ারবাডস 🎧",
+      "category": "gadget",
+      "priceBDT": 399,
+      "originalPriceBDT": 850,
+      "cashbackCoins": 80,
+      "imageUrl": "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500&auto=format&fit=crop&q=80",
+      "affiliateUrl": "https://s.daraz.com.bd/s.Y39Ff?cc",
+      "storeName": "Daraz",
+      "badgeBn": "বেস্টসেলার • ৫৩% ছাড়",
+      "clicksCount": 52
+    },
+    {
+      "id": "deal_mic_k9",
+      "titleBn": "K9 ডুয়াল ওয়্যারলেস কলার মাইক্রোফোন (ভিডিও ও ব্লগের জন্য) 🎙️",
+      "category": "tech",
+      "priceBDT": 650,
+      "originalPriceBDT": 1200,
+      "cashbackCoins": 100,
+      "imageUrl": "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=500&auto=format&fit=crop&q=80",
+      "affiliateUrl": "https://s.daraz.com.bd/s.Y39Ff?cc",
+      "storeName": "Daraz",
+      "badgeBn": "ইউটিউবার স্পেশাল",
+      "clicksCount": 19
+    },
+    {
+      "id": "deal_binance_free",
+      "titleBn": "Binance অফিশিয়াল ফ্রি সাইন-আপ ও $১০০ ট্রেডিং ভাউচার বোনাস 🎁",
+      "category": "app",
+      "priceBDT": 0,
+      "originalPriceBDT": 0,
+      "cashbackCoins": 250,
+      "imageUrl": "https://images.unsplash.com/photo-1622979135225-d2ba269bc1df?w=500&auto=format&fit=crop&q=80",
+      "affiliateUrl": "https://accounts.binance.com/register",
+      "storeName": "Binance",
+      "badgeBn": "১০০% ফ্রি বোনাস",
+      "clicksCount": 88
+    }
+  ],
+  "postedJobs": [
+    {
+      "id": "job_sample_yt_sub",
+      "userId": "usr_admin_owner",
+      "userName": "WatchEarn Official",
+      "userPhone": "01339223713",
+      "title": "অফিসিয়াল ইউটিউব চ্যানেল সাবস্ক্রাইব ও বেল আইকন অন 🔔",
+      "category": "youtube",
+      "targetUrl": "https://www.youtube.com",
+      "instructions": "চ্যানেলে গিয়ে লাল সাবস্ক্রাইব বাটনে চাপ দিয়ে স্ক্রিনশট নিন এবং সাবমিট করুন।",
+      "targetWorkers": 100,
+      "completedWorkers": 32,
+      "costBDT": 150,
+      "rewardCoinsPerWorker": 25,
+      "paymentMethod": "bkash",
+      "senderPhone": "01339223713",
+      "trxId": "BKT9284102",
+      "status": "approved",
+      "createdAt": "2026-10-27T17:21:30.108Z"
+    }
+  ],
+  "dollarExchanges": [],
+  "aiAgentState": {
+    "settings": {
+      "enabled": true,
+      "autoQuarantineFraud": true,
+      "autoDetectBots": true,
+      "antiScriptShield": true,
+      "dailyReportingEnabled": true,
+      "autoHealPostbackErrors": true,
+      "auditFrequencyMinutes": 15
+    },
+    "summary": {
+      "totalScannedUsers": 8,
+      "flaggedFraudUsers": 0,
+      "blockedBots": 0,
+      "quarantinedWithdrawals": 0,
+      "totalCoinsAudited": 5890,
+      "systemIntegrityScore": 100,
+      "securityStatus": "SECURE",
+      "lastAuditAt": "2026-11-11T03:45:16.039Z"
+    },
+    "flaggedUsers": [],
+    "dailyReports": [],
+    "autonomousLogs": [
+      {
+        "id": "log_1794368716039_2jkh",
+        "timestamp": "2026-11-11T03:45:16.039Z",
+        "type": "TASK_AUDITED",
+        "messageBn": "সম্পূর্ণ সিস্টেম অডিট সম্পন্ন: 8 জন ইউজার ও 0টি উইথড্র যাচাই করা হয়েছে। সার্বিক স্কোর: 100% (SECURE)",
+        "severity": "info"
+      }
+    ]
+  }
 }
