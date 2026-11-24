@@ -290,10 +290,10 @@ function loadDbFromDisk() {
         const loadedTwUrl = loaded.settings?.offerwallsConfig?.timewallUrl || '';
         db.settings.offerwallsConfig.timewallUrl = loadedTwUrl.includes('d7521f148f92a2d3') ? '' : loadedTwUrl;
         // Gemk configuration
-        db.settings.offerwallsConfig.gemkEnabled = Boolean(loaded.settings?.offerwallsConfig?.gemkEnabled);
-        db.settings.offerwallsConfig.gemkPlacementId = loaded.settings?.offerwallsConfig?.gemkPlacementId || '';
+        db.settings.offerwallsConfig.gemkEnabled = loaded.settings?.offerwallsConfig?.gemkEnabled ?? true;
+        db.settings.offerwallsConfig.gemkPlacementId = loaded.settings?.offerwallsConfig?.gemkPlacementId || '8de6-8577-e445-47cc';
         db.settings.offerwallsConfig.gemkSecretToken = loaded.settings?.offerwallsConfig?.gemkSecretToken || '';
-        db.settings.offerwallsConfig.gemkUrl = loaded.settings?.offerwallsConfig?.gemkUrl || '';
+        db.settings.offerwallsConfig.gemkUrl = loaded.settings?.offerwallsConfig?.gemkUrl || 'https://wall.gemk.io/?app_id=8de6-8577-e445-47cc&userid={uniqueUserID}';
         // Disable platforms where the user has no accounts
         db.settings.offerwallsConfig.adscendEnabled = false;
         db.settings.offerwallsConfig.offerwallDotComEnabled = false;
@@ -517,10 +517,10 @@ const db: {
       timewallEnabled: true,
       timewallPlacementId: '6a96383e2da9d8c7',
       timewallUrl: '',
-      gemkEnabled: false,
-      gemkPlacementId: '',
+      gemkEnabled: true,
+      gemkPlacementId: '8de6-8577-e445-47cc',
       gemkSecretToken: '',
-      gemkUrl: '',
+      gemkUrl: 'https://wall.gemk.io/?app_id=8de6-8577-e445-47cc&userid={uniqueUserID}',
       cpxEnabled: true,
       cpxAppId: '36966',
       customTasksRewardMultiplier: 1.0
@@ -3417,6 +3417,12 @@ app.post('/api/admin/settings', (req, res) => {
       ...req.body.jobPostingConfig
     };
   }
+  if (req.body.offerwallsConfig !== undefined) {
+    db.settings.offerwallsConfig = {
+      ...db.settings.offerwallsConfig,
+      ...req.body.offerwallsConfig
+    };
+  }
 
   // If coin rate was changed, broadcast a system notification to users
   if (oldRate !== db.settings.coinToBDTRate) {
@@ -3433,6 +3439,7 @@ app.post('/api/admin/settings', (req, res) => {
     });
   }
 
+  saveDbToDisk();
   res.json({ success: true, settings: db.settings });
 });
 

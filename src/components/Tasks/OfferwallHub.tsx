@@ -502,18 +502,16 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
     if (provider.partnerType === 'Gemk') {
       const cfg = settings?.offerwallsConfig;
       const customUrl = cfg?.gemkUrl?.trim() || '';
-      const pid = cfg?.gemkPlacementId?.trim() || '';
+      const pid = cfg?.gemkPlacementId?.trim() || '8de6-8577-e445-47cc';
       let gemkWallUrl = '';
       if (customUrl) {
-        if (customUrl.includes('{userid}')) gemkWallUrl = customUrl.replace(/\{userid\}/g, encodeURIComponent(userId));
-        else if (customUrl.includes('{user_id}')) gemkWallUrl = customUrl.replace(/\{user_id\}/g, encodeURIComponent(userId));
-        else gemkWallUrl = customUrl.includes('?') ? `${customUrl}&userid=${encodeURIComponent(userId)}` : `${customUrl}?userid=${encodeURIComponent(userId)}`;
-      } else if (pid) {
-        gemkWallUrl = `https://gemk.io/offerwall/${encodeURIComponent(pid)}?userid=${encodeURIComponent(userId)}`;
-      }
-      if (!gemkWallUrl) {
-        showToast('Gemk অফারওয়াল সেটআপ চলছে 💎', 'Admin Panel থেকে Gemk Offerwall URL সংযুক্ত করলে এটি চালু হবে।', 'info');
-        return;
+        if (/\{uniqueuserid\}|\{userid\}|\{user_id\}/i.test(customUrl)) {
+          gemkWallUrl = customUrl.replace(/\{uniqueuserid\}|\{userid\}|\{user_id\}/gi, encodeURIComponent(userId));
+        } else {
+          gemkWallUrl = customUrl.includes('?') ? `${customUrl}&userid=${encodeURIComponent(userId)}` : `${customUrl}?userid=${encodeURIComponent(userId)}`;
+        }
+      } else {
+        gemkWallUrl = `https://wall.gemk.io/?app_id=${encodeURIComponent(pid)}&userid=${encodeURIComponent(userId)}`;
       }
       try {
         const win = window.open(gemkWallUrl, '_blank', 'noopener,noreferrer');
@@ -968,7 +966,7 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
               return Boolean(cfg?.timewallEnabled !== false && (cfg?.timewallPlacementId || cfg?.timewallUrl || '6a96383e2da9d8c7'));
             }
             if (p.partnerType === 'Gemk') {
-              return Boolean(cfg?.gemkEnabled && (cfg?.gemkUrl || cfg?.gemkPlacementId));
+              return cfg?.gemkEnabled !== false;
             }
             return true;
           }).map((p) => (

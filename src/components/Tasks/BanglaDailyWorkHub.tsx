@@ -46,7 +46,7 @@ export const VERIFIED_PARTNER_WALLS: VerifiedOfferwallPartner[] = [
     accentClass: 'from-blue-950 via-indigo-950 to-slate-900 border-blue-500/60',
     buttonClass: 'from-blue-400 to-cyan-400 hover:from-blue-300 hover:to-cyan-300 text-slate-950 shadow-blue-500/30',
     getUrl: (uid, cfg) => {
-      const oid = cfg?.timewallPlacementId?.trim() || '';
+      const oid = cfg?.timewallPlacementId?.trim() || '6a96383e2da9d8c7';
       const customUrl = cfg?.timewallUrl?.trim();
       if (customUrl && !customUrl.includes('d7521f148f92a2d3')) {
         return customUrl.includes('?')
@@ -70,14 +70,15 @@ export const VERIFIED_PARTNER_WALLS: VerifiedOfferwallPartner[] = [
     getUrl: (uid, cfg) => {
       const customUrl = cfg?.gemkUrl?.trim() || '';
       if (customUrl) {
-        if (customUrl.includes('{userid}')) return customUrl.replace(/\{userid\}/g, encodeURIComponent(uid));
-        if (customUrl.includes('{user_id}')) return customUrl.replace(/\{user_id\}/g, encodeURIComponent(uid));
+        if (/\{uniqueuserid\}|\{userid\}|\{user_id\}/i.test(customUrl)) {
+          return customUrl.replace(/\{uniqueuserid\}|\{userid\}|\{user_id\}/gi, encodeURIComponent(uid));
+        }
         return customUrl.includes('?')
           ? `${customUrl}&userid=${encodeURIComponent(uid)}`
           : `${customUrl}?userid=${encodeURIComponent(uid)}`;
       }
-      const pid = cfg?.gemkPlacementId?.trim() || '';
-      return `https://gemk.io/offerwall/${encodeURIComponent(pid)}?userid=${encodeURIComponent(uid)}`;
+      const pid = cfg?.gemkPlacementId?.trim() || '8de6-8577-e445-47cc';
+      return `https://wall.gemk.io/?app_id=${encodeURIComponent(pid)}&userid=${encodeURIComponent(uid)}`;
     }
   },
   {
@@ -258,7 +259,7 @@ export const TOP_GLOBAL_PLATFORMS = [
 
 export const BanglaDailyWorkHub: React.FC = () => {
   const { user } = useAuth();
-  const { setActiveTab, settings } = useApp();
+  const { setActiveTab, settings, showToast } = useApp();
 
   const coinRate = settings?.coinToBDTRate || 0.015;
   const uid = user?.uid || user?.phone || 'user';
@@ -446,11 +447,11 @@ export const BanglaDailyWorkHub: React.FC = () => {
           {VERIFIED_PARTNER_WALLS.filter((partner) => {
             if (partner.id === 'timewall') {
               const cfg = settings?.offerwallsConfig;
-              return Boolean(cfg?.timewallEnabled && (cfg?.timewallPlacementId || cfg?.timewallUrl));
+              return cfg?.timewallEnabled !== false;
             }
             if (partner.id === 'gemk') {
               const cfg = settings?.offerwallsConfig;
-              return Boolean(cfg?.gemkEnabled && (cfg?.gemkUrl || cfg?.gemkPlacementId));
+              return cfg?.gemkEnabled !== false;
             }
             return true;
           }).map((partner) => (

@@ -2622,7 +2622,7 @@ export const AdminDashboard: React.FC = () => {
                     </span>
                     <input
                       type="checkbox"
-                      checked={editSettings.offerwallsConfig?.timewallEnabled ?? false}
+                      checked={editSettings.offerwallsConfig?.timewallEnabled ?? true}
                       onChange={(e) => setEditSettings({
                         ...editSettings,
                         offerwallsConfig: {
@@ -2710,7 +2710,7 @@ export const AdminDashboard: React.FC = () => {
                     </span>
                     <input
                       type="checkbox"
-                      checked={editSettings.offerwallsConfig?.gemkEnabled ?? false}
+                      checked={editSettings.offerwallsConfig?.gemkEnabled ?? true}
                       onChange={(e) => setEditSettings({
                         ...editSettings,
                         offerwallsConfig: {
@@ -2763,7 +2763,7 @@ export const AdminDashboard: React.FC = () => {
                             gemkEnabled: true
                           } as any
                         })}
-                        placeholder="যেমন: https://gemk.io/offerwall/..."
+                        placeholder="https://wall.gemk.io/?app_id=8de6-8577-e445-47cc&userid={uniqueUserID}"
                         className="w-full p-2 bg-slate-950 border border-teal-500/30 rounded-xl text-xs font-mono text-teal-200 focus:outline-none"
                       />
                     </div>
