@@ -5,9 +5,22 @@ import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 export const InstallPrompt: React.FC = () => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(() => {
+    try {
+      return localStorage.getItem('we_pwa_prompt_dismissed') === '1';
+    } catch {
+      return false;
+    }
+  });
   const [showIOSModal, setShowIOSModal] = useState(false);
   const { language } = useApp();
+
+  const dismissPrompt = () => {
+    setIsDismissed(true);
+    try {
+      localStorage.setItem('we_pwa_prompt_dismissed', '1');
+    } catch {}
+  };
 
   // If already running inside installed standalone app, or dismissed
   if (isInstalled || isDismissed) {
@@ -26,7 +39,7 @@ export const InstallPrompt: React.FC = () => {
     }
     const success = await install();
     if (success) {
-      setIsDismissed(true);
+      dismissPrompt();
     }
   };
 
@@ -66,7 +79,7 @@ export const InstallPrompt: React.FC = () => {
             <span>{language === 'bn' ? 'ইনস্টল' : 'Install'}</span>
           </button>
           <button
-            onClick={() => setIsDismissed(true)}
+            onClick={dismissPrompt}
             className="p-1.5 text-slate-400 hover:text-white rounded-lg transition"
             title="Dismiss"
           >

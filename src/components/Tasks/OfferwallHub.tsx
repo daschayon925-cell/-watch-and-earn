@@ -39,7 +39,7 @@ interface OfferwallProvider {
   descEn: string;
   avgReward: string;
   payoutRange: string;
-  partnerType: 'BitcoTasks' | 'Affmine' | 'Freecash' | 'OfferwallMe' | 'Lootly' | 'AdGem' | 'CPX' | 'CPAGrip' | 'AdsterraTask' | 'HilltopAdsTask' | 'MonetagTask' | 'ZeydooTask';
+  partnerType: 'TimeWall' | 'Gemk' | 'BitcoTasks' | 'Affmine' | 'Freecash' | 'OfferwallMe' | 'Lootly' | 'AdGem' | 'CPX' | 'CPAGrip' | 'AdsterraTask' | 'HilltopAdsTask' | 'MonetagTask' | 'ZeydooTask';
   status: 'active' | 'popular' | 'high_rate';
 }
 
@@ -93,6 +93,34 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
 
   // 💎 শুধুমাত্র যেসকল প্ল্যাটফর্মে ইউজারের অ্যাকাউন্ট বা কোড যুক্ত রয়েছে
   const providers: OfferwallProvider[] = [
+    // ⏱️ TIMEWALL OFFICIAL MICRO-TASK & PTC OFFERWALL
+    {
+      id: 'timewall_hub',
+      name: 'TimeWall মাইক্রো-টাস্ক, ক্লিক ও সার্ভে',
+      badge: 'অফিসিয়াল পার্টনার ⏱️',
+      badgeColor: 'from-blue-600 to-cyan-600',
+      icon: '⏱️',
+      descBn: 'ছোট ওয়েবসাইট ভিজিট, ক্লিক ও সার্ভে সম্পন্ন করে সরাসরি অটো-পোস্টব্যাকে কয়েন অর্জন করুন',
+      descEn: 'Micro-tasks, website clicks & surveys with instant automatic postback credits',
+      avgReward: '+১০০ – +৮,০০০ 🪙',
+      payoutRange: '৳২.০০ – ৳১২০.০০+',
+      partnerType: 'TimeWall',
+      status: 'popular'
+    },
+    // 💎 GEMK.IO OFFICIAL OFFERWALL
+    {
+      id: 'gemk_hub',
+      name: 'Gemk.io গ্লোবাল অফার ও সার্ভে',
+      badge: 'অফিসিয়াল পার্টনার 💎',
+      badgeColor: 'from-teal-600 to-emerald-600',
+      icon: '💎',
+      descBn: 'সহজ অ্যাপ, গেম ও সার্ভে সম্পন্ন করে সরাসরি অটো-পোস্টব্যাকে কয়েন অর্জন করুন',
+      descEn: 'Mobile apps, games & global surveys with automatic server-to-server postback',
+      avgReward: '+২০০ – +১০,০০০ 🪙',
+      payoutRange: '৳৩.০০ – ৳১৫০.০০+',
+      partnerType: 'Gemk',
+      status: 'popular'
+    },
     // 🔥 1. OFFICIAL BITCOTASKS VERIFIED OFFERWALL (User's Verified Key: el15zv6b8o9kz3i9haq63pgtpdiivh)
     {
       id: 'bitcotasks_hub',
@@ -445,6 +473,65 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
     soundService.playCoinReward();
     const userId = user?.uid || 'user_guest';
     let url = '';
+
+    if (provider.partnerType === 'TimeWall') {
+      const cfg = settings?.offerwallsConfig;
+      const oid = cfg?.timewallPlacementId?.trim() || '6a96383e2da9d8c7';
+      const customUrl = cfg?.timewallUrl?.trim();
+      const timewallUrl = (customUrl && !customUrl.includes('d7521f148f92a2d3'))
+        ? (customUrl.includes('?') ? `${customUrl}&uid=${encodeURIComponent(userId)}` : `${customUrl}?uid=${encodeURIComponent(userId)}`)
+        : `https://timewall.io/users/login?oid=${encodeURIComponent(oid)}&uid=${encodeURIComponent(userId)}`;
+      try {
+        const win = window.open(timewallUrl, '_blank', 'noopener,noreferrer');
+        if (!win || win.closed || typeof win.closed === 'undefined') {
+          setActiveOfferwallUrl(timewallUrl);
+          setActiveWallName(provider.name);
+        }
+        showToast(
+          'TimeWall অফারওয়াল ওপেন হয়েছে ⏱️',
+          'ক্লিক, মাইক্রো-টাস্ক বা সার্ভে সম্পন্ন করলে অটো-পোস্টব্যাকে সরাসরি কয়েন যোগ হবে।',
+          'success'
+        );
+      } catch {
+        setActiveOfferwallUrl(timewallUrl);
+        setActiveWallName(provider.name);
+      }
+      return;
+    }
+
+    if (provider.partnerType === 'Gemk') {
+      const cfg = settings?.offerwallsConfig;
+      const customUrl = cfg?.gemkUrl?.trim() || '';
+      const pid = cfg?.gemkPlacementId?.trim() || '';
+      let gemkWallUrl = '';
+      if (customUrl) {
+        if (customUrl.includes('{userid}')) gemkWallUrl = customUrl.replace(/\{userid\}/g, encodeURIComponent(userId));
+        else if (customUrl.includes('{user_id}')) gemkWallUrl = customUrl.replace(/\{user_id\}/g, encodeURIComponent(userId));
+        else gemkWallUrl = customUrl.includes('?') ? `${customUrl}&userid=${encodeURIComponent(userId)}` : `${customUrl}?userid=${encodeURIComponent(userId)}`;
+      } else if (pid) {
+        gemkWallUrl = `https://gemk.io/offerwall/${encodeURIComponent(pid)}?userid=${encodeURIComponent(userId)}`;
+      }
+      if (!gemkWallUrl) {
+        showToast('Gemk অফারওয়াল সেটআপ চলছে 💎', 'Admin Panel থেকে Gemk Offerwall URL সংযুক্ত করলে এটি চালু হবে।', 'info');
+        return;
+      }
+      try {
+        const win = window.open(gemkWallUrl, '_blank', 'noopener,noreferrer');
+        if (!win || win.closed || typeof win.closed === 'undefined') {
+          setActiveOfferwallUrl(gemkWallUrl);
+          setActiveWallName(provider.name);
+        }
+        showToast(
+          'Gemk.io অফারওয়াল ওপেন হয়েছে 💎',
+          'অফার বা সার্ভে সম্পন্ন হলে অটো-পোস্টব্যাকে সরাসরি আপনার ওয়ালেটে কয়েন যোগ হবে।',
+          'success'
+        );
+      } catch {
+        setActiveOfferwallUrl(gemkWallUrl);
+        setActiveWallName(provider.name);
+      }
+      return;
+    }
 
     if (provider.partnerType === 'BitcoTasks') {
       const apiKey = settings?.offerwallsConfig?.bitcotasksApiKey || 'el15zv6b8o9kz3i9haq63pgtpdiivh';
@@ -875,7 +962,16 @@ export const OfferwallHub: React.FC<OfferwallHubProps> = ({ onSwitchToDailyTasks
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {providers.map((p) => (
+          {providers.filter((p) => {
+            const cfg = settings?.offerwallsConfig;
+            if (p.partnerType === 'TimeWall') {
+              return Boolean(cfg?.timewallEnabled !== false && (cfg?.timewallPlacementId || cfg?.timewallUrl || '6a96383e2da9d8c7'));
+            }
+            if (p.partnerType === 'Gemk') {
+              return Boolean(cfg?.gemkEnabled && (cfg?.gemkUrl || cfg?.gemkPlacementId));
+            }
+            return true;
+          }).map((p) => (
             <div
               key={p.id}
               onClick={() => handleOpenProvider(p)}

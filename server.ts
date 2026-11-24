@@ -87,7 +87,7 @@ app.get(['/health', '/api/health', '/api/ping'], (req, res) => {
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
   res.setHeader('X-Robots-Tag', 'all, index, follow');
-  const host = req.headers.host || 'watch-and-earn-z5hx.onrender.com';
+  const host = req.headers.host || 'watchearnbd.bdz1.top';
   res.send(`User-agent: *
 Allow: /
 Sitemap: https://${host}/sitemap.xml
@@ -125,7 +125,7 @@ app.use(express.static(path.resolve(process.cwd(), 'public')));
 app.get('/sitemap.xml', (req, res) => {
   res.type('application/xml');
   res.setHeader('X-Robots-Tag', 'all, index, follow');
-  const host = req.headers.host || 'watch-and-earn-z5hx.onrender.com';
+  const host = req.headers.host || 'watchearnbd.bdz1.top';
   const today = new Date().toISOString().split('T')[0];
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -283,10 +283,17 @@ function loadDbFromDisk() {
         db.settings.offerwallsConfig.zeydooEnabled = true;
         db.settings.offerwallsConfig.zeydooSmartLink = 'https://nya5.com/link?z=12138356';
         // TimeWall configuration (preserve user's settings if configured)
-        db.settings.offerwallsConfig.timewallEnabled = Boolean(loaded.settings?.offerwallsConfig?.timewallEnabled);
-        db.settings.offerwallsConfig.timewallPlacementId = loaded.settings?.offerwallsConfig?.timewallPlacementId || '';
+        db.settings.offerwallsConfig.timewallEnabled = loaded.settings?.offerwallsConfig?.timewallEnabled ?? true;
+        const loadedOid = loaded.settings?.offerwallsConfig?.timewallPlacementId || '';
+        db.settings.offerwallsConfig.timewallPlacementId = (!loadedOid || loadedOid === 'd7521f148f92a2d3') ? '6a96383e2da9d8c7' : loadedOid;
         db.settings.offerwallsConfig.timewallSecretKey = loaded.settings?.offerwallsConfig?.timewallSecretKey || '';
-        db.settings.offerwallsConfig.timewallUrl = loaded.settings?.offerwallsConfig?.timewallUrl || '';
+        const loadedTwUrl = loaded.settings?.offerwallsConfig?.timewallUrl || '';
+        db.settings.offerwallsConfig.timewallUrl = loadedTwUrl.includes('d7521f148f92a2d3') ? '' : loadedTwUrl;
+        // Gemk configuration
+        db.settings.offerwallsConfig.gemkEnabled = Boolean(loaded.settings?.offerwallsConfig?.gemkEnabled);
+        db.settings.offerwallsConfig.gemkPlacementId = loaded.settings?.offerwallsConfig?.gemkPlacementId || '';
+        db.settings.offerwallsConfig.gemkSecretToken = loaded.settings?.offerwallsConfig?.gemkSecretToken || '';
+        db.settings.offerwallsConfig.gemkUrl = loaded.settings?.offerwallsConfig?.gemkUrl || '';
         // Disable platforms where the user has no accounts
         db.settings.offerwallsConfig.adscendEnabled = false;
         db.settings.offerwallsConfig.offerwallDotComEnabled = false;
@@ -508,8 +515,12 @@ const db: {
       monlixEnabled: true,
       monlixAppId: '',
       timewallEnabled: true,
-      timewallPlacementId: 'd7521f148f92a2d3',
-      timewallUrl: 'https://timewall.io/offers/d7521f148f92a2d3',
+      timewallPlacementId: '6a96383e2da9d8c7',
+      timewallUrl: '',
+      gemkEnabled: false,
+      gemkPlacementId: '',
+      gemkSecretToken: '',
+      gemkUrl: '',
       cpxEnabled: true,
       cpxAppId: '36966',
       customTasksRewardMultiplier: 1.0
@@ -3592,31 +3603,67 @@ app.all(['/api/postback/timewall', '/api/postbacks/timewall'], (req, res) => {
     const txid = (params.txid || params.transactionID || params.transactionId || 'tx_' + Date.now()).toString().trim();
     const revenueRaw = (params.revenue || '0').toString().trim();
     const revenue = parseFloat(revenueRaw) || 0;
-    const currencyAmount = Math.round(parseFloat((params.currencyAmount || params.currency || '0').toString()) || (revenue * 1000));
+    const currencyAmount = Math.round(parseFloat((params.currencyAmount || params.currency || '0').toString()) || (revenue * 4000));
     const txType = (params.type || 'credit').toString().toLowerCase();
     const offerName = (params.offername || params.offerdetail || 'মাইক্রো-টাস্ক ও ক্লিক').toString().trim();
+    const receivedSignature = (params.signature || '').toString().trim().toLowerCase();
     const receivedHash = (params.hash || '').toString().trim().toLowerCase();
     const configuredSecret = (db.settings?.offerwallsConfig?.timewallSecretKey || '').trim();
 
     console.log(`[TimeWall Postback] User=${userId}, TxID=${txid}, Type=${txType}, Revenue=$${revenueRaw}, Coins=${currencyAmount}`);
 
-    // Optional SHA-256 signature verification if SecretKey is saved in Admin Settings
-    if (configuredSecret && receivedHash && userId && revenueRaw) {
-      const expectedHash = crypto
-        .createHash('sha256')
-        .update(`${userId}${revenueRaw}${configuredSecret}`)
-        .digest('hex')
-        .toLowerCase();
-      if (receivedHash !== expectedHash) {
-        console.warn(`[TimeWall Postback] Invalid SHA256 hash for User=${userId}, TxID=${txid}`);
-        aiSentinelService.recordLog(db, {
-          type: 'SECURITY_SHIELD',
-          messageBn: `TimeWall পোস্টব্যাকে অবৈধ সিকিউরিটি হ্যাশ শনাক্ত হয়েছে (TxID: ${txid})।`,
-          severity: 'warning',
-          targetUid: userId
-        });
-        return res.status(403).send('INVALID_HASH');
+    // Verify TimeWall HMAC-SHA256 signature (recommended) or legacy SHA256 hash when SecretKey is configured
+    if (configuredSecret) {
+      if (receivedSignature) {
+        const signSource: Record<string, string> = {};
+        for (const [k, v] of Object.entries(req.query)) {
+          if (k === 'signature') continue;
+          signSource[k] = Array.isArray(v) ? String(v[0] ?? '') : String(v ?? '');
+        }
+        const sortedKeys = Object.keys(signSource).sort();
+        const payloadString = sortedKeys.map((k) => `${k}${signSource[k]}`).join('');
+        const expectedSig = crypto
+          .createHmac('sha256', configuredSecret)
+          .update(payloadString)
+          .digest('hex')
+          .toLowerCase();
+
+        const sigBuf = Buffer.from(receivedSignature, 'utf8');
+        const expBuf = Buffer.from(expectedSig, 'utf8');
+        const sigValid = sigBuf.length === expBuf.length && crypto.timingSafeEqual(sigBuf, expBuf);
+
+        if (!sigValid) {
+          console.warn(`[TimeWall Postback] Invalid HMAC signature for User=${userId}, TxID=${txid}`);
+          aiSentinelService.recordLog(db, {
+            type: 'SECURITY_SHIELD',
+            messageBn: `TimeWall পোস্টব্যাকে অবৈধ HMAC সিগনেচার শনাক্ত হয়েছে (TxID: ${txid})।`,
+            severity: 'warning',
+            targetUid: userId
+          });
+          return res.status(403).send('INVALID_SIGNATURE');
+        }
+      } else if (receivedHash && userId && revenueRaw) {
+        const expectedHash = crypto
+          .createHash('sha256')
+          .update(`${userId}${revenueRaw}${configuredSecret}`)
+          .digest('hex')
+          .toLowerCase();
+        if (receivedHash !== expectedHash) {
+          console.warn(`[TimeWall Postback] Invalid SHA256 hash for User=${userId}, TxID=${txid}`);
+          aiSentinelService.recordLog(db, {
+            type: 'SECURITY_SHIELD',
+            messageBn: `TimeWall পোস্টব্যাকে অবৈধ সিকিউরিটি হ্যাশ শনাক্ত হয়েছে (TxID: ${txid})।`,
+            severity: 'warning',
+            targetUid: userId
+          });
+          return res.status(403).send('INVALID_HASH');
+        }
       }
+    }
+
+    // Ignore pending/cancelled holds without crediting
+    if (txType === 'hold' || txType === 'hold_cancelled') {
+      return res.status(200).send('OK');
     }
 
     if (userId) {
@@ -3685,6 +3732,94 @@ app.all(['/api/postback/timewall', '/api/postbacks/timewall'], (req, res) => {
     return res.status(200).send('OK');
   } catch (err) {
     console.error('[TimeWall Postback] Error:', err);
+    return res.status(200).send('OK');
+  }
+});
+
+// Gemk.io Official S2S Postback Webhook (Supports {userid}, {user_amount}, {payout}, {offer_name}, {offer_id}, {date}, security token)
+app.all(['/api/postback/gemk', '/api/postbacks/gemk'], (req, res) => {
+  try {
+    const params = { ...req.query, ...req.body };
+    const userId = (params.userid || params.user || params.user_id || params.userId || params.subid || '').toString().trim();
+    const offerId = (params.offer_id || params.offerid || '').toString().trim();
+    const offerName = (params.offer_name || params.offername || 'Gemk অফার টাস্ক').toString().trim();
+    const payoutRaw = (params.payout || params.revenue || '0').toString().trim();
+    const payoutUsd = parseFloat(payoutRaw) || 0;
+    const dateParam = (params.date || '').toString().trim();
+    const txid = (params.txid || params.transaction_id || params.trans_id || (offerId ? `${offerId}_${dateParam || userId}` : `gemk_${Date.now()}`)).toString().trim();
+    const currencyCoins = Math.round(
+      parseFloat((params.user_amount || params.amount || params.currency || '0').toString()) || (payoutUsd * 4000)
+    );
+    const configuredToken = (db.settings?.offerwallsConfig?.gemkSecretToken || '').trim();
+    const receivedToken = (
+      params.token ||
+      params.secret ||
+      params.signature ||
+      req.headers['x-gemk-token'] ||
+      req.headers['x-postback-token'] ||
+      ''
+    ).toString().trim();
+
+    console.log(`[Gemk Postback] User=${userId}, Offer=${offerName} (${offerId}), Payout=$${payoutRaw}, Coins=${currencyCoins}`);
+
+    if (configuredToken && receivedToken !== configuredToken) {
+      console.warn(`[Gemk Postback] Invalid security token for User=${userId}`);
+      aiSentinelService.recordLog(db, {
+        type: 'SECURITY_SHIELD',
+        messageBn: `Gemk পোস্টব্যাকে অবৈধ সিকিউরিটি টোকেন শনাক্ত হয়েছে (User: ${userId})।`,
+        severity: 'warning',
+        targetUid: userId
+      });
+      return res.status(403).send('INVALID_TOKEN');
+    }
+
+    if (userId && currencyCoins > 0) {
+      const targetUser = db.users.find(u => u.uid === userId || u.id === userId || u.phone === userId);
+      if (targetUser) {
+        const externalKey = `gemk_${txid}`;
+        const alreadyProcessed = (db.transactions || []).some(
+          t => t.id === externalKey || t.externalTransactionId === externalKey
+        );
+
+        if (!alreadyProcessed) {
+          targetUser.coins = (targetUser.coins || 0) + currencyCoins;
+          targetUser.lifetimeCoins = (targetUser.lifetimeCoins || 0) + currencyCoins;
+          targetUser.todayCoins = (targetUser.todayCoins || 0) + currencyCoins;
+          targetUser.updatedAt = new Date().toISOString();
+
+          db.transactions.unshift({
+            transactionId: `gemk_${Date.now()}`,
+            id: externalKey,
+            externalTransactionId: externalKey,
+            userId: targetUser.uid,
+            type: 'CPA_OFFER_COMPLETED',
+            amount: currencyCoins,
+            bdtEquivalent: currencyCoins * (db.settings.coinToBDTRate || 0.015),
+            revenueUsd: payoutUsd,
+            source: `💎 Gemk: ${offerName} (+${currencyCoins} কয়েন)`,
+            status: 'COMPLETED',
+            createdAt: new Date().toISOString()
+          });
+
+          db.notifications.unshift({
+            id: 'notif_gemk_' + Date.now(),
+            userId: targetUser.uid,
+            title: '🎉 Gemk কয়েন যুক্ত হয়েছে!',
+            message: `Gemk-এ "${offerName}" অফার সম্পন্ন করার জন্য আপনার ওয়ালেটে +${currencyCoins} কয়েন যোগ হয়েছে।`,
+            type: 'reward',
+            read: false,
+            createdAt: new Date().toISOString(),
+            linkTab: 'wallet'
+          });
+
+          saveDbToDisk();
+        }
+      }
+    }
+
+    return res.status(200).send('OK');
+  } catch (err) {
+    console.error('[Gemk Postback] Error:', err);
     return res.status(200).send('OK');
   }
 });

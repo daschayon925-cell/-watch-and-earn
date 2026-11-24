@@ -418,8 +418,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (savedUid) {
       loginDemo(savedUid);
     } else {
-      // 🚀 Auto-initialize guest user session so users & owner immediately see the full dashboard, videos, and wallet
-      loginDemo();
+      // Show LandingPage on first visit so new users clearly see Signup (+100 bonus) & Login, with optional 1-click Guest preview
+      setLoading(false);
     }
 
     // 🔄 Dynamic User Profile Polling every 12 seconds to reflect realtime earnings without overloading network

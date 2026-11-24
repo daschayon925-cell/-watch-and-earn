@@ -2643,13 +2643,13 @@ export const AdminDashboard: React.FC = () => {
                       <input
                         type="text"
                         readOnly
-                        value={`${window.location.origin}/api/postback/timewall?userid={userID}&txid={transactionID}&revenue={revenue}&currency={currencyAmount}&hash={hash}&ip={ip}&type={type}&withdrawid={withdrawid}&reason={reason}&offername={offername}&offerdetail={offerdetail}`}
+                        value={`${window.location.origin}/api/postback/timewall?userid={userID}&txid={transactionID}&revenue={revenue}&currency={currencyAmount}&ip={ip}&type={type}&withdrawid={withdrawid}&reason={reason}&offername={offername}&offerdetail={offerdetail}&signature={signature}`}
                         className="flex-1 p-1.5 bg-slate-900 border border-slate-800 rounded text-[10px] font-mono text-cyan-300 select-all"
                       />
                       <button
                         type="button"
                         onClick={() => {
-                          const url = `${window.location.origin}/api/postback/timewall?userid={userID}&txid={transactionID}&revenue={revenue}&currency={currencyAmount}&hash={hash}&ip={ip}&type={type}&withdrawid={withdrawid}&reason={reason}&offername={offername}&offerdetail={offerdetail}`;
+                          const url = `${window.location.origin}/api/postback/timewall?userid={userID}&txid={transactionID}&revenue={revenue}&currency={currencyAmount}&ip={ip}&type={type}&withdrawid={withdrawid}&reason={reason}&offername={offername}&offerdetail={offerdetail}&signature={signature}`;
                           navigator.clipboard?.writeText(url);
                           showToast('কপি সফল ✅', 'TimeWall Postback URL কপি করা হয়েছে', 'success');
                         }}
@@ -2696,6 +2696,93 @@ export const AdminDashboard: React.FC = () => {
                         })}
                         placeholder="Secret Key বসান"
                         className="w-full p-2 bg-slate-950 border border-blue-500/30 rounded-xl text-xs font-mono text-blue-200 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 💎 4B. Gemk.io Rewarded Offerwall */}
+                <div className="p-3 rounded-xl bg-teal-950/35 border border-teal-500/40 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-teal-300 flex items-center gap-1.5">
+                      <span>💎</span>
+                      <span>Gemk.io অফারওয়াল (gemk.io)</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={editSettings.offerwallsConfig?.gemkEnabled ?? false}
+                      onChange={(e) => setEditSettings({
+                        ...editSettings,
+                        offerwallsConfig: {
+                          ...editSettings.offerwallsConfig,
+                          gemkEnabled: e.target.checked
+                        } as any
+                      })}
+                      className="rounded accent-teal-500 w-4 h-4"
+                    />
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-slate-950/80 border border-teal-500/30 space-y-1">
+                    <span className="block text-[10px] font-bold text-teal-300">
+                      Gemk Server Postback Webhook URL:
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        readOnly
+                        value={`${window.location.origin}/api/postback/gemk?userid={userid}&user_amount={user_amount}&payout={payout}&offer_name={offer_name}&offer_id={offer_id}&ip_address={ip_address}&currency_name={currency_name}&date={date}`}
+                        className="flex-1 p-1.5 bg-slate-900 border border-slate-800 rounded text-[10px] font-mono text-cyan-300 select-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = `${window.location.origin}/api/postback/gemk?userid={userid}&user_amount={user_amount}&payout={payout}&offer_name={offer_name}&offer_id={offer_id}&ip_address={ip_address}&currency_name={currency_name}&date={date}`;
+                          navigator.clipboard?.writeText(url);
+                          showToast('কপি সফল ✅', 'Gemk Postback URL কপি করা হয়েছে', 'success');
+                        }}
+                        className="px-2 py-1.5 rounded bg-teal-500 text-slate-950 font-black text-[10px] hover:bg-teal-400 shrink-0 cursor-pointer"
+                      >
+                        কপি করুন
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-300 mb-1">
+                        Gemk Offerwall / iFrame URL:
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.gemkUrl ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            gemkUrl: e.target.value.trim(),
+                            gemkEnabled: true
+                          } as any
+                        })}
+                        placeholder="যেমন: https://gemk.io/offerwall/..."
+                        className="w-full p-2 bg-slate-950 border border-teal-500/30 rounded-xl text-xs font-mono text-teal-200 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-slate-300 mb-1">
+                        Gemk Security Token (যদি সেট করেন):
+                      </label>
+                      <input
+                        type="text"
+                        value={editSettings.offerwallsConfig?.gemkSecretToken ?? ''}
+                        onChange={(e) => setEditSettings({
+                          ...editSettings,
+                          offerwallsConfig: {
+                            ...editSettings.offerwallsConfig,
+                            gemkSecretToken: e.target.value.trim()
+                          } as any
+                        })}
+                        placeholder="Security Token বসান"
+                        className="w-full p-2 bg-slate-950 border border-teal-500/30 rounded-xl text-xs font-mono text-teal-200 focus:outline-none"
                       />
                     </div>
                   </div>

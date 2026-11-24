@@ -46,14 +46,38 @@ export const VERIFIED_PARTNER_WALLS: VerifiedOfferwallPartner[] = [
     accentClass: 'from-blue-950 via-indigo-950 to-slate-900 border-blue-500/60',
     buttonClass: 'from-blue-400 to-cyan-400 hover:from-blue-300 hover:to-cyan-300 text-slate-950 shadow-blue-500/30',
     getUrl: (uid, cfg) => {
+      const oid = cfg?.timewallPlacementId?.trim() || '';
       const customUrl = cfg?.timewallUrl?.trim();
-      if (customUrl) {
+      if (customUrl && !customUrl.includes('d7521f148f92a2d3')) {
         return customUrl.includes('?')
           ? `${customUrl}&uid=${encodeURIComponent(uid)}`
           : `${customUrl}?uid=${encodeURIComponent(uid)}`;
       }
-      const oid = cfg?.timewallPlacementId?.trim() || '';
       return `https://timewall.io/users/login?oid=${encodeURIComponent(oid)}&uid=${encodeURIComponent(uid)}`;
+    }
+  },
+  {
+    id: 'gemk',
+    title: 'Gemk গ্লোবাল অফার ও সার্ভে',
+    category: 'অফিসিয়াল পার্টনার • গেম, অ্যাপ ও সার্ভে 💎',
+    description: 'সহজ অ্যাপ, গেম ও সার্ভে সম্পন্ন করে সরাসরি অটো-পোস্টব্যাকে কয়েন অর্জন করুন।',
+    payoutRange: '৳৩ – ৳১৫০+',
+    coinRange: '+২০০ – +১০,০০০ কয়েন',
+    badge: 'সরাসরি পোস্টব্যাক ✅',
+    icon: '💎',
+    accentClass: 'from-teal-950 via-emerald-950 to-slate-900 border-teal-500/60',
+    buttonClass: 'from-teal-400 to-emerald-400 hover:from-teal-300 hover:to-emerald-300 text-slate-950 shadow-teal-500/30',
+    getUrl: (uid, cfg) => {
+      const customUrl = cfg?.gemkUrl?.trim() || '';
+      if (customUrl) {
+        if (customUrl.includes('{userid}')) return customUrl.replace(/\{userid\}/g, encodeURIComponent(uid));
+        if (customUrl.includes('{user_id}')) return customUrl.replace(/\{user_id\}/g, encodeURIComponent(uid));
+        return customUrl.includes('?')
+          ? `${customUrl}&userid=${encodeURIComponent(uid)}`
+          : `${customUrl}?userid=${encodeURIComponent(uid)}`;
+      }
+      const pid = cfg?.gemkPlacementId?.trim() || '';
+      return `https://gemk.io/offerwall/${encodeURIComponent(pid)}?userid=${encodeURIComponent(uid)}`;
     }
   },
   {
@@ -423,6 +447,10 @@ export const BanglaDailyWorkHub: React.FC = () => {
             if (partner.id === 'timewall') {
               const cfg = settings?.offerwallsConfig;
               return Boolean(cfg?.timewallEnabled && (cfg?.timewallPlacementId || cfg?.timewallUrl));
+            }
+            if (partner.id === 'gemk') {
+              const cfg = settings?.offerwallsConfig;
+              return Boolean(cfg?.gemkEnabled && (cfg?.gemkUrl || cfg?.gemkPlacementId));
             }
             return true;
           }).map((partner) => (

@@ -205,6 +205,10 @@ export interface AdminSettings {
     timewallPlacementId?: string; // TimeWall Placement ID / OID
     timewallSecretKey?: string; // TimeWall Secret Key for SHA256 Postback Verification
     timewallUrl?: string; // TimeWall publisher iFrame URL
+    gemkEnabled?: boolean;
+    gemkPlacementId?: string; // Gemk Placement ID
+    gemkSecretToken?: string; // Gemk Postback Security Token
+    gemkUrl?: string; // Gemk Offerwall iFrame URL
     adgateEnabled?: boolean;
     adgateWallId?: string; // AdGate Media Wall ID
     notikEnabled?: boolean;

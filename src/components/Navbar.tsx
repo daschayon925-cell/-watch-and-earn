@@ -34,21 +34,21 @@ export const Navbar: React.FC = () => {
           isWatchTab 
             ? 'bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px]' 
             : 'bg-[#05070B]/90 backdrop-blur-md border-b border-slate-800/80'
-        } px-4 py-3 max-w-md mx-auto w-full`}
+        } px-3 sm:px-4 py-2.5 sm:py-3 max-w-md mx-auto w-full overflow-hidden`}
       >
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         {/* Brand Logo & Tagline */}
         <div 
           onClick={() => setActiveTab('home')}
-          className="flex items-center gap-2.5 cursor-pointer group"
+          className="flex items-center gap-2 cursor-pointer group min-w-0 flex-1"
         >
           {/* Custom Modern 3D Play-Coin Logo Icon */}
-          <div className="relative w-9 h-9 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 p-[1.5px] shadow-lg shadow-emerald-500/30 group-hover:scale-105 group-hover:rotate-1 transition-all duration-300">
-            <div className="w-full h-full bg-[#05070B] rounded-[14px] flex items-center justify-center relative overflow-hidden">
+          <div className="relative w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 p-[1.5px] shadow-lg shadow-emerald-500/30 group-hover:scale-105 group-hover:rotate-1 transition-all duration-300">
+            <div className="w-full h-full bg-[#05070B] rounded-[10px] sm:rounded-[14px] flex items-center justify-center relative overflow-hidden">
               {/* Background radial spark */}
               <div className="absolute inset-0 bg-radial from-emerald-500/20 to-transparent" />
-              <svg viewBox="0 0 32 32" className="w-5 h-5 drop-shadow-[0_2px_8px_rgba(16,185,129,0.7)]" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg viewBox="0 0 32 32" className="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-[0_2px_8px_rgba(16,185,129,0.7)]" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="16" cy="16" r="14" stroke="url(#logo_grad)" strokeWidth="2" strokeDasharray="3 3" />
                 <path d="M12 9.5L23 16L12 22.5V9.5Z" fill="url(#play_grad)" />
                 <circle cx="22" cy="10" r="3.5" fill="#F59E0B" />
@@ -67,16 +67,16 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
 
-          <div>
-            <div className="flex items-center gap-1.5 leading-none">
-              <span className="font-black text-sm tracking-tight text-white font-['Outfit'] flex items-center">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1 leading-none">
+              <span className="font-black text-xs sm:text-sm tracking-tight text-white font-['Outfit'] flex items-center truncate">
                 WATCH<span className="text-emerald-400">&</span>EARN
               </span>
-              <span className="text-[9px] font-black px-1.5 py-0.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-emerald-300 rounded-md border border-emerald-500/40 tracking-wider">
-                BD 🇧🇩
+              <span className="hidden xs:inline-flex sm:inline-flex text-[8px] sm:text-[9px] font-black px-1 sm:px-1.5 py-0.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-emerald-300 rounded-md border border-emerald-500/40 tracking-wider shrink-0">
+                BD
               </span>
             </div>
-            <p className="text-[9.5px] text-slate-300 font-semibold tracking-wide mt-0.5 flex items-center gap-1">
+            <p className="hidden sm:flex text-[9.5px] text-slate-300 font-semibold tracking-wide mt-0.5 items-center gap-1 truncate">
               <span className="text-amber-400">★</span>
               <span>{language === 'bn' ? 'ভিডিও দেখুন • প্রতিদিন আয় করুন' : 'Watch Videos • Earn Daily'}</span>
             </p>
@@ -84,7 +84,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Right Action Icons & Coin Pill */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* Quick Clean View / Floating Ad Toggle */}
           <button
             onClick={() => {
@@ -98,7 +98,7 @@ export const Navbar: React.FC = () => {
                 nextState ? 'coin' : 'info'
               );
             }}
-            className={`p-1.5 rounded-full border transition active:scale-95 ${
+            className={`p-1 sm:p-1.5 rounded-full border transition active:scale-95 ${
               floatingAdsEnabled 
                 ? 'bg-slate-900/80 border-slate-800 text-amber-400 hover:text-amber-300' 
                 : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
@@ -109,23 +109,23 @@ export const Navbar: React.FC = () => {
                 : (language === 'bn' ? 'বিজ্ঞাপন দেখান' : 'Show ads')
             }
           >
-            {floatingAdsEnabled ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            {floatingAdsEnabled ? <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
           </button>
 
           {/* Audio Mute Toggle */}
           <button
             onClick={() => setIsMuted(!isMuted)}
-            className="p-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white transition"
+            className="p-1 sm:p-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white transition"
             title={isMuted ? 'Unmute' : 'Mute'}
           >
-            {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+            {isMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />}
           </button>
 
           {/* PWA Direct Install Button */}
           {!isInstalled && (isInstallable || isIOS) && (
             <button
               onClick={install}
-              className="px-2 py-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-300 border border-emerald-500/40 rounded-lg flex items-center gap-1 text-[11px] font-bold transition active:scale-95"
+              className="hidden sm:flex px-2 py-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-300 border border-emerald-500/40 rounded-lg items-center gap-1 text-[11px] font-bold transition active:scale-95"
               title={language === 'bn' ? 'অ্যাপটি ইনস্টল করুন' : 'Install App'}
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" />
@@ -137,13 +137,13 @@ export const Navbar: React.FC = () => {
           {user && (
             <div 
               onClick={() => setActiveTab('wallet')}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-amber-500/10 via-emerald-500/15 to-amber-500/10 border border-amber-500/30 hover:border-amber-400 rounded-full cursor-pointer transition shadow-sm"
+              className="flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-gradient-to-r from-amber-500/10 via-emerald-500/15 to-amber-500/10 border border-amber-500/30 hover:border-amber-400 rounded-full cursor-pointer transition shadow-sm whitespace-nowrap"
             >
-              <div className="w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center text-[10px] font-black text-slate-950 shadow-inner">
+              <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-amber-400 flex items-center justify-center text-[9px] sm:text-[10px] font-black text-slate-950 shadow-inner shrink-0">
                 🪙
               </div>
               <div className="flex flex-col text-left">
-                <span className="text-xs font-bold text-amber-300 leading-tight">
+                <span className="text-[11px] sm:text-xs font-bold text-amber-300 leading-tight">
                   {user.coins.toLocaleString()}
                 </span>
                 <span className="text-[8px] text-slate-400 font-medium leading-none">
@@ -156,47 +156,49 @@ export const Navbar: React.FC = () => {
           {/* Notification Bell */}
           <button
             onClick={() => setIsNotificationDrawerOpen(true)}
-            className="relative p-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white transition"
+            className="relative p-1 sm:p-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white transition"
+            title={language === 'bn' ? 'নোটিফিকেশন' : 'Notifications'}
           >
-            <Bell className="w-4 h-4" />
+            <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             {unreadNotificationCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-rose-500 text-white font-bold text-[8px] sm:text-[9px] rounded-full flex items-center justify-center animate-pulse">
                 {unreadNotificationCount}
               </span>
             )}
           </button>
 
-          {/* 👑 Admin Direct Portal Button for Website Owner */}
-          <button
-            onClick={() => setActiveTab('admin')}
-            className={`px-2 py-1 rounded-lg text-[10px] font-black transition flex items-center gap-1 active:scale-95 ${
-              activeTab === 'admin'
-                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
-                : 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40'
-            }`}
-            title="মালিক অ্যাডমিন প্যানেল (ইনকাম ও লিংক পরিচালনা)"
-          >
-            <span>👑</span>
-            <span>অ্যাডমিন</span>
-          </button>
+          {/* 👑 Admin Direct Portal Button (Only visible to logged-in Admin) */}
+          {user?.role === 'admin' && (
+            <button
+              onClick={() => setActiveTab('admin')}
+              className={`px-1.5 sm:px-2 py-1 rounded-lg text-[10px] font-black transition flex items-center gap-1 active:scale-95 whitespace-nowrap ${
+                activeTab === 'admin'
+                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                  : 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40'
+              }`}
+              title="মালিক অ্যাডমিন প্যানেল"
+            >
+              <span>👑</span>
+              <span className="hidden sm:inline">অ্যাডমিন</span>
+            </button>
+          )}
 
           {/* Language Toggle */}
           <button
             onClick={() => setLanguage(language === 'bn' ? 'en' : 'bn')}
-            className="px-2 py-1 text-[11px] font-bold rounded-lg bg-slate-800/80 text-slate-300 border border-slate-700 hover:text-emerald-400 transition"
+            className="px-1.5 sm:px-2 py-1 text-[10px] sm:text-[11px] font-bold rounded-lg bg-slate-800/80 text-slate-300 border border-slate-700 hover:text-emerald-400 transition whitespace-nowrap"
           >
             {language === 'bn' ? 'বাং' : 'EN'}
           </button>
         </div>
       </div>
 
-      {/* Demo Mode Badge / Notice if active */}
-      {settings?.isDemoMode && !isWatchTab && (
+      {/* Demo Mode Badge (visible only to admin) */}
+      {settings?.isDemoMode && user?.role === 'admin' && !isWatchTab && (
         <div className="mt-2 py-0.5 px-2 bg-gradient-to-r from-blue-950/60 via-slate-900/80 to-blue-950/60 rounded border border-cyan-500/30 flex items-center justify-between text-[10px]">
           <div className="flex items-center gap-1 text-cyan-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
             <span className="font-semibold">
-              {language === 'bn' ? 'ডেমো মোড সক্রিয়: বিকাশ ও নগদ ক্যাশআউট সিমুলেশন' : 'DEMO MODE: Simulated Ad & BD Payouts'}
+              {language === 'bn' ? 'ডেমো মোড সক্রিয় (শুধু অ্যাডমিন দেখছেন)' : 'DEMO MODE (Admin View)'}
             </span>
           </div>
         </div>

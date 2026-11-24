@@ -160,24 +160,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       {/* 🌟 Top Navigation Bar */}
       <header className="sticky top-0 z-40 bg-[#05070B]/90 backdrop-blur-md border-b border-white/10 px-4 py-3.5 transition-all">
 
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
           {/* Logo & Brand Identity */}
-          <a href="#" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 p-0.5 shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
-              <div className="w-full h-full bg-[#070A11] rounded-[10px] flex items-center justify-center text-emerald-400 font-black text-base">
+          <a href="#" className="flex items-center gap-2 sm:gap-3 group min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 p-0.5 shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
+              <div className="w-full h-full bg-[#070A11] rounded-[10px] flex items-center justify-center text-emerald-400 font-black text-sm sm:text-base">
                 ▶
               </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-base font-extrabold tracking-wide text-white">
+                <span className="text-xs sm:text-base font-extrabold tracking-wide text-white truncate">
                   WATCH & EARN BD
                 </span>
-                <span className="hidden sm:inline-block px-1.5 py-0.5 text-[9px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 rounded">
+                <span className="hidden sm:inline-block px-1.5 py-0.5 text-[9px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 rounded shrink-0">
                   🇧🇩 ভেরিফায়েড
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">
+              <p className="hidden sm:block text-[11px] text-slate-400 font-medium truncate">
                 বাংলাদেশের প্রিমিয়াম রিওয়ার্ড ও ভিডিও মনিটাইজেশন পোর্টাল
               </p>
             </div>
@@ -194,13 +194,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
           </nav>
 
           {/* Action CTAs */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={handleEnterAuditorPreview}
               disabled={guestLoading}
-              className="flex items-center gap-1 px-2.5 sm:px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-xs font-bold text-cyan-300 border border-cyan-500/40 transition shadow-sm hover:border-cyan-400 cursor-pointer"
+              className="flex items-center gap-1 px-2 sm:px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-[11px] sm:text-xs font-bold text-cyan-300 border border-cyan-500/40 transition shadow-sm hover:border-cyan-400 cursor-pointer whitespace-nowrap shrink-0"
             >
-              <Eye className="w-3.5 h-3.5" />
+              <Eye className="w-3.5 h-3.5 shrink-0" />
               <span>{guestLoading ? '...' : 'সরাসরি প্রবেশ'}</span>
             </button>
 
@@ -210,19 +210,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 e.stopPropagation();
                 onOpenAuth();
               }}
-              className="px-4 py-2 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/25 transition active:scale-95 cursor-pointer flex items-center gap-1.5 no-popunder"
+              className="px-2.5 sm:px-4 py-2 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-[11px] sm:text-xs rounded-xl shadow-lg shadow-emerald-500/25 transition active:scale-95 cursor-pointer flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shrink-0 no-popunder"
             >
               <span>লগইন / সাইন আপ</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 hidden sm:inline shrink-0" />
             </button>
 
             {/* Mobile Menu Toggle Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+              className="lg:hidden p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white shrink-0"
               aria-label="Toggle Navigation"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-4 h-4 sm:w-5 sm:h-5" /> : <Menu className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
           </div>
         </div>

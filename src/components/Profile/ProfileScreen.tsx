@@ -43,7 +43,7 @@ import { MiniBannerAd } from '../Common/MiniBannerAd';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 export const ProfileScreen: React.FC = () => {
-  const { user, updateProfile, toggleAdminRole, logout } = useAuth();
+  const { user, updateProfile, logout } = useAuth();
   const { 
     language, 
     setLanguage, 
@@ -69,6 +69,8 @@ export const ProfileScreen: React.FC = () => {
   const [activeLegalModal, setActiveLegalModal] = useState<'terms' | 'privacy' | 'support' | 'payout_rules' | null>(null);
   const [supportMessage, setSupportMessage] = useState('');
   const [supportSubmitting, setSupportSubmitting] = useState(false);
+
+  const isGuest = !user?.uid || user.uid.startsWith('usr_guest_') || Boolean(user?.email?.includes('@watchearn'));
 
   // Avatar presets
   const avatarPresets = [
@@ -211,7 +213,7 @@ export const ProfileScreen: React.FC = () => {
   ];
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 pt-20 sm:pt-24 pb-24 space-y-4 font-sans">
+    <div className="w-full max-w-md mx-auto px-4 pt-4 sm:pt-6 pb-24 space-y-4 font-sans">
       
       {/* 1. HERO USER PROFILE CARD */}
       <div className="rounded-3xl bg-gradient-to-br from-[#0C1524] via-[#08101A] to-[#0A1713] border border-emerald-500/30 p-5 shadow-2xl space-y-4 relative overflow-hidden">
@@ -219,21 +221,22 @@ export const ProfileScreen: React.FC = () => {
         <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative group cursor-pointer" onClick={() => setShowEditModal(true)}>
+        <div className="relative z-10 flex items-start justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="relative group cursor-pointer shrink-0" onClick={() => setShowEditModal(true)}>
               <img
                 src={user?.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
                 alt={user?.displayName}
-                className="w-16 h-16 rounded-full object-cover border-2 border-emerald-400 shadow-xl group-hover:opacity-85 transition"
+                referrerPolicy="no-referrer"
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-emerald-400 shadow-xl group-hover:opacity-85 transition"
               />
               <span className="absolute bottom-0 right-0 p-1 bg-emerald-500 rounded-full text-slate-950 border-2 border-[#09101A]">
                 <ShieldCheck className="w-3.5 h-3.5" />
               </span>
             </div>
 
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
                 <h2 className="text-base font-black text-white leading-tight truncate">
                   {user?.displayName || 'ব্যবহারকারী'}
                 </h2>
@@ -244,23 +247,38 @@ export const ProfileScreen: React.FC = () => {
                     setSelectedAvatar(user?.photoURL || avatarPresets[0]);
                     setShowEditModal(true);
                   }}
-                  className="p-1 rounded-lg bg-slate-800/80 text-slate-300 hover:text-emerald-400 transition"
+                  className="p-1 rounded-lg bg-slate-800/80 text-slate-300 hover:text-emerald-400 transition shrink-0"
                   title="এডিট প্রোফাইল"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <span className="text-xs text-slate-400 block truncate mt-0.5">{user?.email}</span>
+              <span className="text-xs text-slate-400 block truncate mt-0.5">
+                {isGuest ? 'অস্থায়ী গেস্ট সেশন (লগইন করা নেই)' : user?.email}
+              </span>
 
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5 text-emerald-400" />
-                  {user?.role === 'admin' ? 'Super Admin' : 'Verified Member'}
-                </span>
-                <span className="text-[10px] text-slate-400 font-mono">
-                  {user?.phone || '০১৭XXXXXXXX'}
-                </span>
+                {user?.role === 'admin' ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+                    <Sparkles className="w-2.5 h-2.5 text-cyan-400" />
+                    Super Admin
+                  </span>
+                ) : isGuest ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                    অস্থায়ী গেস্ট
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                    <Sparkles className="w-2.5 h-2.5 text-emerald-400" />
+                    Verified Member
+                  </span>
+                )}
+                {user?.phone && (
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {user.phone}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -275,13 +293,34 @@ export const ProfileScreen: React.FC = () => {
                 'info'
               );
             }}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 font-bold text-[10px] border border-slate-700 transition"
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl font-bold text-[10px] border transition shrink-0 whitespace-nowrap ${
+              isGuest
+                ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-emerald-400'
+                : 'bg-slate-800 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 border-slate-700'
+            }`}
             title="নতুন একাউন্ট খুলুন বা লগইন করুন"
           >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>নতুন অ্যাকাউন্ট</span>
+            <UserPlus className="w-3.5 h-3.5 shrink-0" />
+            <span>{isGuest ? 'সাইন আপ' : 'নতুন অ্যাকাউন্ট'}</span>
           </button>
         </div>
+
+        {isGuest && (
+          <button
+            onClick={() => logout()}
+            className="relative z-10 w-full p-2.5 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-left flex items-center justify-between gap-2 transition"
+          >
+            <div className="min-w-0">
+              <span className="text-xs font-bold text-emerald-300 block">
+                ফ্রি অ্যাকাউন্ট খুললে +১০০ কয়েন বোনাস!
+              </span>
+              <span className="text-[10px] text-slate-300 block">
+                ব্যালেন্স সুরক্ষিত রাখতে এখনই অ্যাকাউন্ট তৈরি বা লগইন করুন
+              </span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-emerald-400 shrink-0" />
+          </button>
+        )}
 
         {/* UID & Fast Copy Bar */}
         <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs">
@@ -480,34 +519,24 @@ export const ProfileScreen: React.FC = () => {
           </button>
         </div>
 
-        {/* Admin Dashboard Switch & Direct Portal */}
-        <div className="flex items-center justify-between py-2">
-          <div className="flex items-center gap-2 text-xs text-slate-200">
-            <ShieldAlert className="w-4 h-4 text-amber-400" />
-            <div>
-              <span className="block font-bold">{language === 'bn' ? 'মালিক অ্যাডমিন প্যানেল' : 'Admin Portal'}</span>
-              <span className="text-[10px] text-slate-400">বিজ্ঞাপন ও ইনকাম নিয়ন্ত্রণ (পিন: 7788)</span>
+        {/* Admin Portal Switch (Only visible to authenticated Admin users) */}
+        {user?.role === 'admin' && (
+          <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+            <div className="flex items-center gap-2 text-xs text-slate-200">
+              <ShieldAlert className="w-4 h-4 text-amber-400" />
+              <div>
+                <span className="block font-bold">{language === 'bn' ? 'অ্যাডমিন প্যানেল' : 'Admin Portal'}</span>
+                <span className="text-[10px] text-slate-400">বিজ্ঞাপন, ভিডিও ও পেমেন্ট নিয়ন্ত্রণ</span>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setActiveTab('admin')}
-              className="px-3 py-1.5 text-xs font-black rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 transition active:scale-95 shadow-md flex items-center gap-1"
+              className="px-3 py-1.5 text-xs font-black rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 transition active:scale-95 shadow-md flex items-center gap-1 shrink-0 whitespace-nowrap"
             >
               <span>👑 প্রবেশ</span>
             </button>
-            <button
-              onClick={toggleAdminRole}
-              className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition ${
-                user?.role === 'admin'
-                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
-              }`}
-            >
-              {user?.role === 'admin' ? 'Admin ✓' : 'Role'}
-            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 4. PROFESSIONAL SUPPORT & POLICIES (প্রো লেভেল ওয়েবসাইট অপশন) */}
@@ -642,11 +671,7 @@ export const ProfileScreen: React.FC = () => {
 
         <div className="text-center text-[10px] text-slate-500 font-mono space-y-0.5 pb-2">
           <p>WATCH & EARN BD • Version 3.4.0 (Production Build)</p>
-          <p 
-            onClick={toggleAdminRole} 
-            className="cursor-pointer select-none text-slate-600 hover:text-cyan-400 transition"
-            title="মালিক প্রবেশদ্বার"
-          >
+          <p className="select-none text-slate-600">
             © 2026 All Rights Reserved • Authorized Entertainment Platform
           </p>
         </div>
@@ -679,6 +704,7 @@ export const ProfileScreen: React.FC = () => {
                   <img
                     src={selectedAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
                     alt="Current Avatar"
+                    referrerPolicy="no-referrer"
                     className="w-14 h-14 rounded-full object-cover border-2 border-emerald-400 shadow-md"
                   />
                   <div className="flex-1">
